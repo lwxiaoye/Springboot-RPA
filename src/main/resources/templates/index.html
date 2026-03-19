@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RPA 系统 - 首页</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Microsoft YaHei', Arial, sans-serif; background: #f5f5f5; }
+        .navbar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .navbar-brand { font-size: 24px; font-weight: bold; }
+        .navbar-menu { display: flex; gap: 20px; }
+        .navbar-menu a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+        .navbar-menu a:hover { background: rgba(255, 255, 255, 0.2); }
+        .user-info { display: flex; align-items: center; gap: 15px; }
+        .user-name { font-size: 14px; }
+        .logout-btn {
+            padding: 6px 12px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid white;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .logout-btn:hover { background: rgba(255, 255, 255, 0.3); }
+        .container { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s;
+        }
+        .stat-card:hover { transform: translateY(-5px); }
+        .stat-card h3 { color: #666; font-size: 14px; margin-bottom: 10px; }
+        .stat-card .number { font-size: 32px; font-weight: bold; color: #667eea; }
+        .content-section {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        .section-header h2 { color: #333; font-size: 20px; }
+        .btn {
+            padding: 8px 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: transform 0.2s;
+        }
+        .btn:hover { transform: translateY(-2px); }
+        table { width: 100%; border-collapse: collapse; }
+        table th, table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        table th { background: #f9f9f9; color: #333; font-weight: 600; }
+        table tr:hover { background: #f9f9f9; }
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .status-active { background: #e3fcef; color: #00a854; }
+        .status-pending { background: #fff7e6; color: #fa8c16; }
+        .status-completed { background: #e6f7ff; color: #1890ff; }
+        .status-failed { background: #fff1f0; color: #f5222d; }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        .modal-header h3 { color: #333; font-size: 18px; }
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+        .close-btn:hover { color: #333; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; color: #333; font-weight: 500; }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .form-group textarea { resize: vertical; min-height: 80px; }
+        .action-btn {
+            padding: 4px 8px;
+            margin: 0 2px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .edit-btn { background: #1890ff; color: white; }
+        .delete-btn { background: #f5222d; color: white; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-brand">RPA 系统</div>
+        <div class="navbar-menu">
+            <a href="#process">流程管理</a>
+            <a href="#robot">机器人管理</a>
+            <a href="#task">任务管理</a>
+            <a href="#log">执行日志</a>
+        </div>
+        <div class="user-info">
+            <span class="user-name" id="userName">用户</span>
+            <button class="logout-btn" onclick="logout()">退出</button>
+        </div>
+    </nav>
+    <div class="container">
+        <div class="dashboard">
+            <div class="stat-card">
+                <h3>RPA 流程</h3>
+                <div class="number" id="processCount">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>机器人</h3>
+                <div class="number" id="robotCount">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>待执行任务</h3>
+                <div class="number" id="pendingTaskCount">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>已完成任务</h3>
+                <div class="number" id="completedTaskCount">0</div>
+            </div>
+        </div>
+        <div class="content-section" id="process">
+            <div class="section-header">
+                <h2>RPA 流程管理</h2>
+                <button class="btn" onclick="showCreateProcessModal()">新建流程</button>
+            </div>
+            <table>
+                <thead>
+                    <tr><th>ID</th><th>名称</th><th>编码</th><th>状态</th><th>创建人</th><th>操作</th></tr>
+                </thead>
+                <tbody id="processTable"></tbody>
+            </table>
+        </div>
+        <div class="content-section" id="robot">
+            <div class="section-header">
+                <h2>机器人管理</h2>
+                <button class="btn" onclick="showCreateRobotModal()">新建机器人</button>
+            </div>
+            <table>
+                <thead>
+                    <tr><th>ID</th><th>名称</th><th>类型</th><th>状态</th><th>能力</th><th>操作</th></tr>
+                </thead>
+                <tbody id="robotTable"></tbody>
+            </table>
+        </div>
+        <div class="content-section" id="task">
+            <div class="section-header">
+                <h2>任务管理</h2>
+                <button class="btn" onclick="showCreateTaskModal()">新建任务</button>
+            </div>
+            <table>
+                <thead>
+                    <tr><th>ID</th><th>名称</th><th>分类</th><th>优先级</th><th>状态</th><th>机器人</th><th>操作</th></tr>
+                </thead>
+                <tbody id="taskTable"></tbody>
+            </table>
+        </div>
+        <div class="content-section" id="log">
+            <div class="section-header">
+                <h2>执行日志</h2>
+            </div>
+            <table>
+                <thead>
+                    <tr><th>ID</th><th>任务 ID</th><th>操作</th><th>状态</th><th>消息</th><th>时间</th></tr>
+                </thead>
+                <tbody id="logTable"></tbody>
+            </table>
+        </div>
+    </div>
+    <div id="processModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>新建 RPA 流程</h3>
+                <button class="close-btn" onclick="closeModal('processModal')">&times;</button>
+            </div>
+            <form id="processForm">
+                <div class="form-group">
+                    <label>流程名称</label>
+                    <input type="text" id="processName" required>
+                </div>
+                <div class="form-group">
+                    <label>流程编码</label>
+                    <input type="text" id="processCode" required>
+                </div>
+                <div class="form-group">
+                    <label>描述</label>
+                    <textarea id="processDescription"></textarea>
+                </div>
+                <button type="submit" class="btn">保存</button>
+            </form>
+        </div>
+    </div>
+    <div id="robotModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>新建机器人</h3>
+                <button class="close-btn" onclick="closeModal('robotModal')">&times;</button>
+            </div>
+            <form id="robotForm">
+                <div class="form-group">
+                    <label>机器人名称</label>
+                    <input type="text" id="robotName" required>
+                </div>
+                <div class="form-group">
+                    <label>类型</label>
+                    <input type="text" id="robotType" required>
+                </div>
+                <div class="form-group">
+                    <label>能力</label>
+                    <textarea id="robotCapabilities"></textarea>
+                </div>
+                <button type="submit" class="btn">保存</button>
+            </form>
+        </div>
+    </div>
+    <div id="taskModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>新建任务</h3>
+                <button class="close-btn" onclick="closeModal('taskModal')">&times;</button>
+            </div>
+            <form id="taskForm">
+                <div class="form-group">
+                    <label>任务名称</label>
+                    <input type="text" id="taskName" required>
+                </div>
+                <div class="form-group">
+                    <label>分类</label>
+                    <input type="text" id="taskCategory" required>
+                </div>
+                <div class="form-group">
+                    <label>优先级</label>
+                    <select id="taskPriority">
+                        <option value="low">低</option>
+                        <option value="normal" selected>正常</option>
+                        <option value="high">高</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn">保存</button>
+            </form>
+        </div>
+    </div>
+    <script>
+        let currentUser = null;
+        function init() {
+            const userStr = localStorage.getItem('user');
+            if (!userStr) { window.location.href = '/login.html'; return; }
+            currentUser = JSON.parse(userStr);
+            document.getElementById('userName').textContent = currentUser.realName || currentUser.username;
+            loadData();
+        }
+        function logout() {
+            localStorage.removeItem('user');
+            window.location.href = '/login.html';
+        }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        function loadData() {
+            loadProcesses();
+            loadRobots();
+            loadTasks();
+            loadLogs();
+            loadStats();
+        }
+        async function loadProcesses() {
+            const res = await fetch('/api/process');
+            const data = await res.json();
+            const tbody = document.getElementById('processTable');
+            tbody.innerHTML = '';
+            if (data.code === 0 && data.data) {
+                data.data.forEach(p => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td>${p.id}</td><td>${p.name}</td><td>${p.code||''}</td><td><span class="status-badge status-active">${p.status}</span></td><td>${p.creatorName||''}</td><td><button class="action-btn delete-btn" onclick="deleteProcess(${p.id})">删除</button></td>`;
+                    tbody.appendChild(tr);
+                });
+                document.getElementById('processCount').textContent = data.data.length;
+            }
+        }
+        async function loadRobots() {
+            const res = await fetch('/api/robot');
+            const data = await res.json();
+            const tbody = document.getElementById('robotTable');
+            tbody.innerHTML = '';
+            if (data.code === 0 && data.data) {
+                data.data.forEach(r => {
+                    const tr = document.createElement('tr');
+                    const statusClass = r.status === 'idle' ? 'status-active' : (r.status === 'running' ? 'status-pending' : 'status-completed');
+                    tr.innerHTML = `<td>${r.id}</td><td>${r.name}</td><td>${r.type||''}</td><td><span class="status-badge ${statusClass}">${r.status}</span></td><td>${r.capabilities||''}</td><td><button class="action-btn delete-btn" onclick="deleteRobot(${r.id})">删除</button></td>`;
+                    tbody.appendChild(tr);
+                });
+                document.getElementById('robotCount').textContent = data.data.length;
+            }
+        }
+        async function loadTasks() {
+            const res = await fetch('/api/task');
+            const data = await res.json();
+            const tbody = document.getElementById('taskTable');
+            tbody.innerHTML = '';
+            let pending = 0, completed = 0;
+            if (data.code === 0 && data.data) {
+                data.data.forEach(t => {
+                    if (t.status === 'pending') pending++;
+                    if (t.status === 'completed') completed++;
+                    const tr = document.createElement('tr');
+                    const statusClass = t.status === 'pending' ? 'status-pending' : (t.status === 'completed' ? 'status-completed' : 'status-failed');
+                    tr.innerHTML = `<td>${t.id}</td><td>${t.name}</td><td>${t.category||''}</td><td>${t.priority}</td><td><span class="status-badge ${statusClass}">${t.status}</span></td><td>${t.robotName||'未分配'}</td><td><button class="action-btn delete-btn" onclick="deleteTask(${t.id})">删除</button></td>`;
+                    tbody.appendChild(tr);
+                });
+                document.getElementById('pendingTaskCount').textContent = pending;
+                document.getElementById('completedTaskCount').textContent = completed;
+            }
+        }
+        async function loadLogs() {
+            const res = await fetch('/api/log');
+            const data = await res.json();
+            const tbody = document.getElementById('logTable');
+            tbody.innerHTML = '';
+            if (data.code === 0 && data.data) {
+                data.data.slice(0, 20).forEach(l => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td>${l.id}</td><td>${l.taskId||''}</td><td>${l.action||''}</td><td>${l.status}</td><td>${l.message||''}</td><td>${l.createTime||''}</td>`;
+                    tbody.appendChild(tr);
+                });
+            }
+        }
+        async function loadStats() { }
+        function showCreateProcessModal() { document.getElementById('processModal').style.display = 'flex'; }
+        function showCreateRobotModal() { document.getElementById('robotModal').style.display = 'flex'; }
+        function showCreateTaskModal() { document.getElementById('taskModal').style.display = 'flex'; }
+        document.getElementById('processForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            try {
+                const response = await fetch('/api/process', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: document.getElementById('processName').value,
+                        code: document.getElementById('processCode').value,
+                        description: document.getElementById('processDescription').value,
+                        creatorId: parseInt(currentUser.id),
+                        creatorName: currentUser.username
+                    })
+                });
+                const result = await response.json();
+                if (result.code === 0) {
+                    alert('创建成功！');
+                    closeModal('processModal');
+                    loadProcesses();
+                } else {
+                    alert('创建失败：' + result.message);
+                }
+            } catch (error) {
+                alert('创建失败：' + error.message);
+            }
+        });
+        document.getElementById('robotForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            try {
+                const response = await fetch('/api/robot', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: document.getElementById('robotName').value,
+                        type: document.getElementById('robotType').value,
+                        capabilities: document.getElementById('robotCapabilities').value
+                    })
+                });
+                const result = await response.json();
+                if (result.code === 0) {
+                    alert('创建成功！');
+                    closeModal('robotModal');
+                    loadRobots();
+                } else {
+                    alert('创建失败：' + result.message);
+                }
+            } catch (error) {
+                alert('创建失败：' + error.message);
+            }
+        });
+        document.getElementById('taskForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            try {
+                const response = await fetch('/api/task', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: document.getElementById('taskName').value,
+                        category: document.getElementById('taskCategory').value,
+                        priority: document.getElementById('taskPriority').value,
+                        assigneeId: parseInt(currentUser.id),
+                        assigneeName: currentUser.username
+                    })
+                });
+                const result = await response.json();
+                if (result.code === 0) {
+                    alert('创建成功！');
+                    closeModal('taskModal');
+                    loadTasks();
+                } else {
+                    alert('创建失败：' + result.message);
+                }
+            } catch (error) {
+                alert('创建失败：' + error.message);
+            }
+        });
+        async function deleteProcess(id) {
+            if (confirm('确定删除？')) {
+                await fetch('/api/process/' + id, { method: 'DELETE' });
+                loadProcesses();
+            }
+        }
+        async function deleteRobot(id) {
+            if (confirm('确定删除？')) {
+                await fetch('/api/robot/' + id, { method: 'DELETE' });
+                loadRobots();
+            }
+        }
+        async function deleteTask(id) {
+            if (confirm('确定删除？')) {
+                await fetch('/api/task/' + id, { method: 'DELETE' });
+                loadTasks();
+            }
+        }
+        init();
+    </script>
+</body>
+</html>
