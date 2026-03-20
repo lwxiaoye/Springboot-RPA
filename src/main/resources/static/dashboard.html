@@ -1154,6 +1154,18 @@
             }
         }
 
+        // 删除任务
+        async function deleteTask(id) {
+            if (!confirm('确定删除该任务吗？')) return;
+            try {
+                await fetch('/api/task/' + id, { method: 'DELETE' });
+                alert('删除成功！');
+                loadTasksTable();
+            } catch (error) {
+                alert('删除失败：' + error.message);
+            }
+        }
+
         // 模态框控制
         function showModal(modalId) {
             document.getElementById(modalId).classList.add('show');
