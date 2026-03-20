@@ -18,7 +18,7 @@ public class UserService {
                 .filter(user -> user.getPassword().equals(password));
     }
 
-    public User register(String username, String password, String realName) {
+    public User register(String username, String password, String realName, String email, String phone, Integer role) {
         if (userRepository.existsByUsername(username)) {
             throw new RuntimeException("用户名已存在");
         }
@@ -26,7 +26,9 @@ public class UserService {
         user.setUsername(username);
         user.setPassword(password);
         user.setRealName(realName);
-        user.setRole(0);
+        user.setEmail(email);
+        user.setPhone(phone);
+        user.setRole(role != null ? role : 0);
         return userRepository.save(user);
     }
 

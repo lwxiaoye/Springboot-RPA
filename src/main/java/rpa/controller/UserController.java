@@ -31,7 +31,10 @@ public class UserController {
             data.put("id", user.getId());
             data.put("username", user.getUsername());
             data.put("realName", user.getRealName());
+            data.put("email", user.getEmail());
+            data.put("phone", user.getPhone());
             data.put("role", user.getRole());
+            data.put("status", user.getStatus());
             response.put("data", data);
         } else {
             response.put("code", -1);
@@ -47,8 +50,12 @@ public class UserController {
             String username = request.get("username");
             String password = request.get("password");
             String realName = request.get("realName");
-            
-            User user = userService.register(username, password, realName);
+            String email = request.get("email");
+            String phone = request.get("phone");
+            String roleStr = request.get("role");
+            Integer role = roleStr != null ? Integer.parseInt(roleStr) : null;
+
+            User user = userService.register(username, password, realName, email, phone, role);
             response.put("code", 0);
             response.put("message", "注册成功");
             Map<String, Object> data = new HashMap<>();
