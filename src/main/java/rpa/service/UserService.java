@@ -70,8 +70,10 @@ public class UserService {
 
     public User resetPassword(Long id, String newPassword) {
         return userRepository.findById(id).map(user -> {
+            LocalDateTime now = LocalDateTime.now();
             user.setPassword(newPassword);
-            user.setPasswordChangeTime(LocalDateTime.now());
+            user.setPasswordChangeTime(now);
+            user.setUpdateTime(now); // 使用本地时间直接替换原有的更新时间
             return userRepository.save(user);
         }).orElseThrow(() -> new RuntimeException("用户不存在"));
     }
