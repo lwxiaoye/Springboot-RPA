@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import rpa.entity.User;
 import rpa.repository.UserRepository;
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.List;
 
@@ -13,22 +14,25 @@ public class UserService {
     
     private final UserRepository userRepository;
 
-    public Optional<User> login(String username, String password) {
-        return userRepository.findByUsername(username)
+    public Optional<User> login(String account, String password) {
+        // 尝试通过用户名或手机号登录
+        return userRepository.findByUsername(account)
+                .or(() -> userRepository.findByPhone(account))
                 .filter(user -> user.getPassword().equals(password));
     }
 
-    public User register(String username, String password, String realName) {
-        if (userRepository.existsByUsername(username)) {
-            throw new RuntimeException("用户名已存在");
-        }
-        User user = new User();
-        user.setUsername(username);
-        user.setPassword(password);
-        user.setRealName(realName);
-        user.setRole(0);
-        return userRepository.save(user);
+    public Optional<User> getUserByUsername(String username) {
+        return userRepository.findByUsername(username);
     }
+
+    public Optional<User> getUserByPhone(String phone) {
+        return userRepository.findByPhone(phone);
+    }
+
+    public Optional<User> getUserByEmail(String email) {
+        return userRepository.findByEmail(email);
+    }
+
 
     public Optional<User> findById(Long id) {
         return userRepository.findById(id);
@@ -67,6 +71,56 @@ public class UserService {
     public User resetPassword(Long id, String newPassword) {
         return userRepository.findById(id).map(user -> {
             user.setPassword(newPassword);
+            user.setPasswordChangeTime(LocalDateTime.now());
+            return userRepository.save(user);
+        }).orElseThrow(() -> new RuntimeException("用户不存在"));
+    }
+
+    public boolean isPasswordExpired(User user) {
+        if (user.getPasswordChangeTime() == null) {
+            return true; // 从未修改过密码，需要强制修改
+        }
+        LocalDateTime now = LocalDateTime.now();
+        long daysBetween = java.time.Duration.between(user.getPasswordChangeTime(), now).toDays();
+        return daysBetween >= 90; // 90 天强制修改
+    }
+
+    public boolean validatePasswordComplexity(String password) {
+        if (password == null || password.length() < 8 || password.length() > 24) {
+            return false;
+        }
+        
+        boolean hasLetter = false;
+        boolean hasDigit = false;
+        boolean hasSpecialChar = false;
+        
+        for (char c : password.toCharArray()) {
+            if (Character.isLetter(c)) {
+                hasLetter = true;
+            } else if (Character.isDigit(c)) {
+                hasDigit = true;
+            } else {
+                hasSpecialChar = true;
+            }
+        }
+        
+        return hasLetter && hasDigit && hasSpecialChar;
+    }
+
+    public User changePassword(Long userId, String oldPassword, String newPassword) {
+        return userRepository.findById(userId).map(user -> {
+            // 验证旧密码
+            if (!user.getPassword().equals(oldPassword)) {
+                throw new RuntimeException("原密码错误");
+            }
+            
+            // 验证新密码复杂度
+            if (!validatePasswordComplexity(newPassword)) {
+                throw new RuntimeException("密码不符合复杂度要求：必须包含字母、数字和特殊字符，长度 8-24 位");
+            }
+            
+            user.setPassword(newPassword);
+            user.setPasswordChangeTime(LocalDateTime.now());
             return userRepository.save(user);
         }).orElseThrow(() -> new RuntimeException("用户不存在"));
     }

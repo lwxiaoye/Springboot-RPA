@@ -762,6 +762,15 @@
             if (profilePage) {
                 profilePage.classList.remove('hidden');
             }
+            
+            // 检查 URL 参数，如果是密码过期强制修改
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('changePassword') === 'true') {
+                showChangePasswordTab();
+            }
+            
+            // 检查密码是否即将过期（80 天提醒）
+            checkPasswordExpiry();
         }
 
         // 加载个人信息
@@ -820,6 +829,27 @@
                 return;
             }
             
+            // 密码复杂度校验
+            if (newPwd.length < 8 || newPwd.length > 24) {
+                alert('密码长度必须在 8-24 位之间');
+                return;
+            }
+            
+            let hasLetter = false;
+            let hasDigit = false;
+            let hasSpecialChar = false;
+            
+            for (let c of newPwd) {
+                if (/[a-zA-Z]/.test(c)) hasLetter = true;
+                else if (/[0-9]/.test(c)) hasDigit = true;
+                else hasSpecialChar = true;
+            }
+            
+            if (!hasLetter || !hasDigit || !hasSpecialChar) {
+                alert('密码必须包含字母、数字和特殊字符');
+                return;
+            }
+            
             try {
                 const response = await fetch('/api/user/password/' + currentUser.id, {
                     method: 'PUT',
@@ -866,6 +896,46 @@
             } else {
                 document.getElementById('basicTab').classList.add('hidden');
                 document.getElementById('passwordTab').classList.remove('hidden');
+            }
+        }
+        
+        // 强制显示密码修改 Tab
+        function showChangePasswordTab() {
+            const passwordTab = document.getElementById('passwordTab');
+            const basicTab = document.getElementById('basicTab');
+            
+            if (passwordTab && basicTab) {
+                basicTab.classList.add('hidden');
+                passwordTab.classList.remove('hidden');
+                
+                // 更新 Tab 样式
+                const tabs = document.querySelectorAll('.tab-item');
+                tabs.forEach((tab, index) => {
+                    if (index === 1) {
+                        tab.classList.add('active');
+                    } else {
+                        tab.classList.remove('active');
+                    }
+                });
+                
+                alert('您的密码已过期或即将过期，请立即修改密码！');
+            }
+        }
+        
+        // 检查密码过期
+        async function checkPasswordExpiry() {
+            try {
+                const response = await fetch('/api/user/check-password-expiry/' + currentUser.id, {
+                    method: 'POST'
+                });
+                const result = await response.json();
+                
+                if (result.code === 0 && result.data) {
+                    // 密码已过期，强制修改
+                    showChangePasswordTab();
+                }
+            } catch (error) {
+                console.error('检查密码过期失败:', error);
             }
         }
 
@@ -1013,7 +1083,7 @@
             }
             
             try {
-                const response = await fetch('/api/user/register', {
+                const response = await fetch('/api/user', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({

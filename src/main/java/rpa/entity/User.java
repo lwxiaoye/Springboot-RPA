@@ -29,4 +29,7 @@ public class User {
     
     private LocalDateTime createTime = LocalDateTime.now();
     private LocalDateTime updateTime = LocalDateTime.now();
+    
+    // 密码最后修改时间
+    private LocalDateTime passwordChangeTime = LocalDateTime.now();
 }
