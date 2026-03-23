@@ -159,6 +159,7 @@
                     <input type="text" id="resetAccount" placeholder="请输入用户名、手机号或邮箱">
                 </div>
                 <button class="btn" onclick="sendVerificationCode()">发送验证码</button>
+                <button class="btn" style="background: #e5e7eb; color: #4b5563; margin-top: 10px;" onclick="closeForgotPasswordModal()">取消</button>
             </div>
             
             <!-- 步骤 2: 输入验证码 -->
@@ -171,6 +172,7 @@
                     <button class="btn" onclick="verifyCode()" style="flex: 1;">验证</button>
                     <button class="btn" onclick="resendCode()" style="background: #e5e7eb; color: #4b5563; flex: 1;">重新发送</button>
                 </div>
+                <button class="btn" style="background: #e5e7eb; color: #4b5563; margin-top: 10px;" onclick="resetStep1()">取消</button>
             </div>
             
             <!-- 步骤 3: 重置密码 -->
@@ -184,6 +186,7 @@
                     <input type="password" id="confirmResetPassword" placeholder="请再次输入新密码">
                 </div>
                 <button class="btn" onclick="resetPasswordSubmit()">重置密码</button>
+                <button class="btn" style="background: #e5e7eb; color: #4b5563; margin-top: 10px;" onclick="resetStep1()">取消</button>
             </div>
             
             <div id="resetMessage" class="message" style="margin-top: 20px;"></div>
