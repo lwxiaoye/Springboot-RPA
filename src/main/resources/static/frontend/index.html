@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RPA运营管理系统</title>
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css" />
+    <style>
+        /* 全局基础样式 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', Arial, sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+            background: #f0f4fa;
+            padding:5px;
+        }
+
+        /* 顶部导航栏 */
+        .top-nav {
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 130px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f0f4fa;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            position: relative;
+        }
+
+        .nav-platform {
+            font-size: 40px;
+            font-weight: 600;
+            color: #1e3a4a;
+            letter-spacing: 2.5px;
+            background: linear-gradient(135deg, #1e3a4a 0%, #1f5270 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            position: relative;
+            padding: 0 32px;
+        }
+
+        .nav-platform::before,
+        .nav-platform::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 40px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #8aa8c8, transparent);
+        }
+
+        .nav-platform::before {
+            left: -20px;
+            transform: translateY(-50%);
+        }
+
+        .nav-platform::after {
+            right: -20px;
+            transform: translateY(-50%);
+        }
+
+         /* 新增的英文标题区域 - 艺术字样式 */
+        .english-title-section {
+            width: 100%;
+            position: relative;
+            /* background: linear-gradient(135deg, #f0f4fa 0%, #e8eef5 100%); */
+            padding: 5px 0 15px 0;
+            margin-top: -10px;
+            overflow: hidden;
+        }
+
+        /* 装饰性背景元素 */
+        .english-title-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 300px;
+            height: 300px;
+            /* background: radial-gradient(circle, rgba(30, 58, 74, 0.03) 0%, rgba(30, 58, 74, 0) 70%); */
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .english-title-section::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -5%;
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(106, 154, 186, 0.05) 0%, rgba(106, 154, 186, 0) 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .english-title-wrapper {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 40px;
+            text-align: right;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* 艺术字主样式 */
+        .english-title {
+            font-size: 22px;
+            font-weight: 600;
+            font-family: 'Orbitron', 'Poppins', 'Playfair Display', monospace;
+            letter-spacing: 3px;
+            position: relative;
+            display: inline-block;
+            padding: 12px 28px 12px 20px;
+            background: linear-gradient(135deg, #1e3a4a 0%, #2a5f7a 50%, #1e3a4a 100%);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 2px 2px 4px rgba(30, 58, 74, 0.2);
+            transition: all 0.4s ease;
+            cursor: default;
+        }
+
+        /* 添加光效动画 */
+        .english-title:hover {
+            background-position: right center;
+            letter-spacing: 4px;
+        }
+
+        /* 装饰性下划线 */
+        .english-title::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #6a9aba, #1e3a4a, #6a9aba, transparent);
+            transform: scaleX(0.8);
+            transition: transform 0.3s ease;
+        }
+
+        .english-title:hover::before {
+            transform: scaleX(1);
+        }
+
+        /* 右侧装饰竖线 */
+        .english-title::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 3px;
+            height: 30px;
+            background: linear-gradient(180deg, #6a9aba, #1e3a4a, #6a9aba);
+            border-radius: 2px;
+            opacity: 0.6;
+            transition: height 0.3s ease, opacity 0.3s ease;
+        }
+
+        .english-title:hover::after {
+            height: 40px;
+            opacity: 1;
+        }
+
+        /* 添加小星星装饰 */
+        .english-title .star-decoration {
+            position: absolute;
+            font-size: 12px;
+            opacity: 0;
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+
+        .english-title:hover .star-decoration {
+            opacity: 1;
+            transform: translateY(-5px);
+        }
+
+        /* 主容器左右结构 */
+        .login-container {
+            min-height: 100vh;
+            width: 100%;
+            display: flex;
+            background: #f0f4fa;
+            position: relative;
+            top: 0;
+        }
+
+        /* 左侧区域 - 作为外层容器 */
+        .left-hero {
+            flex: 3;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            position: relative;
+            padding: 20px;
+            margin-left: 30px;
+            margin-right: 30px;
+        }
+
+        /* 左侧内部子元素 - 包含所有图片内容和布局 */
+        .left-content {
+            width: 100%;
+            height: 80vh;
+            min-height: 350px;
+            max-height: 600px;
+            background: url('../images/background.png') no-repeat center center;
+            background-size: cover;
+            position: relative;
+            clip-path: polygon(0% 0%, 100% 0%, 92% 100%, 0% 100%);
+            border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            transition: all 0.3s ease;
+            
+            &::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: linear-gradient(135deg, rgba(30, 58, 74, 0.2) 0%, rgba(30, 58, 74, 0.05) 100%);
+                pointer-events: none;
+                z-index: 1;
+            }
+            
+            &::after {
+                content: '';
+                position: absolute;
+                bottom: 0;
+                right: 0;
+                width: 150px;
+                height: 150px;
+                background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 70%);
+                pointer-events: none;
+                z-index: 1;
+            }
+        }
+        
+        .left-overlay-text {
+            position: absolute;
+            bottom: 40px;
+            left: 30px;
+            color: white;
+            z-index: 2;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            font-size: 24px;
+            font-weight: 500;
+            background: linear-gradient(90deg, rgba(30,58,74,0.7), rgba(30,58,74,0));
+            padding: 12px 24px;
+            border-radius: 8px;
+            backdrop-filter: blur(5px);
+        }
+        
+        .left-overlay-text p {
+            font-size: 14px;
+            margin-top: 8px;
+            opacity: 0.9;
+        }
+
+        /* 右侧区域 */
+        .right-card-area {
+            flex: 2;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* 卡片本身 */
+        .login-card {
+            width: 100%;
+            max-width: 440px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 32px;
+            box-shadow: 0 25px 50px -8px rgba(0, 40, 60, 0.25);
+            padding: 32px 32px 40px 32px;
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(200, 220, 240, 0.5);
+        }
+
+        .card-welcome {
+            text-align: center;
+            margin-bottom: 24px;
+            font-size: 28px;
+            font-weight: 600;
+            color: #1e3a4a;
+            letter-spacing: 1px;
+            position: relative;
+            
+            &::after {
+                content: '';
+                position: absolute;
+                bottom: -12px;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 50px;
+                height: 3px;
+                background: linear-gradient(90deg, #1e3a4a, #6a9aba);
+                border-radius: 3px;
+            }
+        }
+
+        /* 登录选项栏样式 */
+        .login-tabs {
+            display: flex;
+            border-bottom: 2px solid #e0e8f0;
+            margin-bottom: 28px;
+            margin-top: 8px;
+        }
+
+        .tab-item {
+            flex: 1;
+            text-align: center;
+            font-size: 16px;
+            font-weight: 500;
+            color: #6a7a8a;
+            padding: 0 0 12px 0;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .tab-item.active {
+            color: #1e3a4a;
+            font-weight: 600;
+        }
+
+        .tab-item.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 70%;
+            height: 3px;
+            background: #1e3a4a;
+            border-radius: 3px;
+        }
+
+        .el-form-item {
+            margin-bottom: 24px;
+        }
+
+        .el-form-item__label {
+            font-weight: 500;
+            color: #2a4a5a;
+            font-size: 14px;
+            line-height: 1.8;
+        }
+
+        .el-input__wrapper {
+            background-color: #f8fcff;
+            border-radius: 12px;
+            padding: 4px 16px;
+            border: 1px solid #c9d8e8;
+            box-shadow: none;
+        }
+
+        .el-input__wrapper:hover {
+            border-color: #8aa8c8;
+        }
+
+        .el-input__wrapper.is-focus {
+            border-color: #1e3a4a;
+            box-shadow: 0 0 0 3px rgba(30, 58, 74, 0.1);
+        }
+
+        .el-input__inner {
+            height: 46px;
+            color: #1e3a4a;
+            font-size: 15px;
+        }
+
+        .password-tip {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: -12px;
+            margin-bottom: 16px;
+            font-size: 12px;
+            color: #6a7a8a;
+        }
+
+        .verification-code {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .verification-code .el-input {
+            flex: 1;
+        }
+
+        .code-button {
+            min-width: 120px;
+            height: 46px;
+            background: #e8f0f8;
+            color: #1e3a4a;
+            border: 1px solid #c9d8e8;
+            border-radius: 12px;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
+        .code-button:hover:not(:disabled) {
+            background: #d0e0f0;
+        }
+
+        .form-options {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 28px;
+        }
+
+        .forgot-text {
+            color: #1e3a4a;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: opacity 0.2s;
+        }
+        .forgot-text:hover {
+            opacity: 0.7;
+            text-decoration: underline;
+        }
+
+        .login-button {
+            width: 100%;
+            height: 50px;
+            font-size: 18px;
+            font-weight: 500;
+            border-radius: 25px;
+            background: linear-gradient(135deg, #1e3a4a 0%, #2a4a6a 100%);
+            border: none;
+            color: white;
+            letter-spacing: 1px;
+            transition: all 0.25s;
+            cursor: pointer;
+            border: 1px solid #1e3a4a;
+        }
+
+        .login-button:hover {
+            background: linear-gradient(135deg, #14303e 0%, #1e405e 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 20px -10px #1e3a4a80;
+        }
+
+        .default-account-tip {
+            text-align: center;
+            font-size: 14px;
+            color: #4a6a7a;
+            background: #f5faff;
+            padding: 12px 16px;
+            border-radius: 30px;
+            border: 1px dashed #b8cde0;
+            margin-top: 24px;
+        }
+
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            .login-container {
+                flex-direction: column;
+            }
+            .left-hero {
+                flex: 1;
+                min-height: auto;
+                padding: 15px;
+            }
+            .left-content {
+                height: 40vh;
+                min-height: 280px;
+                clip-path: polygon(0% 0%, 100% 0%, 100% 90%, 0% 100%);
+            }
+            .right-card-area {
+                flex: 3;
+            }
+            .top-nav {
+                height: 70px;
+            }
+            .nav-platform {
+                font-size: 28px;
+            }
+            .card-welcome {
+                font-size: 24px;
+                margin-bottom: 20px;
+            }
+            .left-overlay-text {
+                font-size: 18px;
+                bottom: 20px;
+                left: 20px;
+                padding: 8px 16px;
+            }
+            .left-overlay-text p {
+                font-size: 12px;
+            }
+            .english-title-wrapper {
+                padding: 0 20px;
+            }
+            .english-title {
+                font-size: 14px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .login-card {
+                padding: 24px 20px 30px 20px;
+            }
+            .card-welcome {
+                font-size: 22px;
+                margin-bottom: 16px;
+            }
+            .nav-platform {
+                font-size: 22px;
+            }
+            .nav-platform::before,
+            .nav-platform::after {
+                width: 25px;
+            }
+            .left-content {
+                height: 35vh;
+            }
+            .left-overlay-text {
+                font-size: 16px;
+                bottom: 15px;
+                left: 15px;
+            }
+            .english-title {
+                font-size: 12px;
+            }
+        }
+        
+        /* 添加动画效果 */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .left-content {
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        /* 英文标题淡入动画 */
+        .english-title-section {
+            animation: fadeInUp 0.5s ease-out 0.2s both;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app"></div>
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/element-plus"></script>
+    
+    <script>
+        const { createApp, ref, reactive } = Vue;
+        const { ElMessage, ElDialog } = ElementPlus;
+
+        const app = createApp({
+            setup() {
+                const loginType = ref('password');
+                const loading = ref(false);
+                const codeSending = ref(false);
+                const codeCountdown = ref(0);
+                const rememberMe = ref(false);
+
+                const loginFailCount = ref(0);
+                const isLocked = ref(false);
+
+                // 密码登录
+                const passwordFormRef = ref(null);
+                const passwordForm = reactive({ username: '', password: '' });
+
+                // 邮箱登录
+                const emailFormRef = ref(null);
+                const emailForm = reactive({ email: '', code: '' });
+
+                // 忘记密码
+                const forgetVisible = ref(false);
+                const resetForm = reactive({ username: '', code: '', newPassword: '' });
+                const resetCode = ref('');
+
+                // 验证规则
+                const passwordRules = {
+                    username: [{ required: true, message: '请输入用户名' }],
+                    password: [
+                        { required: true, message: '请输入密码' },
+                        { min: 8, message: '密码不少于8位' },
+                        { pattern: /^(?=.*[A-Za-z])(?=.*\d)(?=.*[!@#$%^&*])/, 
+                          message: '必须包含字母+数字+特殊符号' }
+                    ]
+                };
+
+                const emailRules = {
+                    email: [
+                        { required: true, message: '请输入邮箱' },
+                        { type: 'email', message: '邮箱格式不正确' }
+                    ],
+                    code: [{ required: true, len:6, message: '请输入6位验证码' }]
+                };
+
+                // 禁止密码复制粘贴
+                const preventCopyPaste = (e) => {
+                    e.preventDefault();
+                    ElMessage.warning('禁止复制/粘贴密码！');
+                };
+
+                // 发送邮箱验证码
+                const sendEmailCode = () => {
+                    emailFormRef.value.validateField('email', valid => {
+                        if(valid){
+                            codeSending.value = true;
+                            ElMessage.success('验证码已发送至您的邮箱！');
+                            codeCountdown.value = 60;
+                            let timer = setInterval(()=>{
+                                codeCountdown.value--;
+                                if(codeCountdown.value <=0) clearInterval(timer);
+                            },1000);
+                            setTimeout(()=> codeSending.value = false, 1000);
+                        }
+                    })
+                };
+
+                // 密码登录
+                const handlePasswordLogin = () => {
+                    if(isLocked.value){
+                        ElMessage.error('账号已临时锁定，请稍后再试！');
+                        return;
+                    }
+
+                    passwordFormRef.value.validate(valid => {
+                        if(!valid) return;
+                        loading.value = true;
+                        setTimeout(()=>{
+                            if(passwordForm.username === 'admin' && passwordForm.password === 'Admin@123'){
+                                ElMessage.success('登录成功！');
+                                loginFailCount.value = 0;
+                            } else {
+                                loginFailCount.value++;
+                                if(loginFailCount.value >=5){
+                                    isLocked.value = true;
+                                    ElMessage.error('连续失败5次，账号已锁定1分钟！');
+                                    setTimeout(()=> isLocked.value = false, 60000);
+                                } else {
+                                    ElMessage.error(`错误！剩余 ${5-loginFailCount.value} 次机会`);
+                                }
+                            }
+                            loading.value = false;
+                        },800);
+                    })
+                };
+
+                // 邮箱登录
+                const handleEmailLogin = () => {
+                    emailFormRef.value.validate(valid => {
+                        if(valid){
+                            loading.value = true;
+                            setTimeout(()=>{
+                                if(emailForm.code === '123456'){
+                                    ElMessage.success('邮箱验证登录成功！');
+                                } else {
+                                    ElMessage.error('验证码错误！');
+                                }
+                                loading.value = false;
+                            },800);
+                        }
+                    })
+                };
+
+                // 忘记密码
+                const openForget = () => { forgetVisible.value = true; };
+                const getResetCode = () => {
+                    resetCode.value = Math.floor(100000 + Math.random()*900000).toString();
+                    ElMessage.success(`验证码：${resetCode.value}`);
+                };
+                const resetPassword = () => {
+                    if(resetForm.code === resetCode.value){
+                        ElMessage.success('密码重置成功！');
+                        forgetVisible.value = false;
+                    } else ElMessage.error('验证码错误');
+                };
+
+                return {
+                    loginType, loading, codeSending, codeCountdown, rememberMe,
+                    passwordFormRef, passwordForm, passwordRules,
+                    emailFormRef, emailForm, emailRules,
+                    forgetVisible, resetForm, resetCode,
+                    preventCopyPaste, sendEmailCode,
+                    handlePasswordLogin, handleEmailLogin,
+                    openForget, getResetCode, resetPassword
+                }
+            },
+
+            template: `
+            <!-- 顶部导航栏 -->
+            <div class="top-nav">
+                <span class="nav-platform">RPA运营管理系统</span>
+            </div>
+
+            <!-- 新增的英文标题区域 - 放在导航栏和主容器之间 -->
+            <div class="english-title-section">
+                <div class="english-title-wrapper">
+                    <div class="english-title">Robotic Process Automation Operation Management System</div>
+                </div>
+            </div>
+
+            <div class="login-container">
+                <!-- 左侧区域 - 外层容器 -->
+                <div class="left-hero">
+                    <!-- 左侧内部子元素 - 包含所有图片内容和布局 -->
+                    <div class="left-content">
+                        <!-- 可以在图片上添加文字或装饰元素 -->
+                        <div class="left-overlay-text">
+                            <span>智能运营 · 高效管理</span>
+                            <p>RPA自动化流程解决方案</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 右侧卡片区域 -->
+                <div class="right-card-area">
+                    <div class="login-card">
+                        <!-- 欢迎标题 -->
+                        <div class="card-welcome">欢迎登录</div>
+                        
+                        <!-- 登录选项栏 -->
+                        <div class="login-tabs">
+                            <div class="tab-item" :class="{active:loginType==='password'}" @click="loginType='password'">密码登录</div>
+                            <div class="tab-item" :class="{active:loginType==='email'}" @click="loginType='email'">邮箱验证</div>
+                        </div>
+
+                        <!-- 密码登录 -->
+                        <el-form v-if="loginType==='password'" ref="passwordFormRef" :model="passwordForm" :rules="passwordRules" label-position="top" @keyup.enter="handlePasswordLogin">
+                            <el-form-item label="用户名" prop="username">
+                                <el-input v-model="passwordForm.username" placeholder="请输入用户名" size="large" />
+                            </el-form-item>
+
+                            <el-form-item label="密码" prop="password">
+                                <el-input 
+                                    v-model="passwordForm.password" 
+                                    type="password" 
+                                    placeholder="密码" 
+                                    size="large" 
+                                    show-password
+                                    autocomplete="new-password"
+                                    @paste.prevent="preventCopyPaste"
+                                    @copy.prevent="preventCopyPaste"
+                                />
+                            </el-form-item>
+
+                            <div class="password-tip">
+                                <span>需字母+数字+符号 ≥8位</span>
+                            </div>
+
+                            <div class="form-options">
+                                <el-checkbox v-model="rememberMe">记住我</el-checkbox>
+                                <span class="forgot-text" @click="openForget">忘记密码？</span>
+                            </div>
+
+                            <el-button type="primary" :loading="loading" class="login-button" @click="handlePasswordLogin">登录</el-button>
+                        </el-form>
+
+                        <!-- 邮箱验证码登录 -->
+                        <el-form v-if="loginType==='email'" ref="emailFormRef" :model="emailForm" :rules="emailRules" label-position="top">
+                            <el-form-item label="邮箱" prop="email">
+                                <el-input v-model="emailForm.email" placeholder="请输入登录邮箱" size="large" />
+                            </el-form-item>
+
+                            <el-form-item label="验证码" prop="code">
+                                <div class="verification-code">
+                                    <el-input v-model="emailForm.code" placeholder="6位有效验证码" size="large" />
+                                    <el-button class="code-button" :disabled="codeSending || codeCountdown>0" @click="sendEmailCode">
+                                        {{ codeCountdown>0 ? codeCountdown+'秒' : '获取验证码' }}
+                                    </el-button>
+                                </div>
+                            </el-form-item>
+
+                            <el-button type="primary" :loading="loading" class="login-button" @click="handleEmailLogin">登录</el-button>
+                        </el-form>
+
+                        <div class="default-account-tip">默认账号：admin / Admin@123</div>
+                    </div>
+                </div>
+
+                <!-- 忘记密码弹窗 -->
+                <el-dialog v-model="forgetVisible" title="重置密码" width="420px" :close-on-click-modal="false">
+                    <el-form :model="resetForm" label-width="80px" style="margin-top:20px">
+                        <el-form-item label="用户名">
+                            <el-input v-model="resetForm.username" placeholder="请输入用户名" />
+                        </el-form-item>
+                        <el-form-item label="验证码">
+                            <div style="display:flex;gap:10px">
+                                <el-input v-model="resetForm.code" placeholder="6位验证码" style="flex:1" />
+                                <el-button size="default" @click="getResetCode">获取</el-button>
+                            </div>
+                        </el-form-item>
+                        <el-form-item label="新密码">
+                            <el-input v-model="resetForm.newPassword" type="password" placeholder="输入新密码" show-password />
+                        </el-form-item>
+                    </el-form>
+                    <div style="text-align:right;margin-top:20px">
+                        <el-button @click="forgetVisible=false">取消</el-button>
+                        <el-button type="primary" @click="resetPassword">确认重置</el-button>
+                    </div>
+                </el-dialog>
+            </div>
+            `
+        });
+
+        app.use(ElementPlus);
+        app.mount('#app');
+    </script>
+</body>
+</html>
