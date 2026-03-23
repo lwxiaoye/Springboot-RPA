@@ -572,7 +572,7 @@
                                     role: result.data?.role,
                                     loginTime: new Date().toISOString()
                                 };
-                                localStorage.setItem('userInfo', JSON.stringify(userInfo));
+                                localStorage.setItem('user', JSON.stringify(userInfo));
                                 if(rememberMe.value){
                                     localStorage.setItem('rememberedUser', passwordForm.username);
                                 } else {
@@ -583,7 +583,7 @@
                                 loginFailCount.value = 0;
                                 
                                 // 可以跳转到首页
-                                // window.location.href = '/dashboard';
+                                window.location.href = '/dashboard.html';
                                 ElMessage.success('欢迎回来，' + (result.data?.realName || result.data?.username));
                             } else {
                                 // 登录失败
