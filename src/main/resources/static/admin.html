@@ -734,7 +734,7 @@
         let currentTab = 'basic';
 
         // 初始化
-        function init() {
+        async function init() {
             const userStr = localStorage.getItem('user');
             if (!userStr) {
                 window.location.href = '/login.html';
@@ -752,9 +752,9 @@
             
             loadProfile();
             if (isAdmin) {
-                loadUsers();
-                loadRoles();
-                loadResources();
+                await loadUsers();
+                await loadRoles();
+                await loadResources();
             }
             
             // 默认显示个人信息页面
@@ -913,7 +913,7 @@
         // 加载用户列表
         async function loadUsers() {
             try {
-                const response = await fetch('/api/users');
+                const response = await fetch('/api/user');
                 const result = await response.json();
                 if (result.code === 0) {
                     usersData = result.data || [];
@@ -1397,23 +1397,18 @@
         let resourcesData = [];
         
         // 加载资源列表
-        function loadResources() {
-            // 模拟数据
-            resourcesData = [
-                { id: 1, code: 'RPA_MANAGE', name: 'RPA 运营管理', type: 'menu', url: '/rpa', icon: 'Setting', sort: 2, status: 0 },
-                { id: 2, code: 'PROCESS_LIST', name: '流程列表', type: 'menu', url: '/process-definition', icon: 'Document', sort: 4, status: 0 },
-                { id: 3, code: 'ROBOT_LIST', name: '机器人列表', type: 'menu', url: '/robot-list', icon: 'Service', sort: 5, status: 0 },
-                { id: 4, code: 'PROCESS_EXECUTION', name: '执行记录', type: 'menu', url: '/process-execution', icon: 'Clock', sort: 6, status: 0 },
-                { id: 5, code: 'DATA_COLLECTION', name: '数据采集', type: 'menu', url: '/data-collection', icon: 'Download', sort: 7, status: 0 },
-                { id: 6, code: 'DATA_PARSING', name: '数据解析', type: 'menu', url: '/data-parsing', icon: 'Document', sort: 8, status: 0 },
-                { id: 7, code: 'SYSTEM_MANAGE', name: '系统管理', type: 'menu', url: '/system', icon: 'User', sort: 3, status: 0 },
-                { id: 8, code: 'USER_PROFILE', name: '个人信息', type: 'menu', url: '/user-profile', icon: 'User', sort: 1, status: 0 },
-                { id: 9, code: 'USER_MANAGE', name: '用户管理', type: 'menu', url: '/user-management', icon: 'User', sort: 2, status: 0 },
-                { id: 10, code: 'ROLE_MANAGE', name: '角色管理', type: 'menu', url: '/role-management', icon: 'UserFilled', sort: 3, status: 0 },
-                { id: 11, code: 'RESOURCE_MANAGE', name: '资源管理', type: 'menu', url: '/resource-management', icon: 'Menu', sort: 4, status: 0 }
-            ];
-            
-            renderResourcesTable(resourcesData);
+        async function loadResources() {
+            try {
+                const response = await fetch('/api/resource');
+                const result = await response.json();
+                if (result.code === 0) {
+                    resourcesData = result.data || [];
+                    renderResourcesTable(resourcesData);
+                }
+            } catch (error) {
+                console.error('加载资源失败:', error);
+                alert('加载资源失败：' + error.message);
+            }
         }
         
         // 渲染资源表格
@@ -1447,22 +1442,43 @@
         }
         
         // 搜索资源
-        function searchResources() {
+        async function searchResources() {
             const name = document.getElementById('searchResourceName').value;
             const type = document.getElementById('searchResourceType').value;
             
-            let filtered = resourcesData;
-            if (name) filtered = filtered.filter(r => r.name.includes(name));
-            if (type) filtered = filtered.filter(r => r.type === type);
-            
-            renderResourcesTable(filtered);
+            try {
+                // 重新从数据库加载所有资源
+                const response = await fetch('/api/resource');
+                const result = await response.json();
+                
+                if (result.code === 0) {
+                    let allResources = result.data || [];
+                    
+                    // 在前端过滤
+                    let filtered = allResources;
+                    if (name) filtered = filtered.filter(r => r.name.includes(name));
+                    if (type) filtered = filtered.filter(r => r.type === type);
+                    
+                    resourcesData = filtered;
+                    renderResourcesTable(filtered);
+                    
+                    // 更新分页信息
+                    const pageInfo = document.querySelector('#resourcesPage .page-info');
+                    if (pageInfo) {
+                        pageInfo.textContent = 'Total ' + filtered.length;
+                    }
+                }
+            } catch (error) {
+                console.error('搜索资源失败:', error);
+                alert('查询失败：' + error.message);
+            }
         }
         
         // 重置资源搜索
         function resetResourcesSearch() {
             document.getElementById('searchResourceName').value = '';
             document.getElementById('searchResourceType').value = '';
-            renderResourcesTable(resourcesData);
+            loadResources();
         }
         
         // 新增资源
@@ -1473,55 +1489,72 @@
             const url = document.getElementById('newResourceUrl').value;
             const icon = document.getElementById('newResourceIcon').value;
             const sort = document.getElementById('newResourceSort').value;
-            
+                    
             if (!name || !code) {
                 alert('请填写必填项');
                 return;
             }
-            
-            // 添加到资源列表
-            const newResource = {
-                id: resourcesData.length > 0 ? Math.max(...resourcesData.map(r => r.id)) + 1 : 1,
-                name: name,
-                code: code,
-                type: type,
-                url: url,
-                icon: icon,
-                sort: parseInt(sort),
-                status: 1
-            };
-            
-            resourcesData.push(newResource);
-            alert('添加成功！');
-            closeModal('addResourceModal');
-            renderResourcesTable(resourcesData);
-            
-            // 清空表单
-            document.getElementById('newResourceName').value = '';
-            document.getElementById('newResourceCode').value = '';
-            document.getElementById('newResourceUrl').value = '';
-            document.getElementById('newResourceIcon').value = '';
-            document.getElementById('newResourceSort').value = '1';
+                    
+            try {
+                const response = await fetch('/api/resource', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: name,
+                        code: code,
+                        type: type,
+                        url: url,
+                        icon: icon,
+                        sort: parseInt(sort)
+                    })
+                });
+                const result = await response.json();
+                if (result.code === 0) {
+                    alert('添加成功!');
+                    closeModal('addResourceModal');
+                    loadResources();
+                    // 清空表单
+                    document.getElementById('newResourceName').value = '';
+                    document.getElementById('newResourceCode').value = '';
+                    document.getElementById('newResourceUrl').value = '';
+                    document.getElementById('newResourceIcon').value = '';
+                    document.getElementById('newResourceSort').value = '1';
+                } else {
+                    alert('添加失败：' + result.message);
+                }
+            } catch (error) {
+                alert('添加失败：' + error.message);
+            }
         }
         
         // 编辑资源
         let currentEditingResourceId = null;
         async function editResource(id) {
-            const resource = resourcesData.find(r => r.id === id);
-            if (!resource) return;
-            
-            currentEditingResourceId = id;
-            
-            // 填充表单数据
-            document.getElementById('editResourceName').value = resource.name || '';
-            document.getElementById('editResourceCode').value = resource.code || '';
-            document.getElementById('editResourceType').value = resource.type || 'menu';
-            document.getElementById('editResourceUrl').value = resource.url || '';
-            document.getElementById('editResourceIcon').value = resource.icon || '';
-            document.getElementById('editResourceSort').value = resource.sort || 0;
-            document.getElementById('editResourceStatus').value = resource.status || 0;
-            
-            showModal('editResourceModal');
+            try {
+                const response = await fetch('/api/resource/' + id);
+                const result = await response.json();
+                
+                if (result.code !== 0) {
+                    alert('获取资源信息失败');
+                    return;
+                }
+                
+                const resource = result.data;
+                currentEditingResourceId = id;
+                
+                // 填充表单数据
+                document.getElementById('editResourceName').value = resource.name || '';
+                document.getElementById('editResourceCode').value = resource.code || '';
+                document.getElementById('editResourceType').value = resource.type || 'menu';
+                document.getElementById('editResourceUrl').value = resource.url || '';
+                document.getElementById('editResourceIcon').value = resource.icon || '';
+                document.getElementById('editResourceSort').value = resource.sort || 0;
+                document.getElementById('editResourceStatus').value = resource.status || 1;
+                
+                showModal('editResourceModal');
+            } catch (error) {
+                alert('获取资源信息失败：' + error.message);
+            }
         }
         
         // 保存编辑资源
@@ -1530,7 +1563,7 @@
                 alert('资源 ID 不存在');
                 return;
             }
-            
+                    
             const name = document.getElementById('editResourceName').value;
             const code = document.getElementById('editResourceCode').value;
             const type = document.getElementById('editResourceType').value;
@@ -1538,38 +1571,58 @@
             const icon = document.getElementById('editResourceIcon').value;
             const sort = document.getElementById('editResourceSort').value;
             const status = document.getElementById('editResourceStatus').value;
-            
+                    
             if (!name || !code) {
                 alert('请填写必填项');
                 return;
             }
-            
-            // 更新资源数据
-            const resourceIndex = resourcesData.findIndex(r => r.id === currentEditingResourceId);
-            if (resourceIndex !== -1) {
-                resourcesData[resourceIndex] = {
-                    ...resourcesData[resourceIndex],
-                    name: name,
-                    code: code,
-                    type: type,
-                    url: url,
-                    icon: icon,
-                    sort: parseInt(sort),
-                    status: parseInt(status)
-                };
+                    
+            try {
+                const response = await fetch('/api/resource/' + currentEditingResourceId, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: name,
+                        code: code,
+                        type: type,
+                        url: url,
+                        icon: icon,
+                        sort: parseInt(sort),
+                        status: parseInt(status)
+                    })
+                });
                 
-                alert('保存成功！');
-                closeModal('editResourceModal');
-                renderResourcesTable(resourcesData);
-            } else {
-                alert('未找到该资源');
+                const result = await response.json();
+                if (result.code === 0) {
+                    alert('保存成功!');
+                    closeModal('editResourceModal');
+                    loadResources();
+                } else {
+                    alert('保存失败：' + result.message);
+                }
+            } catch (error) {
+                alert('保存失败：' + error.message);
             }
         }
         
         // 删除资源
         async function deleteResource(id) {
             if (!confirm('确定要删除该资源吗？')) return;
-            alert('删除资源功能开发中，资源 ID: ' + id);
+                    
+            try {
+                const response = await fetch('/api/resource/' + id, {
+                    method: 'DELETE'
+                });
+                const result = await response.json();
+                if (result.code === 0) {
+                    alert('删除成功');
+                    loadResources();
+                } else {
+                    alert('删除失败：' + result.message);
+                }
+            } catch (error) {
+                alert('删除失败：' + error.message);
+            }
         }
     </script>
 </body>
