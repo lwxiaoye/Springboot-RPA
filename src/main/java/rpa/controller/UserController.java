@@ -2,12 +2,19 @@ package rpa.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import rpa.entity.User;
 import rpa.service.UserService;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 @RestController
 @RequestMapping("/api/user")
@@ -70,8 +77,7 @@ public class UserController {
             data.put("username", user.getUsername());
             data.put("realName", user.getRealName());
             data.put("role", user.getRole());
-            // 检查密码是否过期
-            data.put("passwordExpired", userService.isPasswordExpired(user));
+            data.put("avatar", user.getAvatar()); // 返回头像信息
             response.put("data", data);
         } else {
             response.put("code", -1);
@@ -152,9 +158,8 @@ public class UserController {
         try {
             Optional<User> userOpt = userService.findById(id);
             if (userOpt.isPresent()) {
-                boolean isExpired = userService.isPasswordExpired(userOpt.get());
                 response.put("code", 0);
-                response.put("data", isExpired);
+                response.put("data", false); // 密码永不过期
             } else {
                 response.put("code", -1);
                 response.put("message", "用户不存在");
@@ -327,5 +332,92 @@ public class UserController {
             response.put("message", e.getMessage());
         }
         return response;
+    }
+
+    /**
+     * 上传头像
+     */
+    @PostMapping("/avatar/{id}")
+    public Map<String, Object> uploadAvatar(@PathVariable Long id,
+                                            @RequestParam("avatar") MultipartFile file) {
+        Map<String, Object> response = new HashMap<>();
+        
+        if (file.isEmpty()) {
+            response.put("code", -1);
+            response.put("message", "请选择文件");
+            return response;
+        }
+        
+        // 检查文件大小（2MB）
+        if (file.getSize() > 2 * 1024 * 1024) {
+            response.put("code", -1);
+            response.put("message", "文件大小不能超过 2MB");
+            return response;
+        }
+        
+        // 检查文件类型
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            response.put("code", -1);
+            response.put("message", "只支持图片文件");
+            return response;
+        }
+        
+        try {
+            // 保存到本地文件系统
+            String fileName = saveAvatarFile(file, id);
+            String imageUrl = "/api/user/avatar/image/" + fileName;
+            
+            // 更新用户信息
+            userService.updateAvatar(id, imageUrl);
+            
+            response.put("code", 0);
+            response.put("message", "头像上传成功");
+            Map<String, String> data = new HashMap<>();
+            data.put("imageUrl", imageUrl);
+            response.put("data", data);
+            
+        } catch (IOException e) {
+            response.put("code", -1);
+            response.put("message", "上传失败：" + e.getMessage());
+        }
+        
+        return response;
+    }
+
+    /**
+     * 获取头像图片
+     */
+    @GetMapping("/avatar/image/{filename}")
+    public byte[] getAvatarImage(@PathVariable String filename) throws IOException {
+        Path filePath = Paths.get("uploads/avatars/" + filename);
+        return Files.readAllBytes(filePath);
+    }
+
+    /**
+     * 保存头像文件到本地
+     */
+    private String saveAvatarFile(MultipartFile file, Long userId) throws IOException {
+        // 创建上传目录
+        Path uploadPath = Paths.get("uploads/avatars");
+        if (!Files.exists(uploadPath)) {
+            Files.createDirectories(uploadPath);
+        }
+        
+        // 生成文件名：userId_timestamp.ext
+        String originalFilename = file.getOriginalFilename();
+        String extension = "";
+        if (originalFilename != null && originalFilename.contains(".")) {
+            extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+        }
+        
+        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        String filename = "avatar_" + userId + "_" + timestamp + extension;
+        
+        // 保存文件
+        Path filePath = uploadPath.resolve(filename);
+        Files.copy(file.getInputStream(), filePath, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        
+        return filename;
     }
 }

@@ -27,6 +27,9 @@ public class User {
 
     private Integer status = 1; // 1: 启用，0: 禁用
     
+    // 头像 URL
+    private String avatar;
+    
     private LocalDateTime createTime = LocalDateTime.now();
     private LocalDateTime updateTime = LocalDateTime.now();
     

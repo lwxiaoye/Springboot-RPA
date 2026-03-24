@@ -79,12 +79,8 @@ public class UserService {
     }
 
     public boolean isPasswordExpired(User user) {
-        if (user.getPasswordChangeTime() == null) {
-            return true; // 从未修改过密码，需要强制修改
-        }
-        LocalDateTime now = LocalDateTime.now();
-        long daysBetween = java.time.Duration.between(user.getPasswordChangeTime(), now).toDays();
-        return daysBetween >= 90; // 90 天强制修改
+        // 移除 90 天密码过期机制
+        return false;
     }
 
     public boolean validatePasswordComplexity(String password) {
@@ -136,5 +132,18 @@ public class UserService {
 
     public void deleteUser(Long id) {
         userRepository.deleteById(id);
+    }
+
+    /**
+     * 更新用户头像
+     * @param id 用户 ID
+     * @param avatarUrl 头像 URL
+     * @return 更新后的用户
+     */
+    public User updateAvatar(Long id, String avatarUrl) {
+        return userRepository.findById(id).map(user -> {
+            user.setAvatar(avatarUrl);
+            return userRepository.save(user);
+        }).orElseThrow(() -> new RuntimeException("用户不存在"));
     }
 }
