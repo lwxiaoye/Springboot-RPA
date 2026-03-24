@@ -1,12 +1,12 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Login from '../views/Login.vue'
-import RoleManagement from '../views/RoleManagement.vue'
+import Dashboard from '../views/Dashboard.vue'
 import Profile from '../views/Profile.vue'
 
 const routes = [
     {
         path: '/',
-        redirect: '/role-management'
+        redirect: '/login'
     },
     {
         path: '/login',
@@ -14,19 +14,19 @@ const routes = [
         component: Login
     },
     {
-        path: '/role-management',
-        name: 'RoleManagement',
-        component: RoleManagement
-    },
-    // 添加404页面重定向
-    {
-        path: '/:pathMatch(.*)*',
-        redirect: '/role-management'
+        path: '/dashboard',
+        name: 'Dashboard',
+        component: Dashboard
     },
     {
         path: '/profile',
         name: 'Profile',
         component: Profile
+    },
+    // 添加404页面重定向
+    {
+        path: '/:pathMatch(.*)*',
+        redirect: '/login'
     }
 ]
 

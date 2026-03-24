@@ -224,8 +224,8 @@ const handlePasswordLogin = async () => {
         // 重置失败计数
         loginFailCount.value = 0
 
-        // 跳转到角色管理页面
-        router.push('/role-management')
+        // 跳转到管理后台页面
+        router.push('/dashboard')
       } else {
         // 登录失败
         loginFailCount.value++

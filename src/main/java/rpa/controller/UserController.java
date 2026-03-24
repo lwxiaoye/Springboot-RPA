@@ -28,6 +28,9 @@ public class UserController {
     public Map<String, Object> login(@RequestBody Map<String, String> request) {
         Map<String, Object> response = new HashMap<>();
         String account = request.get("account"); // 支持用户名或手机号
+        if (account == null || account.trim().isEmpty()) {
+            account = request.get("username"); // 兼容前端发送的username参数
+        }
         String password = request.get("password");
         
         // 后端校验
@@ -318,6 +321,55 @@ public class UserController {
         
         // 最后尝试邮箱
         return userService.getUserByEmail(account);
+    }
+
+    @PostMapping("/register")
+    public Map<String, Object> register(@RequestBody Map<String, Object> request) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            String username = (String) request.get("username");
+            String password = (String) request.get("password");
+            String realName = (String) request.get("realName");
+            String email = (String) request.get("email");
+            String phone = (String) request.get("phone");
+            Integer role = request.get("role") != null ? ((Number) request.get("role")).intValue() : 0;
+
+            if (username == null || username.trim().isEmpty()) {
+                response.put("code", -1);
+                response.put("message", "请输入用户名");
+                return response;
+            }
+
+            if (password == null || password.isEmpty()) {
+                response.put("code", -1);
+                response.put("message", "请输入密码");
+                return response;
+            }
+
+            if (password.length() < 6 || password.length() > 20) {
+                response.put("code", -1);
+                response.put("message", "密码长度必须在 6-20 位之间");
+                return response;
+            }
+
+            User user = new User();
+            user.setUsername(username);
+            user.setPassword(password);
+            user.setRealName(realName);
+            user.setEmail(email);
+            user.setPhone(phone);
+            user.setRole(role);
+            user.setStatus(1);
+
+            User createdUser = userService.createUser(user);
+            response.put("code", 0);
+            response.put("message", "创建成功");
+            response.put("data", createdUser);
+        } catch (Exception e) {
+            response.put("code", -1);
+            response.put("message", e.getMessage());
+        }
+        return response;
     }
 
     @DeleteMapping("/{id}")

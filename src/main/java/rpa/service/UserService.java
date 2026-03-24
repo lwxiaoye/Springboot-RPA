@@ -146,4 +146,25 @@ public class UserService {
             return userRepository.save(user);
         }).orElseThrow(() -> new RuntimeException("用户不存在"));
     }
+
+    /**
+     * 创建新用户
+     * @param user 用户信息
+     * @return 创建的用户
+     */
+    public User createUser(User user) {
+        if (userRepository.findByUsername(user.getUsername()).isPresent()) {
+            throw new RuntimeException("用户名已存在");
+        }
+        user.setCreateTime(LocalDateTime.now());
+        user.setUpdateTime(LocalDateTime.now());
+        user.setPasswordChangeTime(LocalDateTime.now());
+        if (user.getRole() == null) {
+            user.setRole(0);
+        }
+        if (user.getStatus() == null) {
+            user.setStatus(1);
+        }
+        return userRepository.save(user);
+    }
 }
