@@ -758,6 +758,125 @@
       <div class="detail-content" v-html="detailContent"></div>
     </el-dialog>
 
+    <!-- 数据采集编辑弹窗 -->
+    <el-dialog v-model="dataCollectDialogVisible" :title="editingDataCollect ? '编辑采集' : '新建采集'" width="600px" class="custom-dialog">
+      <el-form :model="dataCollectForm" label-width="100px">
+        <el-form-item label="采集名称" required>
+          <el-input v-model="dataCollectForm.name" placeholder="请输入采集名称" />
+        </el-form-item>
+        <el-form-item label="数据来源URL" required>
+          <el-input v-model="dataCollectForm.sourceUrl" placeholder="请输入网址，如：https://news.163.com" />
+        </el-form-item>
+        <el-form-item label="来源类型">
+          <el-select v-model="dataCollectForm.sourceType" style="width: 100%;">
+            <el-option label="网页" value="web" />
+            <el-option label="API" value="api" />
+            <el-option label="文件" value="file" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="选择器规则">
+          <el-input v-model="dataCollectForm.selectorRules" type="textarea" :rows="3" placeholder='{"listSelector": "tr", "title": "td:nth-child(1)"}' />
+        </el-form-item>
+        <el-form-item label="定时表达式">
+          <el-input v-model="dataCollectForm.cronExpression" placeholder="如：0 0 * * * ? (每天执行)" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="dataCollectDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="saveDataCollect" :loading="saveLoading">确认保存</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 数据解析编辑弹窗 -->
+    <el-dialog v-model="dataParseDialogVisible" :title="editingDataParse ? '编辑解析' : '新建解析'" width="600px" class="custom-dialog">
+      <el-form :model="dataParseForm" label-width="100px">
+        <el-form-item label="解析名称" required>
+          <el-input v-model="dataParseForm.name" placeholder="请输入解析名称" />
+        </el-form-item>
+        <el-form-item label="关联采集">
+          <el-select v-model="dataParseForm.collectId" placeholder="选择关联的采集配置" clearable style="width: 100%;">
+            <el-option v-for="c in dataCollects" :key="c.id" :label="c.name" :value="String(c.id)" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="解析类型">
+          <el-select v-model="dataParseForm.parseType" style="width: 100%;">
+            <el-option label="JSON" value="json" />
+            <el-option label="XML" value="xml" />
+            <el-option label="HTML" value="html" />
+            <el-option label="正则" value="regex" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="解析规则">
+          <el-input v-model="dataParseForm.parseRules" type="textarea" :rows="3" placeholder='{"title": "trim", "content": "regex:(.+)", "time": "trim"}' />
+        </el-form-item>
+        <el-form-item label="输出格式">
+          <el-select v-model="dataParseForm.outputFormat" style="width: 100%;">
+            <el-option label="JSON" value="json" />
+            <el-option label="XML" value="xml" />
+            <el-option label="CSV" value="csv" />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="dataParseDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="saveDataParse" :loading="saveLoading">确认保存</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 数据加工编辑弹窗 -->
+    <el-dialog v-model="dataProcessDialogVisible" :title="editingDataProcess ? '编辑加工' : '新建加工'" width="600px" class="custom-dialog">
+      <el-form :model="dataProcessForm" label-width="100px">
+        <el-form-item label="加工名称" required>
+          <el-input v-model="dataProcessForm.name" placeholder="请输入加工名称" />
+        </el-form-item>
+        <el-form-item label="数据源ID">
+          <el-input v-model="dataProcessForm.sourceIds" placeholder="留空表示全部数据，多个用逗号分隔" />
+        </el-form-item>
+        <el-form-item label="加工类型">
+          <el-select v-model="dataProcessForm.processType" style="width: 100%;">
+            <el-option label="数据转换" value="transform" />
+            <el-option label="数据过滤" value="filter" />
+            <el-option label="数据聚合" value="aggregate" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="加工规则">
+          <el-input v-model="dataProcessForm.processRules" type="textarea" :rows="3" placeholder='{"filter": {"status": "active"}, "transform": {"name": "[{value}]"}}' />
+        </el-form-item>
+        <el-form-item label="输出表名">
+          <el-input v-model="dataProcessForm.outputTable" placeholder="输出目标表名" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="dataProcessDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="saveDataProcess" :loading="saveLoading">确认保存</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 数据查询编辑弹窗 -->
+    <el-dialog v-model="dataQueryDialogVisible" :title="editingDataQuery ? '编辑查询' : '新建查询'" width="600px" class="custom-dialog">
+      <el-form :model="dataQueryForm" label-width="100px">
+        <el-form-item label="查询名称" required>
+          <el-input v-model="dataQueryForm.name" placeholder="请输入查询名称" />
+        </el-form-item>
+        <el-form-item label="数据源表">
+          <el-select v-model="dataQueryForm.sourceTable" style="width: 100%;">
+            <el-option label="采集数据表" value="collected_data" />
+            <el-option label="解析后数据" value="parsed_data" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="查询条件">
+          <el-input v-model="dataQueryForm.queryCondition" type="textarea" :rows="2" placeholder='{"status": "active"}' />
+        </el-form-item>
+        <el-form-item label="查询列">
+          <el-input v-model="dataQueryForm.queryColumns" placeholder="留空查询全部列，多个用逗号分隔，如：id,name,status" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="dataQueryDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="saveDataQuery" :loading="saveLoading">确认保存</el-button>
+      </template>
+    </el-dialog>
+
     <!-- 遮罩 -->
     <div class="overlay" v-if="dropdownVisible" @click="dropdownVisible = false"></div>
   </div>
@@ -1200,21 +1319,175 @@ const viewLogDetail = (log) => {
 }
 
 // ========== 数据管理方法 ==========
-const showDataCollectModal = (item) => { ElMessage.info('数据采集配置功能开发中') }
-const runDataCollect = (item) => { ElMessage.success(`执行采集任务: ${item.name}`) }
-const deleteDataCollect = async (id) => { await ElMessageBox.confirm('确定删除吗？', '提示', { type: 'warning' }); ElMessage.success('删除成功') }
+const editingDataCollect = ref(null)
+const editingDataParse = ref(null)
+const editingDataProcess = ref(null)
+const editingDataQuery = ref(null)
+const dataCollectDialogVisible = ref(false)
+const dataParseDialogVisible = ref(false)
+const dataProcessDialogVisible = ref(false)
+const dataQueryDialogVisible = ref(false)
 
-const showDataParseModal = (item) => { ElMessage.info('数据解析配置功能开发中') }
-const runDataParse = (item) => { ElMessage.success(`执行解析任务: ${item.name}`) }
-const deleteDataParse = async (id) => { await ElMessageBox.confirm('确定删除吗？', '提示', { type: 'warning' }); ElMessage.success('删除成功') }
+const dataCollectForm = reactive({ name: '', sourceUrl: '', sourceType: 'web', selectorRules: '', cronExpression: '' })
+const dataParseForm = reactive({ name: '', collectId: '', parseType: 'json', parseRules: '', outputFormat: 'json' })
+const dataProcessForm = reactive({ name: '', sourceIds: '', processType: 'transform', processRules: '', outputTable: '' })
+const dataQueryForm = reactive({ name: '', sourceTable: 'collected_data', queryCondition: '', queryColumns: '' })
 
-const showDataProcessModal = (item) => { ElMessage.info('数据加工配置功能开发中') }
-const runDataProcess = (item) => { ElMessage.success(`执行加工任务: ${item.name}`) }
-const deleteDataProcess = async (id) => { await ElMessageBox.confirm('确定删除吗？', '提示', { type: 'warning' }); ElMessage.success('删除成功') }
+const showDataCollectModal = (item) => {
+  editingDataCollect.value = item
+  if (item) Object.assign(dataCollectForm, { name: item.name, sourceUrl: item.sourceUrl || '', sourceType: item.sourceType || 'web', selectorRules: item.selectorRules || '', cronExpression: item.cronExpression || '' })
+  else Object.assign(dataCollectForm, { name: '', sourceUrl: '', sourceType: 'web', selectorRules: '', cronExpression: '' })
+  dataCollectDialogVisible.value = true
+}
+const saveDataCollect = async () => {
+  if (!dataCollectForm.name) { ElMessage.warning('请输入采集名称'); return }
+  saveLoading.value = true
+  try {
+    const url = editingDataCollect.value ? `${API_BASE}/dataCollect/${editingDataCollect.value.id}` : `${API_BASE}/dataCollect`
+    const method = editingDataCollect.value ? 'PUT' : 'POST'
+    const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dataCollectForm) })
+    const result = await res.json()
+    if (result.code === 0) { ElMessage.success(editingDataCollect.value ? '更新成功' : '创建成功'); dataCollectDialogVisible.value = false; loadDataCollects() }
+    else ElMessage.error(result.message || '操作失败')
+  } catch { ElMessage.error('网络错误') } finally { saveLoading.value = false }
+}
+const runDataCollect = async (item) => {
+  loading.value = true
+  try {
+    const res = await fetch(`${API_BASE}/dataCollect/${item.id}/execute`, { method: 'POST' })
+    const result = await res.json()
+    if (result.success) { ElMessage.success(`采集完成，共获取 ${result.count || 0} 条数据`) }
+    else ElMessage.error(result.message || '采集失败')
+  } catch { ElMessage.error('网络错误') } finally { loading.value = false }
+}
+const deleteDataCollect = async (id) => {
+  await ElMessageBox.confirm('确定删除该采集配置吗？', '提示', { type: 'warning' })
+  try {
+    const res = await fetch(`${API_BASE}/dataCollect/${id}`, { method: 'DELETE' })
+    const result = await res.json()
+    if (result.code === 0) { ElMessage.success('删除成功'); loadDataCollects() }
+    else ElMessage.error(result.message || '删除失败')
+  } catch { ElMessage.error('网络错误') }
+}
 
-const showDataQueryModal = (item) => { ElMessage.info('数据查询配置功能开发中') }
-const runDataQuery = (item) => { ElMessage.success(`执行查询任务: ${item.name}`) }
-const deleteDataQuery = async (id) => { await ElMessageBox.confirm('确定删除吗？', '提示', { type: 'warning' }); ElMessage.success('删除成功') }
+const showDataParseModal = (item) => {
+  editingDataParse.value = item
+  if (item) Object.assign(dataParseForm, { name: item.name, collectId: item.collectId || '', parseType: item.parseType || 'json', parseRules: item.parseRules || '', outputFormat: item.outputFormat || 'json' })
+  else Object.assign(dataParseForm, { name: '', collectId: '', parseType: 'json', parseRules: '', outputFormat: 'json' })
+  dataParseDialogVisible.value = true
+}
+const saveDataParse = async () => {
+  if (!dataParseForm.name) { ElMessage.warning('请输入解析名称'); return }
+  saveLoading.value = true
+  try {
+    const url = editingDataParse.value ? `${API_BASE}/dataParse/${editingDataParse.value.id}` : `${API_BASE}/dataParse`
+    const method = editingDataParse.value ? 'PUT' : 'POST'
+    const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dataParseForm) })
+    const result = await res.json()
+    if (result.code === 0) { ElMessage.success(editingDataParse.value ? '更新成功' : '创建成功'); dataParseDialogVisible.value = false; loadDataParses() }
+    else ElMessage.error(result.message || '操作失败')
+  } catch { ElMessage.error('网络错误') } finally { saveLoading.value = false }
+}
+const runDataParse = async (item) => {
+  loading.value = true
+  try {
+    const res = await fetch(`${API_BASE}/dataParse/${item.id}/execute`, { method: 'POST' })
+    const result = await res.json()
+    if (result.success) { ElMessage.success(`解析完成，成功 ${result.successCount || 0}} 条，失败 ${result.failCount || 0} 条`) }
+    else ElMessage.error(result.message || '解析失败')
+  } catch { ElMessage.error('网络错误') } finally { loading.value = false }
+}
+const deleteDataParse = async (id) => {
+  await ElMessageBox.confirm('确定删除该解析配置吗？', '提示', { type: 'warning' })
+  try {
+    const res = await fetch(`${API_BASE}/dataParse/${id}`, { method: 'DELETE' })
+    const result = await res.json()
+    if (result.code === 0) { ElMessage.success('删除成功'); loadDataParses() }
+    else ElMessage.error(result.message || '删除失败')
+  } catch { ElMessage.error('网络错误') }
+}
+
+const showDataProcessModal = (item) => {
+  editingDataProcess.value = item
+  if (item) Object.assign(dataProcessForm, { name: item.name, sourceIds: item.sourceIds || '', processType: item.processType || 'transform', processRules: item.processRules || '', outputTable: item.outputTable || '' })
+  else Object.assign(dataProcessForm, { name: '', sourceIds: '', processType: 'transform', processRules: '', outputTable: '' })
+  dataProcessDialogVisible.value = true
+}
+const saveDataProcess = async () => {
+  if (!dataProcessForm.name) { ElMessage.warning('请输入加工名称'); return }
+  saveLoading.value = true
+  try {
+    const url = editingDataProcess.value ? `${API_BASE}/dataProcess/${editingDataProcess.value.id}` : `${API_BASE}/dataProcess`
+    const method = editingDataProcess.value ? 'PUT' : 'POST'
+    const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dataProcessForm) })
+    const result = await res.json()
+    if (result.code === 0) { ElMessage.success(editingDataProcess.value ? '更新成功' : '创建成功'); dataProcessDialogVisible.value = false; loadDataProcesses() }
+    else ElMessage.error(result.message || '操作失败')
+  } catch { ElMessage.error('网络错误') } finally { saveLoading.value = false }
+}
+const runDataProcess = async (item) => {
+  loading.value = true
+  try {
+    const res = await fetch(`${API_BASE}/dataProcess/${item.id}/execute`, { method: 'POST' })
+    const result = await res.json()
+    if (result.success) { ElMessage.success(`加工完成，处理 ${result.count || 0} 条数据`) }
+    else ElMessage.error(result.message || '加工失败')
+  } catch { ElMessage.error('网络错误') } finally { loading.value = false }
+}
+const deleteDataProcess = async (id) => {
+  await ElMessageBox.confirm('确定删除该加工配置吗？', '提示', { type: 'warning' })
+  try {
+    const res = await fetch(`${API_BASE}/dataProcess/${id}`, { method: 'DELETE' })
+    const result = await res.json()
+    if (result.code === 0) { ElMessage.success('删除成功'); loadDataProcesses() }
+    else ElMessage.error(result.message || '删除失败')
+  } catch { ElMessage.error('网络错误') }
+}
+
+const showDataQueryModal = (item) => {
+  editingDataQuery.value = item
+  if (item) Object.assign(dataQueryForm, { name: item.name, sourceTable: item.sourceTable || 'collected_data', queryCondition: item.queryCondition || '', queryColumns: item.queryColumns || '' })
+  else Object.assign(dataQueryForm, { name: '', sourceTable: 'collected_data', queryCondition: '', queryColumns: '' })
+  dataQueryDialogVisible.value = true
+}
+const saveDataQuery = async () => {
+  if (!dataQueryForm.name) { ElMessage.warning('请输入查询名称'); return }
+  saveLoading.value = true
+  try {
+    const url = editingDataQuery.value ? `${API_BASE}/dataQuery/${editingDataQuery.value.id}` : `${API_BASE}/dataQuery`
+    const method = editingDataQuery.value ? 'PUT' : 'POST'
+    const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dataQueryForm) })
+    const result = await res.json()
+    if (result.code === 0) { ElMessage.success(editingDataQuery.value ? '更新成功' : '创建成功'); dataQueryDialogVisible.value = false; loadDataQueries() }
+    else ElMessage.error(result.message || '操作失败')
+  } catch { ElMessage.error('网络错误') } finally { saveLoading.value = false }
+}
+const runDataQuery = async (item) => {
+  loading.value = true
+  try {
+    const res = await fetch(`${API_BASE}/dataQuery/${item.id}/execute`, { method: 'POST' })
+    const result = await res.json()
+    if (result.success) { 
+      if (result.data && result.data.length > 0) {
+        detailTitle.value = '查询结果'
+        detailContent.value = `<pre style="max-height:400px;overflow:auto;">${JSON.stringify(result.data, null, 2)}</pre>`
+        detailDialogVisible.value = true
+      } else {
+        ElMessage.success(`查询完成，共 ${result.count || 0} 条结果`)
+      }
+    }
+    else ElMessage.error(result.message || '查询失败')
+  } catch { ElMessage.error('网络错误') } finally { loading.value = false }
+}
+const deleteDataQuery = async (id) => {
+  await ElMessageBox.confirm('确定删除该查询配置吗？', '提示', { type: 'warning' })
+  try {
+    const res = await fetch(`${API_BASE}/dataQuery/${id}`, { method: 'DELETE' })
+    const result = await res.json()
+    if (result.code === 0) { ElMessage.success('删除成功'); loadDataQueries() }
+    else ElMessage.error(result.message || '删除失败')
+  } catch { ElMessage.error('网络错误') }
+}
 
 // ========== 数据加载 ==========
 const loadUserFromStorage = () => {
