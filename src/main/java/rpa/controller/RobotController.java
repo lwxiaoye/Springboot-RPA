@@ -57,8 +57,12 @@ public class RobotController {
             String name = (String) request.get("name");
             String type = (String) request.get("type");
             String capabilities = (String) request.get("capabilities");
-            
-            Robot robot = service.create(name, type, capabilities);
+            String ip = (String) request.get("ip");
+            String hostname = (String) request.get("hostname");
+            Integer port = request.get("port") != null ? Integer.valueOf(request.get("port").toString()) : 8080;
+            String description = (String) request.get("description");
+
+            Robot robot = service.create(name, type, capabilities, ip, hostname, port, description);
             response.put("code", 0);
             response.put("message", "创建成功");
             response.put("data", robot);
@@ -94,8 +98,12 @@ public class RobotController {
             String name = (String) request.get("name");
             String type = (String) request.get("type");
             String capabilities = (String) request.get("capabilities");
-            
-            Robot robot = service.update(id, name, type, capabilities);
+            String ip = (String) request.get("ip");
+            String hostname = (String) request.get("hostname");
+            Integer port = request.get("port") != null ? Integer.valueOf(request.get("port").toString()) : 8080;
+            String description = (String) request.get("description");
+
+            Robot robot = service.update(id, name, type, capabilities, ip, hostname, port, description);
             response.put("code", 0);
             response.put("message", "更新成功");
             response.put("data", robot);

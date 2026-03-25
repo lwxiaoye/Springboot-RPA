@@ -225,7 +225,7 @@ const handlePasswordLogin = async () => {
         loginFailCount.value = 0
 
         // 跳转到管理后台页面
-        router.push('/dashboard')
+        router.push('/main')
       } else {
         // 登录失败
         loginFailCount.value++

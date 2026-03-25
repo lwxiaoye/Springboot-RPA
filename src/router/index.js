@@ -1,7 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Login from '../views/Login.vue'
-import Dashboard from '../views/Dashboard.vue'
+import Layout from '../views/Layout.vue'
 import Profile from '../views/Profile.vue'
+import RoleManagement from '../views/RoleManagement.vue'
 
 const routes = [
     {
@@ -14,16 +15,31 @@ const routes = [
         component: Login
     },
     {
-        path: '/dashboard',
-        name: 'Dashboard',
-        component: Dashboard
+        path: '/',
+        component: Layout,
+        children: [
+            {
+                path: 'dashboard',
+                name: 'Dashboard',
+                component: () => import('../views/DashboardContent.vue')
+            }
+        ]
     },
     {
         path: '/profile',
         name: 'Profile',
         component: Profile
     },
-    // 添加404页面重定向
+    {
+        path: '/role-management',
+        name: 'RoleManagement',
+        component: RoleManagement
+    },
+    {
+        path: '/main',
+        name: 'Main',
+        component: Layout
+    },
     {
         path: '/:pathMatch(.*)*',
         redirect: '/login'
@@ -35,9 +51,7 @@ const router = createRouter({
     routes
 })
 
-// 简化路由守卫，避免使用 next 回调
 router.beforeEach((to, from) => {
-    // 可以在这里添加登录判断逻辑
     return true
 })
 
