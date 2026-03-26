@@ -34,55 +34,87 @@ public class WebScraperService {
         List<Map<String, String>> scrapedData = new ArrayList<>();
 
         try {
-            log.info("开始采集数据: {}", collect.getName());
+            log.info("开始采集数据: {}, URL: {}", collect.getName(), collect.getSourceUrl());
 
-            Document doc = Jsoup.connect(collect.getSourceUrl())
-                    .userAgent(USER_AGENT)
-                    .timeout(TIMEOUT)
-                    .maxBodySize(0)
-                    .get();
+            Document doc;
+            try {
+                doc = Jsoup.connect(collect.getSourceUrl())
+                        .userAgent(USER_AGENT)
+                        .timeout(TIMEOUT)
+                        .maxBodySize(0)
+                        .followRedirects(true)
+                        .ignoreHttpErrors(true)
+                        .get();
+            } catch (Exception e) {
+                log.error("连接失败: {}", e.getMessage());
+                result.put("success", false);
+                result.put("message", "连接失败: " + e.getMessage());
+                return result;
+            }
+
+            if (doc == null) {
+                result.put("success", false);
+                result.put("message", "获取页面内容失败");
+                return result;
+            }
 
             Map<String, String> selectorRules = parseSelectorRules(collect.getSelectorRules());
+            String listSelector = selectorRules.get("listSelector");
 
-            Elements rows = selectElements(doc, selectorRules.get("listSelector"));
-            int count = 0;
+            Elements rows;
+            if (listSelector != null && !listSelector.isEmpty()) {
+                rows = doc.select(listSelector);
+            } else {
+                rows = doc.body().children();
+            }
+
+            log.info("找到 {} 个元素", rows.size());
 
             for (Element row : rows) {
                 Map<String, String> item = new HashMap<>();
                 for (Map.Entry<String, String> entry : selectorRules.entrySet()) {
                     if (!"listSelector".equals(entry.getKey())) {
-                        Elements els = row.select(entry.getValue());
-                        String value = els.isEmpty() ? "" : els.first().text();
-                        item.put(entry.getKey(), value);
+                        try {
+                            Elements els = row.select(entry.getValue());
+                            String value = els.isEmpty() ? "" : els.first().text();
+                            item.put(entry.getKey(), value);
+                        } catch (Exception e) {
+                            item.put(entry.getKey(), "");
+                        }
                     }
                 }
                 item.put("sourceUrl", collect.getSourceUrl());
                 item.put("collectTime", LocalDateTime.now().toString());
                 scrapedData.add(item);
-                count++;
             }
 
+            log.info("解析出 {} 条数据，准备保存", scrapedData.size());
+
             for (Map<String, String> data : scrapedData) {
-                CollectedData collected = new CollectedData();
-                collected.setCollectId(collect.getId());
-                collected.setCollectName(collect.getName());
-                collected.setRawData(JSON.toJSONString(data));
-                collected.setSourceUrl(collect.getSourceUrl());
-                collected.setDataType(collect.getSourceType());
-                collected.setParseStatus(0);
-                collected.setCollectTime(LocalDateTime.now());
-                collectedDataRepository.save(collected);
+                try {
+                    CollectedData collected = new CollectedData();
+                    collected.setCollectId(collect.getId());
+                    collected.setCollectName(collect.getName());
+                    collected.setRawData(JSON.toJSONString(data));
+                    collected.setSourceUrl(collect.getSourceUrl());
+                    collected.setDataType(collect.getSourceType());
+                    collected.setParseStatus(0);
+                    collected.setCollectTime(LocalDateTime.now());
+                    collectedDataRepository.save(collected);
+                } catch (Exception e) {
+                    log.error("保存单条数据失败: {}", e.getMessage());
+                }
             }
 
             collect.setLastCollectTime(System.currentTimeMillis());
-            collect.setDataCount(collect.getDataCount() + count);
+            collect.setDataCount(collect.getDataCount() + scrapedData.size());
 
             result.put("success", true);
             result.put("message", "采集成功");
-            result.put("count", count);
+            result.put("count", scrapedData.size());
             result.put("data", scrapedData);
 
-            log.info("采集完成: {}, 数据量: {}", collect.getName(), count);
+            log.info("采集完成: {}, 数据量: {}", collect.getName(), scrapedData.size());
 
         } catch (Exception e) {
             log.error("采集失败: {}", collect.getName(), e);

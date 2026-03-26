@@ -157,9 +157,9 @@ public class DataProcessService {
                     boolean shouldInclude = true;
 
                     for (String key : filter.keySet()) {
-                        String expected = filter.getString(key);
+                        String expected = String.valueOf(filter.get(key));
                         String actual = processed.get(key);
-                        if (!expected.equals(actual)) {
+                        if (actual == null || !actual.equals(expected)) {
                             shouldInclude = false;
                             break;
                         }
@@ -175,7 +175,8 @@ public class DataProcessService {
                     for (String key : transform.keySet()) {
                         String value = processed.get(key);
                         if (value != null) {
-                            processed.put(key, transform.getString(key).replace("{value}", value));
+                            String transformRule = String.valueOf(transform.get(key));
+                            processed.put(key, transformRule.replace("{value}", value));
                         }
                     }
                 }

@@ -3,11 +3,14 @@ package rpa.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import rpa.entity.DataCollect;
+import rpa.entity.CollectedData;
 import rpa.service.DataCollectService;
 import rpa.service.WebScraperService;
+import rpa.repository.CollectedDataRepository;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/dataCollect")
@@ -17,6 +20,7 @@ public class DataCollectController {
 
     private final DataCollectService service;
     private final WebScraperService scraperService;
+    private final CollectedDataRepository collectedDataRepository;
 
     @GetMapping
     public Map<String, Object> list() {
@@ -40,6 +44,32 @@ public class DataCollectController {
                     response.put("message", "采集配置不存在");
                 }
         );
+        return response;
+    }
+
+    @GetMapping("/{id}/data")
+    public Map<String, Object> getCollectedData(@PathVariable Long id) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            List<CollectedData> dataList = collectedDataRepository.findByCollectId(id);
+            List<Map<String, Object>> result = dataList.stream().map(data -> {
+                Map<String, Object> item = new HashMap<>();
+                item.put("id", data.getId());
+                item.put("collectName", data.getCollectName());
+                item.put("rawData", data.getRawData());
+                item.put("dataType", data.getDataType());
+                item.put("sourceUrl", data.getSourceUrl());
+                item.put("collectTime", data.getCollectTime());
+                item.put("parseStatus", data.getParseStatus());
+                return item;
+            }).collect(Collectors.toList());
+            response.put("code", 0);
+            response.put("data", result);
+            response.put("count", result.size());
+        } catch (Exception e) {
+            response.put("code", -1);
+            response.put("message", e.getMessage());
+        }
         return response;
     }
 

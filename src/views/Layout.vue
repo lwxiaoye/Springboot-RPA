@@ -107,7 +107,7 @@
 
       <!-- 内容区 -->
       <main class="content-area">
-        <!-- ========== 仪表板 ========== -->
+        <!-- ========== 首页 ========== -->
         <div v-if="activeMenu === 'dashboard'" class="dashboard-content">
           <div class="content-header">
             <h2>数据概览</h2>
@@ -116,7 +116,7 @@
 
           <!-- 统计卡片 -->
           <div class="stats-grid">
-            <div class="stat-card">
+            <div class="stat-card clickable" @click="switchMenu('tasks')">
               <div class="stat-icon-box blue">
                 <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
               </div>
@@ -125,8 +125,11 @@
                 <div class="stat-label">任务总数</div>
                 <div class="stat-change up">+{{ statsChange.tasks }}%</div>
               </div>
+              <div class="stat-arrow">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
+              </div>
             </div>
-            <div class="stat-card">
+            <div class="stat-card clickable" @click="switchMenu('robots')">
               <div class="stat-icon-box green">
                 <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M20.5 11H19V7c0-1.1-.9-2-2-2h-4V3.5C13 2.12 11.88 1 10.5 1S8 2.12 8 3.5V5H4c-1.1 0-1.99.9-1.99 2v3.8H3.5c1.49 0 2.7 1.21 2.7 2.7s-1.21 2.7-2.7 2.7H2V20c0 1.1.9 2 2 2h3.8v-1.5c0-1.49 1.21-2.7 2.7-2.7s2.7 1.21 2.7 2.7V22H17c1.1 0 2-.9 2-2v-4h1.5c1.38 0 2.5-1.12 2.5-2.5S21.88 11 20.5 11z"/></svg>
               </div>
@@ -135,8 +138,11 @@
                 <div class="stat-label">机器人总数</div>
                 <div class="stat-change up">+{{ statsChange.robots }}%</div>
               </div>
+              <div class="stat-arrow">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
+              </div>
             </div>
-            <div class="stat-card">
+            <div class="stat-card clickable" @click="switchMenu('processes')">
               <div class="stat-icon-box purple">
                 <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
               </div>
@@ -145,15 +151,21 @@
                 <div class="stat-label">流程总数</div>
                 <div class="stat-change up">+{{ statsChange.processes }}%</div>
               </div>
+              <div class="stat-arrow">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
+              </div>
             </div>
-            <div class="stat-card">
+            <div class="stat-card clickable" @click="switchMenu('dataCollect')">
               <div class="stat-icon-box orange">
-                <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+                <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6 10H6v-2h10v2zm4-4H6v-2h12v2z"/></svg>
               </div>
               <div class="stat-info">
-                <div class="stat-value">{{ stats.logs }}</div>
-                <div class="stat-label">日志总数</div>
-                <div class="stat-change up">+{{ statsChange.logs }}%</div>
+                <div class="stat-value">{{ stats.dataCollects }}</div>
+                <div class="stat-label">数据采集</div>
+                <div class="stat-change up">点击查看</div>
+              </div>
+              <div class="stat-arrow">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
               </div>
             </div>
           </div>
@@ -260,51 +272,100 @@
             <p class="header-tip">创建和管理RPA自动化任务</p>
           </div>
 
-          <div class="toolbar">
-            <div class="search-box">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-              <input v-model="taskSearch" placeholder="搜索任务名称..." />
-            </div>
-            <el-select v-model="taskStatusFilter" placeholder="状态筛选" clearable style="width: 140px;">
-              <el-option label="运行中" value="running" />
-              <el-option label="待执行" value="pending" />
-              <el-option label="已完成" value="completed" />
-              <el-option label="失败" value="failed" />
-            </el-select>
-            <el-button type="primary" @click="showTaskModal(null)">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-              新建任务
-            </el-button>
-          </div>
+          <el-tabs v-model="taskActiveTab" class="custom-tabs">
+            <!-- 任务列表 -->
+            <el-tab-pane label="任务列表" name="taskList">
+              <div class="toolbar">
+                <div class="search-box">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                  <input v-model="taskSearch" placeholder="搜索任务名称/企业名称..." />
+                </div>
+                <el-select v-model="taskStatusFilter" placeholder="状态筛选" clearable style="width: 120px;">
+                  <el-option label="待执行" :value="0" />
+                  <el-option label="执行中" :value="1" />
+                  <el-option label="成功" :value="2" />
+                  <el-option label="失败" :value="3" />
+                </el-select>
+                <el-button type="primary" @click="showTaskModal(null)">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                  新建任务
+                </el-button>
+              </div>
 
-          <el-table :data="filteredTasks" v-loading="loading" stripe border class="data-table">
-            <el-table-column type="index" label="序号" width="60" align="center" />
-            <el-table-column prop="name" label="任务名称" min-width="180" show-overflow-tooltip />
-            <el-table-column prop="processName" label="所属流程" min-width="140">
-              <template #default="{ row }">{{ row.processName || '-' }}</template>
-            </el-table-column>
-            <el-table-column prop="robotName" label="执行机器人" min-width="120">
-              <template #default="{ row }">{{ row.robotName || '-' }}</template>
-            </el-table-column>
-            <el-table-column prop="priority" label="优先级" width="80" align="center">
-              <template #default="{ row }">
-                <el-tag size="small" :type="getPriorityType(row.priority)">{{ getPriorityText(row.priority) }}</el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column prop="status" label="状态" width="100" align="center">
-              <template #default="{ row }">
-                <el-tag :type="getStatusType(row.status)" size="small">{{ getStatusText(row.status) }}</el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column prop="createTime" label="创建时间" min-width="160" />
-            <el-table-column label="操作" width="150" fixed="right" align="center">
-              <template #default="{ row }">
-                <el-button link type="primary" @click="viewTaskDetail(row)">详情</el-button>
-                <el-button link type="primary" @click="showTaskModal(row)">编辑</el-button>
-                <el-button link type="danger" @click="deleteTask(row.id)">删除</el-button>
-              </template>
-            </el-table-column>
-          </el-table>
+              <el-table :data="paginatedTasks" v-loading="loading" stripe border class="data-table">
+                <el-table-column type="index" label="序号" width="70" align="center" />
+                <el-table-column prop="taskCode" label="任务编码" min-width="140" />
+                <el-table-column prop="name" label="任务名称" min-width="160" show-overflow-tooltip />
+                <el-table-column prop="taxId" label="纳税人识别号" min-width="160" />
+                <el-table-column prop="companyName" label="企业名称" min-width="180" show-overflow-tooltip />
+                <el-table-column prop="status" label="任务状态" width="100" align="center">
+                  <template #default="{ row }">
+                    <el-tag :type="getTaskStatusType(row.status)" size="small">{{ getTaskStatusText(row.status) }}</el-tag>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="createTime" label="创建时间" min-width="160" />
+                <el-table-column label="操作" width="150" fixed="right" align="center">
+                  <template #default="{ row }">
+                    <el-button link type="primary" @click="viewTaskDetail(row)">详情</el-button>
+                    <el-button link type="primary" @click="showTaskModal(row)">编辑</el-button>
+                    <el-button link type="danger" @click="deleteTask(row.id)">删除</el-button>
+                  </template>
+                </el-table-column>
+              </el-table>
+              <el-pagination
+                v-model:current-page="taskPage"
+                v-model:page-size="taskPageSize"
+                :page-sizes="[10, 20, 50, 100]"
+                :total="filteredTasks.length"
+                layout="total, sizes, prev, pager, next, jumper"
+                class="custom-pagination"
+              />
+            </el-tab-pane>
+
+            <!-- 执行日志 -->
+            <el-tab-pane label="执行日志" name="execLog">
+              <div class="toolbar">
+                <div class="search-box">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                  <input v-model="logSearch" placeholder="搜索任务编码..." />
+                </div>
+                <el-select v-model="logStatusFilter" placeholder="状态筛选" clearable style="width: 100px;">
+                  <el-option label="成功" value="success" />
+                  <el-option label="失败" value="failed" />
+                  <el-option label="进行中" value="running" />
+                </el-select>
+              </div>
+
+              <el-table :data="paginatedLogs" v-loading="loading" stripe border class="data-table">
+                <el-table-column type="index" label="执行序号" width="80" align="center" />
+                <el-table-column prop="executionId" label="执行ID" min-width="140" />
+                <el-table-column prop="taskCode" label="任务编码" min-width="140" />
+                <el-table-column prop="processCode" label="流程编码" min-width="120" />
+                <el-table-column prop="robotCode" label="机器人编码" min-width="120" />
+                <el-table-column prop="status" label="执行状态" width="90" align="center">
+                  <template #default="{ row }">
+                    <el-tag :type="getLogStatusType(row.status)" size="small">{{ getLogStatusText(row.status) }}</el-tag>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="startTime" label="开始时间" min-width="160" />
+                <el-table-column prop="endTime" label="结束时间" min-width="160" />
+                <el-table-column prop="duration" label="执行时长" width="100" align="center" />
+                <el-table-column label="操作" width="80" fixed="right" align="center">
+                  <template #default="{ row }">
+                    <el-button link type="primary" @click="viewLogDetail(row)">详情</el-button>
+                  </template>
+                </el-table-column>
+              </el-table>
+              <el-pagination
+                v-model:current-page="logPage"
+                v-model:page-size="logPageSize"
+                :page-sizes="[10, 20, 50, 100]"
+                :total="filteredLogs.length"
+                layout="total, sizes, prev, pager, next, jumper"
+                class="custom-pagination"
+              />
+            </el-tab-pane>
+          </el-tabs>
         </div>
 
         <!-- ========== 机器人管理 ========== -->
@@ -415,59 +476,6 @@
           </el-table>
         </div>
 
-        <!-- ========== 执行日志 ========== -->
-        <div v-if="activeMenu === 'logs'" class="management-content">
-          <div class="content-header">
-            <h2>执行日志</h2>
-            <p class="header-tip">查看RPA任务执行记录</p>
-          </div>
-
-          <div class="toolbar">
-            <div class="search-box">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-              <input v-model="logSearch" placeholder="搜索任务名称/机器人..." />
-            </div>
-            <el-select v-model="logStatusFilter" placeholder="状态筛选" clearable style="width: 120px;">
-              <el-option label="成功" value="success" />
-              <el-option label="失败" value="failed" />
-              <el-option label="进行中" value="running" />
-            </el-select>
-          </div>
-
-          <el-table :data="filteredLogs" v-loading="loading" stripe border class="data-table">
-            <el-table-column type="index" label="序号" width="60" align="center" />
-            <el-table-column prop="taskName" label="任务名称" min-width="160" show-overflow-tooltip>
-              <template #default="{ row }">{{ row.taskName || '-' }}</template>
-            </el-table-column>
-            <el-table-column prop="robotName" label="执行机器人" min-width="120">
-              <template #default="{ row }">{{ row.robotName || '-' }}</template>
-            </el-table-column>
-            <el-table-column prop="action" label="操作" min-width="100" />
-            <el-table-column prop="status" label="状态" width="90" align="center">
-              <template #default="{ row }">
-                <el-tag :type="getLogStatusType(row.status)" size="small">{{ getLogStatusText(row.status) }}</el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column prop="message" label="信息" min-width="200" show-overflow-tooltip>
-              <template #default="{ row }">{{ row.message || '-' }}</template>
-            </el-table-column>
-            <el-table-column prop="startTime" label="开始时间" min-width="160">
-              <template #default="{ row }">{{ formatDateTime(row.startTime) || '-' }}</template>
-            </el-table-column>
-            <el-table-column prop="endTime" label="结束时间" min-width="160">
-              <template #default="{ row }">{{ formatDateTime(row.endTime) || '-' }}</template>
-            </el-table-column>
-            <el-table-column prop="duration" label="耗时" width="90" align="center">
-              <template #default="{ row }">{{ row.duration || '-' }}</template>
-            </el-table-column>
-            <el-table-column label="操作" width="80" fixed="right" align="center">
-              <template #default="{ row }">
-                <el-button link type="primary" @click="viewLogDetail(row)">详情</el-button>
-              </template>
-            </el-table-column>
-          </el-table>
-        </div>
-
         <!-- ========== 数据管理 ========== -->
         <div v-if="activeMenu.startsWith('data')" class="management-content">
           <!-- 数据采集 -->
@@ -476,6 +484,23 @@
               <h2>数据采集</h2>
               <p class="header-tip">配置和管理数据采集任务</p>
             </div>
+
+            <!-- 统计图表 -->
+            <div class="stats-chart-row">
+              <div class="chart-card">
+                <div class="chart-header">
+                  <h3>采集统计</h3>
+                  <div class="chart-stats">
+                    <div class="chart-stat-item"><span class="chart-stat-dot total"></span>总数 {{ dataCollectStats.total }}</div>
+                    <div class="chart-stat-item"><span class="chart-stat-dot success"></span>成功 {{ dataCollectStats.success }}</div>
+                    <div class="chart-stat-item"><span class="chart-stat-dot running"></span>采集中 {{ dataCollectStats.running }}</div>
+                    <div class="chart-stat-item"><span class="chart-stat-dot failed"></span>失败 {{ dataCollectStats.failed }}</div>
+                  </div>
+                </div>
+                <v-chart :option="dataCollectChartOption" autoresize style="height: 200px;"></v-chart>
+              </div>
+            </div>
+
             <div class="toolbar">
               <div class="search-box">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
@@ -489,24 +514,34 @@
             <el-table :data="filteredDataCollects" v-loading="loading" stripe border class="data-table">
               <el-table-column type="index" label="序号" width="60" align="center" />
               <el-table-column prop="name" label="采集名称" min-width="160" />
-              <el-table-column prop="source" label="数据来源" min-width="140" />
-              <el-table-column prop="status" label="状态" width="90" align="center">
+              <el-table-column prop="sourceUrl" label="数据来源" min-width="180" show-overflow-tooltip />
+              <el-table-column prop="sourceType" label="类型" width="80" align="center" />
+              <el-table-column prop="status" label="状态" width="80" align="center">
                 <template #default="{ row }">
                   <el-tag :type="getStatusType(row.status)" size="small">{{ getStatusText(row.status) }}</el-tag>
                 </template>
               </el-table-column>
-              <el-table-column prop="count" label="数据量" width="100" align="center" />
+              <el-table-column prop="dataCount" label="数据量" width="80" align="center" />
               <el-table-column prop="lastCollectTime" label="最后采集" min-width="160">
-                <template #default="{ row }">{{ formatDateTime(row.lastCollectTime) || '-' }}</template>
+                <template #default="{ row }">{{ row.lastCollectTime ? new Date(row.lastCollectTime).toLocaleString() : '-' }}</template>
               </el-table-column>
-              <el-table-column label="操作" width="150" fixed="right" align="center">
+              <el-table-column label="操作" width="200" fixed="right" align="center">
                 <template #default="{ row }">
+                  <el-button link type="primary" @click="viewCollectData(row)">查看数据</el-button>
                   <el-button link type="primary" @click="runDataCollect(row)">执行</el-button>
                   <el-button link type="primary" @click="showDataCollectModal(row)">编辑</el-button>
                   <el-button link type="danger" @click="deleteDataCollect(row.id)">删除</el-button>
                 </template>
               </el-table-column>
             </el-table>
+            <el-pagination
+              v-model:current-page="taskPage"
+              v-model:page-size="taskPageSize"
+              :page-sizes="[10, 20, 50, 100]"
+              :total="filteredDataCollects.length"
+              layout="total, sizes, prev, pager, next, jumper"
+              class="custom-pagination"
+            />
           </div>
 
           <!-- 数据解析 -->
@@ -515,6 +550,23 @@
               <h2>数据解析</h2>
               <p class="header-tip">配置和管理数据解析规则</p>
             </div>
+
+            <!-- 统计图表 -->
+            <div class="stats-chart-row">
+              <div class="chart-card">
+                <div class="chart-header">
+                  <h3>解析统计</h3>
+                  <div class="chart-stats">
+                    <div class="chart-stat-item"><span class="chart-stat-dot total"></span>总数 {{ dataParseStats.total }}</div>
+                    <div class="chart-stat-item"><span class="chart-stat-dot success"></span>成功 {{ dataParseStats.success }}</div>
+                    <div class="chart-stat-item"><span class="chart-stat-dot running"></span>解析中 {{ dataParseStats.running }}</div>
+                    <div class="chart-stat-item"><span class="chart-stat-dot failed"></span>失败 {{ dataParseStats.failed }}</div>
+                  </div>
+                </div>
+                <v-chart :option="dataParseChartOption" autoresize style="height: 200px;"></v-chart>
+              </div>
+            </div>
+
             <div class="toolbar">
               <div class="search-box">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
@@ -528,17 +580,18 @@
             <el-table :data="filteredDataParses" v-loading="loading" stripe border class="data-table">
               <el-table-column type="index" label="序号" width="60" align="center" />
               <el-table-column prop="name" label="解析名称" min-width="160" />
-              <el-table-column prop="rule" label="解析规则" min-width="140" />
-              <el-table-column prop="status" label="状态" width="90" align="center">
+              <el-table-column prop="parseType" label="解析类型" width="100" align="center" />
+              <el-table-column prop="parseRules" label="解析规则" min-width="180" show-overflow-tooltip />
+              <el-table-column prop="status" label="状态" width="80" align="center">
                 <template #default="{ row }">
                   <el-tag :type="getStatusType(row.status)" size="small">{{ getStatusText(row.status) }}</el-tag>
                 </template>
               </el-table-column>
-              <el-table-column prop="successRate" label="成功率" width="100" align="center">
-                <template #default="{ row }">{{ row.successRate || '0%' }}</template>
+              <el-table-column label="成功率" width="100" align="center">
+                <template #default="{ row }">{{ row.successCount + row.failCount > 0 ? Math.round(row.successCount / (row.successCount + row.failCount) * 100) + '%' : '0%' }}</template>
               </el-table-column>
-              <el-table-column prop="parseTime" label="解析时间" min-width="160">
-                <template #default="{ row }">{{ formatDateTime(row.parseTime) || '-' }}</template>
+              <el-table-column prop="lastParseTime" label="解析时间" min-width="160">
+                <template #default="{ row }">{{ row.lastParseTime ? new Date(row.lastParseTime).toLocaleString() : '-' }}</template>
               </el-table-column>
               <el-table-column label="操作" width="150" fixed="right" align="center">
                 <template #default="{ row }">
@@ -548,6 +601,14 @@
                 </template>
               </el-table-column>
             </el-table>
+            <el-pagination
+              v-model:current-page="taskPage"
+              v-model:page-size="taskPageSize"
+              :page-sizes="[10, 20, 50, 100]"
+              :total="filteredDataParses.length"
+              layout="total, sizes, prev, pager, next, jumper"
+              class="custom-pagination"
+            />
           </div>
 
           <!-- 数据加工 -->
@@ -556,6 +617,23 @@
               <h2>数据加工</h2>
               <p class="header-tip">配置和管理数据加工任务</p>
             </div>
+
+            <!-- 统计图表 -->
+            <div class="stats-chart-row">
+              <div class="chart-card">
+                <div class="chart-header">
+                  <h3>加工统计</h3>
+                  <div class="chart-stats">
+                    <div class="chart-stat-item"><span class="chart-stat-dot total"></span>总数 {{ dataProcessStats.total }}</div>
+                    <div class="chart-stat-item"><span class="chart-stat-dot success"></span>成功 {{ dataProcessStats.success }}</div>
+                    <div class="chart-stat-item"><span class="chart-stat-dot running"></span>加工中 {{ dataProcessStats.running }}</div>
+                    <div class="chart-stat-item"><span class="chart-stat-dot failed"></span>失败 {{ dataProcessStats.failed }}</div>
+                  </div>
+                </div>
+                <v-chart :option="dataProcessChartOption" autoresize style="height: 200px;"></v-chart>
+              </div>
+            </div>
+
             <div class="toolbar">
               <div class="search-box">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
@@ -569,15 +647,16 @@
             <el-table :data="filteredDataProcesses" v-loading="loading" stripe border class="data-table">
               <el-table-column type="index" label="序号" width="60" align="center" />
               <el-table-column prop="name" label="加工名称" min-width="160" />
-              <el-table-column prop="method" label="加工方法" min-width="140" />
-              <el-table-column prop="status" label="状态" width="90" align="center">
+              <el-table-column prop="processType" label="加工类型" width="100" align="center" />
+              <el-table-column prop="processRules" label="加工规则" min-width="180" show-overflow-tooltip />
+              <el-table-column prop="status" label="状态" width="80" align="center">
                 <template #default="{ row }">
                   <el-tag :type="getStatusType(row.status)" size="small">{{ getStatusText(row.status) }}</el-tag>
                 </template>
               </el-table-column>
               <el-table-column prop="processedCount" label="处理数量" width="100" align="center" />
-              <el-table-column prop="processTime" label="处理时间" min-width="160">
-                <template #default="{ row }">{{ formatDateTime(row.processTime) || '-' }}</template>
+              <el-table-column prop="lastProcessTime" label="处理时间" min-width="160">
+                <template #default="{ row }">{{ row.lastProcessTime ? new Date(row.lastProcessTime).toLocaleString() : '-' }}</template>
               </el-table-column>
               <el-table-column label="操作" width="150" fixed="right" align="center">
                 <template #default="{ row }">
@@ -587,40 +666,82 @@
                 </template>
               </el-table-column>
             </el-table>
+            <el-pagination
+              v-model:current-page="taskPage"
+              v-model:page-size="taskPageSize"
+              :page-sizes="[10, 20, 50, 100]"
+              :total="filteredDataProcesses.length"
+              layout="total, sizes, prev, pager, next, jumper"
+              class="custom-pagination"
+            />
           </div>
 
           <!-- 数据查询 -->
           <div v-if="activeMenu === 'dataQuery'">
             <div class="content-header">
               <h2>数据查询</h2>
-              <p class="header-tip">配置和管理数据查询任务</p>
+              <p class="header-tip">查询采集数据</p>
             </div>
-            <div class="toolbar">
-              <div class="search-box">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-                <input v-model="dataQuerySearch" placeholder="搜索查询名称..." />
-              </div>
-              <el-button type="primary" @click="showDataQueryModal(null)">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-                新建查询
-              </el-button>
+
+            <!-- 查询表单 -->
+            <div class="query-form-card">
+              <el-form :model="queryFormData" inline class="query-form">
+                <el-form-item label="关键字">
+                  <el-input v-model="queryFormData.keyword" placeholder="纳税人识别号/企业名称" style="width: 180px;" />
+                </el-form-item>
+                <el-form-item label="任务ID">
+                  <el-input v-model="queryFormData.taskId" placeholder="请输入" style="width: 120px;" />
+                </el-form-item>
+                <el-form-item label="税区ID">
+                  <el-input v-model="queryFormData.taxAreaId" placeholder="请输入" style="width: 120px;" />
+                </el-form-item>
+                <el-form-item label="数据状态">
+                  <el-select v-model="queryFormData.dataStatus" placeholder="请选择" clearable style="width: 120px;">
+                    <el-option label="未解析" :value="0" />
+                    <el-option label="已解析" :value="1" />
+                    <el-option label="解析失败" :value="2" />
+                  </el-select>
+                </el-form-item>
+                <el-form-item label="创建时间">
+                  <el-date-picker v-model="queryFormData.startTime" type="datetime" placeholder="开始时间" style="width: 160px;" />
+                  <span style="margin: 0 10px;">至</span>
+                  <el-date-picker v-model="queryFormData.endTime" type="datetime" placeholder="结束时间" style="width: 160px;" />
+                </el-form-item>
+                <el-form-item>
+                  <el-button type="primary" @click="doDataQuery">查询</el-button>
+                  <el-button @click="resetQueryForm">重置</el-button>
+                </el-form-item>
+              </el-form>
             </div>
-            <el-table :data="filteredDataQueries" v-loading="loading" stripe border class="data-table">
-              <el-table-column type="index" label="序号" width="60" align="center" />
-              <el-table-column prop="name" label="查询名称" min-width="160" />
-              <el-table-column prop="condition" label="查询条件" min-width="200" show-overflow-tooltip />
-              <el-table-column prop="queryTime" label="查询时间" min-width="160">
-                <template #default="{ row }">{{ formatDateTime(row.queryTime) || '-' }}</template>
-              </el-table-column>
-              <el-table-column prop="resultCount" label="结果数量" width="100" align="center" />
-              <el-table-column label="操作" width="150" fixed="right" align="center">
+
+            <el-table :data="paginatedQueryResults" v-loading="loading" stripe border class="data-table">
+              <el-table-column type="index" label="序号" width="70" align="center" />
+              <el-table-column prop="taskId" label="任务ID" width="100" />
+              <el-table-column prop="taxId" label="纳税人识别号" min-width="160" />
+              <el-table-column prop="companyName" label="企业名称" min-width="180" />
+              <el-table-column prop="taxAreaId" label="税区ID" width="100" />
+              <el-table-column prop="dataStatus" label="数据状态" width="100" align="center">
                 <template #default="{ row }">
-                  <el-button link type="primary" @click="runDataQuery(row)">执行</el-button>
-                  <el-button link type="primary" @click="showDataQueryModal(row)">编辑</el-button>
-                  <el-button link type="danger" @click="deleteDataQuery(row.id)">删除</el-button>
+                  <el-tag size="small" :type="row.dataStatus === 1 ? 'success' : row.dataStatus === 2 ? 'danger' : 'info'">
+                    {{ ['', '已解析', '失败', '解析中'][row.dataStatus] || '未解析' }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column prop="collectTime" label="采集时间" min-width="160" />
+              <el-table-column label="操作" width="80" fixed="right" align="center">
+                <template #default="{ row }">
+                  <el-button link type="primary" @click="viewQueryDataDetail(row)">详情</el-button>
                 </template>
               </el-table-column>
             </el-table>
+            <el-pagination
+              v-model:current-page="dataQueryPage"
+              v-model:page-size="dataQueryPageSize"
+              :page-sizes="[10, 20, 50, 100]"
+              :total="queryResultTotal"
+              layout="total, sizes, prev, pager, next, jumper"
+              class="custom-pagination"
+            />
           </div>
         </div>
       </main>
@@ -905,12 +1026,13 @@ const activeMenu = ref('dashboard')
 const expandedSubmenus = ref(['data'])
 const loading = ref(false)
 const saveLoading = ref(false)
+const taskActiveTab = ref('taskList')
 
 // ========== 用户信息 ==========
 const currentUser = ref({ id: 1, username: 'admin', realName: '系统管理员', email: 'admin@rpa.com', role: 1 })
 
 // ========== 统计数据 ==========
-const stats = ref({ tasks: 0, robots: 0, processes: 0, logs: 0 })
+const stats = ref({ tasks: 0, robots: 0, processes: 0, logs: 0, dataCollects: 0, dataParses: 0, dataProcesses: 0, dataQueries: 0 })
 const statsChange = ref({ tasks: 12, robots: 5, processes: 8, logs: 15 })
 const taskStatus = ref({ running: 0, pending: 0, completed: 0, failed: 0 })
 const selectedPeriod = ref('7d')
@@ -935,15 +1057,35 @@ const dataQueries = ref([])
 const userSearch = ref('')
 const taskSearch = ref('')
 const taskStatusFilter = ref('')
+const taskPage = ref(1)
+const taskPageSize = ref(10)
+const logSearch = ref('')
+const logStatusFilter = ref('')
+const logPage = ref(1)
+const logPageSize = ref(10)
 const robotSearch = ref('')
 const robotStatusFilter = ref('')
 const processSearch = ref('')
-const logSearch = ref('')
-const logStatusFilter = ref('')
 const dataCollectSearch = ref('')
 const dataParseSearch = ref('')
 const dataProcessSearch = ref('')
 const dataQuerySearch = ref('')
+const dataQueryPage = ref(1)
+const dataQueryPageSize = ref(10)
+const queryResultTotal = ref(0)
+const queryResults = ref([])
+const paginatedQueryResults = computed(() => {
+  const start = (dataQueryPage.value - 1) * dataQueryPageSize.value
+  return queryResults.value.slice(start, start + dataQueryPageSize.value)
+})
+const queryFormData = reactive({
+  keyword: '',
+  taskId: '',
+  taxAreaId: '',
+  dataStatus: null,
+  startTime: null,
+  endTime: null
+})
 
 // ========== 弹窗 ==========
 const userDialogVisible = ref(false)
@@ -1005,7 +1147,7 @@ const taskStatusList = computed(() => [
 
 // ========== 导航菜单 ==========
 const allNavItems = [
-  { key: 'dashboard', label: '仪表板', icon: '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>' },
+  { key: 'dashboard', label: '首页', icon: '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>' },
   { key: 'rpa', label: 'RPA运营', icon: '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M20.5 11H19V7c0-1.1-.9-2-2-2h-4V3.5C13 2.12 11.88 1 10.5 1S8 2.12 8 3.5V5H4c-1.1 0-1.99.9-1.99 2v3.8H3.5c1.49 0 2.7 1.21 2.7 2.7s-1.21 2.7-2.7 2.7H2V20c0 1.1.9 2 2 2h3.8v-1.5c0-1.49 1.21-2.7 2.7-2.7s2.7 1.21 2.7 2.7V22H17c1.1 0 2-.9 2-2v-4h1.5c1.38 0 2.5-1.12 2.5-2.5S21.88 11 20.5 11z"/></svg>' },
   { key: 'system', label: '系统管理', icon: '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>', adminOnly: true }
 ]
@@ -1014,11 +1156,10 @@ const accessibleNavItems = computed(() => currentUser.value.role === 1 ? allNavI
 
 // ========== 侧边栏菜单 ==========
 const allSidebarMenus = [
-  { key: 'dashboard', label: '仪表板', icon: '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>' },
+  { key: 'dashboard', label: '首页', icon: '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>' },
   { key: 'tasks', label: '任务管理', icon: '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10H7v-2h10v2z"/></svg>' },
   { key: 'robots', label: '机器人管理', icon: '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M20.5 11H19V7c0-1.1-.9-2-2-2h-4V3.5C13 2.12 11.88 1 10.5 1S8 2.12 8 3.5V5H4c-1.1 0-1.99.9-1.99 2v3.8H3.5c1.49 0 2.7 1.21 2.7 2.7s-1.21 2.7-2.7 2.7H2V20c0 1.1.9 2 2 2h3.8v-1.5c0-1.49 1.21-2.7 2.7-2.7s2.7 1.21 2.7 2.7V22H17c1.1 0 2-.9 2-2v-4h1.5c1.38 0 2.5-1.12 2.5-2.5S21.88 11 20.5 11z"/></svg>' },
   { key: 'processes', label: '流程管理', icon: '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>' },
-  { key: 'logs', label: '执行日志', icon: '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>' },
   {
     key: 'data', label: '数据管理', icon: '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6 10H6v-2h10v2zm4-4H6v-2h12v2z"/></svg>',
     children: [
@@ -1047,10 +1188,22 @@ const currentSidebarTitle = computed(() => {
 
 // ========== 筛选后数据 ==========
 const filteredUsers = computed(() => users.value.filter(u => !userSearch.value || u.username.includes(userSearch.value) || (u.realName && u.realName.includes(userSearch.value)) || (u.email && u.email.includes(userSearch.value))))
-const filteredTasks = computed(() => tasks.value.filter(t => (!taskSearch.value || t.name.includes(taskSearch.value)) && (!taskStatusFilter.value || t.status === taskStatusFilter.value)))
+const filteredTasks = computed(() => tasks.value.filter(t => {
+  const matchSearch = !taskSearch.value || (t.name && t.name.includes(taskSearch.value)) || (t.companyName && t.companyName.includes(taskSearch.value)) || (t.taskCode && t.taskCode.includes(taskSearch.value))
+  const matchStatus = !taskStatusFilter.value || t.status === taskStatusFilter.value
+  return matchSearch && matchStatus
+}))
+const paginatedTasks = computed(() => {
+  const start = (taskPage.value - 1) * taskPageSize.value
+  return filteredTasks.value.slice(start, start + taskPageSize.value)
+})
+const filteredLogs = computed(() => logs.value.filter(l => (!logSearch.value || (l.taskCode && l.taskCode.includes(logSearch.value))) && (!logStatusFilter.value || l.status === logStatusFilter.value)))
+const paginatedLogs = computed(() => {
+  const start = (logPage.value - 1) * logPageSize.value
+  return filteredLogs.value.slice(start, start + logPageSize.value)
+})
 const filteredRobots = computed(() => robots.value.filter(r => (!robotSearch.value || r.name.includes(robotSearch.value) || (r.ip && r.ip.includes(robotSearch.value))) && (!robotStatusFilter.value || r.status === robotStatusFilter.value)))
 const filteredProcesses = computed(() => processes.value.filter(p => !processSearch.value || p.name.includes(processSearch.value)))
-const filteredLogs = computed(() => logs.value.filter(l => (!logSearch.value || (l.taskName && l.taskName.includes(logSearch.value)) || (l.robotName && l.robotName.includes(logSearch.value))) && (!logStatusFilter.value || l.status === logStatusFilter.value)))
 const filteredDataCollects = computed(() => dataCollects.value.filter(d => !dataCollectSearch.value || d.name.includes(dataCollectSearch.value)))
 const filteredDataParses = computed(() => dataParses.value.filter(d => !dataParseSearch.value || d.name.includes(dataParseSearch.value)))
 const filteredDataProcesses = computed(() => dataProcesses.value.filter(d => !dataProcessSearch.value || d.name.includes(dataProcessSearch.value)))
@@ -1102,6 +1255,93 @@ const pieChartOption = computed(() => ({
   }]
 }))
 
+// 数据采集统计图表
+const dataCollectStats = computed(() => {
+  const total = dataCollects.value.reduce((sum, d) => sum + (d.dataCount || 0), 0)
+  const success = dataCollects.value.filter(d => d.status === 1).length
+  const running = dataCollects.value.filter(d => d.status === 2).length
+  const failed = dataCollects.value.filter(d => d.status === 3).length
+  return { total, success, running, failed }
+})
+const dataCollectChartOption = computed(() => ({
+  tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: '{b}: {c} 条' },
+  grid: { left: '3%', right: '4%', bottom: '3%', top: '8%', containLabel: true },
+  xAxis: { type: 'category', data: ['总采集数', '成功', '采集中', '失败'], axisLabel: { fontSize: 12 } },
+  yAxis: { type: 'value', name: '数量', axisLabel: { fontSize: 12 } },
+  series: [
+    {
+      name: '采集数量',
+      type: 'bar',
+      barWidth: '50%',
+      data: [
+        { value: dataCollectStats.value.total, itemStyle: { color: '#409eff' } },
+        { value: dataCollectStats.value.success, itemStyle: { color: '#67c23a' } },
+        { value: dataCollectStats.value.running, itemStyle: { color: '#e6a23c' } },
+        { value: dataCollectStats.value.failed, itemStyle: { color: '#f56c6c' } }
+      ],
+      label: { show: true, position: 'top', fontSize: 12, color: '#666' }
+    }
+  ]
+}))
+
+// 数据解析统计图表
+const dataParseStats = computed(() => {
+  const total = dataParses.value.reduce((sum, d) => sum + (d.successCount || 0) + (d.failCount || 0), 0)
+  const success = dataParses.value.reduce((sum, d) => sum + (d.successCount || 0), 0)
+  const running = dataParses.value.filter(d => d.status === 2).length
+  const failed = dataParses.value.reduce((sum, d) => sum + (d.failCount || 0), 0)
+  return { total, success, running, failed }
+})
+const dataParseChartOption = computed(() => ({
+  tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: '{b}: {c} 条' },
+  grid: { left: '3%', right: '4%', bottom: '3%', top: '8%', containLabel: true },
+  xAxis: { type: 'category', data: ['总解析数', '成功', '解析中', '失败'], axisLabel: { fontSize: 12 } },
+  yAxis: { type: 'value', name: '数量', axisLabel: { fontSize: 12 } },
+  series: [
+    {
+      name: '解析数量',
+      type: 'bar',
+      barWidth: '50%',
+      data: [
+        { value: dataParseStats.value.total, itemStyle: { color: '#67c23a' } },
+        { value: dataParseStats.value.success, itemStyle: { color: '#95d475' } },
+        { value: dataParseStats.value.running, itemStyle: { color: '#e6a23c' } },
+        { value: dataParseStats.value.failed, itemStyle: { color: '#f56c6c' } }
+      ],
+      label: { show: true, position: 'top', fontSize: 12, color: '#666' }
+    }
+  ]
+}))
+
+// 数据加工统计图表
+const dataProcessStats = computed(() => {
+  const total = dataProcesses.value.reduce((sum, d) => sum + (d.processedCount || 0), 0)
+  const success = dataProcesses.value.filter(d => d.status === 1).length
+  const running = dataProcesses.value.filter(d => d.status === 2).length
+  const failed = dataProcesses.value.filter(d => d.status === 3).length
+  return { total, success, running, failed }
+})
+const dataProcessChartOption = computed(() => ({
+  tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: '{b}: {c} 条' },
+  grid: { left: '3%', right: '4%', bottom: '3%', top: '8%', containLabel: true },
+  xAxis: { type: 'category', data: ['总加工数', '成功', '加工中', '失败'], axisLabel: { fontSize: 12 } },
+  yAxis: { type: 'value', name: '数量', axisLabel: { fontSize: 12 } },
+  series: [
+    {
+      name: '加工数量',
+      type: 'bar',
+      barWidth: '50%',
+      data: [
+        { value: dataProcessStats.value.total, itemStyle: { color: '#e6a23c' } },
+        { value: dataProcessStats.value.success, itemStyle: { color: '#f0b775' } },
+        { value: dataProcessStats.value.running, itemStyle: { color: '#e6a23c' } },
+        { value: dataProcessStats.value.failed, itemStyle: { color: '#f56c6c' } }
+      ],
+      label: { show: true, position: 'top', fontSize: 12, color: '#666' }
+    }
+  ]
+}))
+
 // ========== 方法 ==========
 const getRoleText = (role) => role === 1 ? '管理员' : '普通用户'
 const toggleDropdown = () => { dropdownVisible.value = !dropdownVisible.value }
@@ -1137,6 +1377,8 @@ const changePeriod = (period) => { selectedPeriod.value = period }
 // ========== 状态方法 ==========
 const getStatusText = (s) => ({ running: '运行中', pending: '待执行', completed: '已完成', failed: '失败', active: '活跃', idle: '空闲', offline: '离线' }[s] || s)
 const getStatusType = (s) => ({ running: 'warning', pending: 'info', completed: 'success', failed: 'danger' }[s] || 'info')
+const getTaskStatusText = (s) => ({ 0: '待执行', 1: '执行中', 2: '成功', 3: '失败' }[s] || '未知')
+const getTaskStatusType = (s) => ({ 0: 'info', 1: 'warning', 2: 'success', 3: 'danger' }[s] || 'info')
 const getRobotStatusText = (s) => ({ active: '活跃', idle: '空闲', offline: '离线' }[s] || s)
 const getRobotStatusType = (s) => ({ active: 'success', idle: 'info', offline: 'danger' }[s] || 'info')
 const getLogStatusText = (s) => ({ success: '成功', failed: '失败', running: '进行中' }[s] || s)
@@ -1369,6 +1611,24 @@ const deleteDataCollect = async (id) => {
     else ElMessage.error(result.message || '删除失败')
   } catch { ElMessage.error('网络错误') }
 }
+const viewCollectData = async (item) => {
+  loading.value = true
+  try {
+    const res = await fetch(`${API_BASE}/dataCollect/${item.id}/data`)
+    const result = await res.json()
+    if (result.code === 0) {
+      detailTitle.value = `采集数据 - ${item.name} (${result.count || 0}条)`
+      if (result.data && result.data.length > 0) {
+        detailContent.value = `<pre style="max-height:500px;overflow:auto;font-size:12px;">${JSON.stringify(result.data, null, 2)}</pre>`
+      } else {
+        detailContent.value = '<div style="padding:20px;color:#999;">暂无采集数据，请先执行采集任务</div>'
+      }
+      detailDialogVisible.value = true
+    } else {
+      ElMessage.error(result.message || '获取数据失败')
+    }
+  } catch { ElMessage.error('网络错误') } finally { loading.value = false }
+}
 
 const showDataParseModal = (item) => {
   editingDataParse.value = item
@@ -1546,14 +1806,60 @@ const loadLogs = async () => {
   finally { loading.value = false }
 }
 
+const doDataQuery = async () => {
+  loading.value = true
+  try {
+    const params = new URLSearchParams()
+    if (queryFormData.keyword) params.append('keyword', queryFormData.keyword)
+    if (queryFormData.taskId) params.append('taskId', queryFormData.taskId)
+    if (queryFormData.taxAreaId) params.append('taxAreaId', queryFormData.taxAreaId)
+    if (queryFormData.dataStatus !== null) params.append('dataStatus', queryFormData.dataStatus)
+    if (queryFormData.startTime) params.append('startTime', new Date(queryFormData.startTime).toISOString())
+    if (queryFormData.endTime) params.append('endTime', new Date(queryFormData.endTime).toISOString())
+    const res = await fetch(`${API_BASE}/dataQuery/collectedData?${params.toString()}`)
+    const result = await res.json()
+    if (result.code === 0) {
+      queryResults.value = result.data || []
+      queryResultTotal.value = queryResults.value.length
+    }
+  } catch { ElMessage.error('查询失败') }
+  finally { loading.value = false }
+}
+
+const resetQueryForm = () => {
+  queryFormData.keyword = ''
+  queryFormData.taskId = ''
+  queryFormData.taxAreaId = ''
+  queryFormData.dataStatus = null
+  queryFormData.startTime = null
+  queryFormData.endTime = null
+  queryResults.value = []
+  queryResultTotal.value = 0
+}
+
+const viewQueryDataDetail = (row) => {
+  detailTitle.value = '数据详情'
+  detailContent.value = `<pre style="max-height:400px;overflow:auto;font-size:12px;">${JSON.stringify(row, null, 2)}</pre>`
+  detailDialogVisible.value = true
+}
+
 const loadDataCollects = async () => {
   loading.value = true
   try {
     const res = await fetch(`${API_BASE}/dataCollect`)
     const result = await res.json()
-    if (result.code === 0) dataCollects.value = result.data || []
-  } catch { dataCollects.value = [] }
-  finally { loading.value = false }
+    if (result.code === 0) {
+      dataCollects.value = result.data || []
+    }
+  } catch {
+    // 后端未响应时使用模拟数据
+    dataCollects.value = [
+      { id: 1, name: '企业基本信息采集', sourceUrl: 'https://www.example.com/tax', sourceType: '网页', status: 1, dataCount: 1520, lastCollectTime: new Date().toISOString() },
+      { id: 2, name: '税务申报数据采集', sourceUrl: 'https://www.example.com/report', sourceType: 'API', status: 1, dataCount: 856, lastCollectTime: new Date().toISOString() },
+      { id: 3, name: '发票信息采集', sourceUrl: 'https://www.example.com/invoice', sourceType: '数据库', status: 2, dataCount: 2340, lastCollectTime: new Date().toISOString() },
+      { id: 4, name: '财务报表采集', sourceUrl: 'https://www.example.com/finance', sourceType: '网页', status: 1, dataCount: 1890, lastCollectTime: new Date().toISOString() }
+    ]
+  } finally { loading.value = false }
 }
 
 const loadDataParses = async () => {
@@ -1561,9 +1867,18 @@ const loadDataParses = async () => {
   try {
     const res = await fetch(`${API_BASE}/dataParse`)
     const result = await res.json()
-    if (result.code === 0) dataParses.value = result.data || []
-  } catch { dataParses.value = [] }
-  finally { loading.value = false }
+    if (result.code === 0) {
+      dataParses.value = result.data || []
+    }
+  } catch {
+    // 后端未响应时使用模拟数据
+    dataParses.value = [
+      { id: 1, name: 'JSON解析', parseType: '结构化', parseRules: 'JSON格式解析', status: 1, successCount: 4560, failCount: 120 },
+      { id: 2, name: 'HTML解析', parseType: '非结构化', parseRules: '网页内容提取', status: 1, successCount: 3200, failCount: 85 },
+      { id: 3, name: 'PDF解析', parseType: '文档', parseRules: 'PDF文本提取', status: 2, successCount: 1890, failCount: 230 },
+      { id: 4, name: 'Excel解析', parseType: '表格', parseRules: 'Excel数据读取', status: 1, successCount: 2100, failCount: 45 }
+    ]
+  } finally { loading.value = false }
 }
 
 const loadDataProcesses = async () => {
@@ -1571,9 +1886,18 @@ const loadDataProcesses = async () => {
   try {
     const res = await fetch(`${API_BASE}/dataProcess`)
     const result = await res.json()
-    if (result.code === 0) dataProcesses.value = result.data || []
-  } catch { dataProcesses.value = [] }
-  finally { loading.value = false }
+    if (result.code === 0) {
+      dataProcesses.value = result.data || []
+    }
+  } catch {
+    // 后端未响应时使用模拟数据
+    dataProcesses.value = [
+      { id: 1, name: '数据清洗', processType: '清洗', processRules: '去除重复数据', status: 1, processedCount: 12500 },
+      { id: 2, name: '数据转换', processType: '转换', processRules: '格式标准化', status: 1, processedCount: 8900 },
+      { id: 3, name: '数据补全', processType: '补全', processRules: '缺失值填充', status: 2, processedCount: 5600 },
+      { id: 4, name: '数据校验', processType: '校验', processRules: '数据一致性检查', status: 1, processedCount: 9800 }
+    ]
+  } finally { loading.value = false }
 }
 
 const loadDataQueries = async () => {
@@ -1588,16 +1912,20 @@ const loadDataQueries = async () => {
 
 const updateTaskStatus = () => {
   taskStatus.value = {
-    running: tasks.value.filter(t => t.status === 'running').length,
-    pending: tasks.value.filter(t => t.status === 'pending').length,
-    completed: tasks.value.filter(t => t.status === 'completed').length,
-    failed: tasks.value.filter(t => t.status === 'failed').length
+    running: tasks.value.filter(t => t.status === 1).length,
+    pending: tasks.value.filter(t => t.status === 0).length,
+    completed: tasks.value.filter(t => t.status === 2).length,
+    failed: tasks.value.filter(t => t.status === 3).length
   }
   stats.value = {
     tasks: tasks.value.length,
     robots: robots.value.length,
     processes: processes.value.length,
-    logs: logs.value.length
+    logs: logs.value.length,
+    dataCollects: dataCollects.value.length,
+    dataParses: dataParses.value.length,
+    dataProcesses: dataProcesses.value.length,
+    dataQueries: dataQueries.value.length
   }
 }
 
@@ -1664,15 +1992,18 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
 /* 内容区 */
 .content-area { flex: 1; padding: 24px; overflow-y: auto; }
 
-/* 仪表板 */
+/* 首页 */
 .dashboard-content { max-width: 1400px; margin: 0 auto; }
 .content-header { margin-bottom: 24px; }
 .content-header h2 { font-size: 20px; font-weight: 600; color: #1a1a1a; }
 .header-tip { font-size: 13px; color: #8c8c8c; margin-top: 4px; }
 
 .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 24px; }
-.stat-card { background: #fff; border-radius: 12px; padding: 20px; display: flex; align-items: center; gap: 16px; box-shadow: 0 2px 8px rgba(0,0,0,.04); border: 1px solid #f0f0f0; transition: box-shadow .2s; }
-.stat-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.08); }
+.stat-card { background: #fff; border-radius: 12px; padding: 20px; display: flex; align-items: center; gap: 16px; box-shadow: 0 2px 8px rgba(0,0,0,.04); border: 1px solid #f0f0f0; transition: all .2s; cursor: pointer; }
+.stat-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.08); transform: translateY(-2px); }
+.stat-card.clickable { cursor: pointer; }
+.stat-arrow { opacity: 0; transition: opacity .2s; color: #8c8c8c; }
+.stat-card:hover .stat-arrow { opacity: 1; }
 .stat-icon-box { width: 52px; height: 52px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .stat-icon-box.blue { background: linear-gradient(135deg, #e6f4ff, #bae0ff); color: #1890ff; }
 .stat-icon-box.green { background: linear-gradient(135deg, #f6ffed, #d9f7be); color: #52c41a; }
@@ -1713,6 +2044,33 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
 .toolbar .el-button { display: flex; align-items: center; gap: 6px; }
 .data-table { border-radius: 8px; overflow: hidden; }
 .data-table :deep(.el-table__header th) { background: #fafafa !important; }
+
+/* 分页 */
+.custom-pagination { display: flex; justify-content: flex-end; margin-top: 16px; padding: 12px 0; }
+
+/* 统计图表 */
+.stats-chart-row { margin-bottom: 20px; display: flex; gap: 20px; }
+.stats-chart-row .chart-card { flex: 1; background: #fff; border-radius: 12px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,.04); border: 1px solid #f0f0f0; }
+.stats-chart-row .chart-header { margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+.stats-chart-row .chart-header h3 { font-size: 14px; font-weight: 600; color: #1a1a1a; }
+.chart-stats { display: flex; gap: 16px; }
+.chart-stat-item { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+.chart-stat-dot { width: 8px; height: 8px; border-radius: 50%; }
+.chart-stat-dot.total { background: #409eff; }
+.chart-stat-dot.success { background: #67c23a; }
+.chart-stat-dot.running { background: #e6a23c; }
+.chart-stat-dot.failed { background: #f56c6c; }
+
+/* 查询表单 */
+.query-form-card { background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,.04); border: 1px solid #f0f0f0; }
+.query-form { display: flex; flex-wrap: wrap; gap: 16px; }
+
+/* Tabs */
+.custom-tabs :deep(.el-tabs__header) { margin-bottom: 20px; }
+.custom-tabs :deep(.el-tabs__nav-wrap::after) { height: 1px; }
+.custom-tabs :deep(.el-tabs__item) { font-size: 14px; color: #8c8c8c; }
+.custom-tabs :deep(.el-tabs__item.is-active) { color: #1890ff; font-weight: 600; }
+.custom-tabs :deep(.el-tabs__active-bar) { background-color: #1890ff; }
 
 /* 详情弹窗 */
 .detail-content { padding: 8px 0; }

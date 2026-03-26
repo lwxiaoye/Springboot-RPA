@@ -273,8 +273,9 @@
         <div v-if="activeMenu === 'dataCollect'" class="content-section">
           <div class="section-header">
             <h2 class="section-title">数据采集</h2>
+            <el-button type="primary" @click="showCollectModal()">+ 新建采集</el-button>
           </div>
-          <el-table :data="dataCollects" style="width: 100%">
+          <el-table :data="dataCollects" style="width: 100%" v-loading="loading">
             <el-table-column prop="id" label="ID" width="80" />
             <el-table-column prop="name" label="采集名称" />
             <el-table-column prop="source" label="数据来源" />
@@ -284,10 +285,12 @@
               </template>
             </el-table-column>
             <el-table-column prop="collectTime" label="采集时间" />
-            <el-table-column prop="count" label="数据量" />
-            <el-table-column label="操作" width="100">
+            <el-table-column prop="count" label="数据量" width="100" />
+            <el-table-column label="操作" width="180">
               <template #default="{ row }">
-                <el-button size="small" type="primary">查看</el-button>
+                <el-button size="small" type="primary" @click="executeCollect(row)">执行</el-button>
+                <el-button size="small" @click="showCollectModal(row)">编辑</el-button>
+                <el-button size="small" type="danger" @click="deleteCollect(row.id)">删除</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -392,6 +395,41 @@
         <el-button type="primary" @click="saveUser">保存</el-button>
       </template>
     </el-dialog>
+
+    <!-- 数据采集编辑弹窗 -->
+    <el-dialog v-model="modals.collect" :title="editingCollect ? '编辑采集配置' : '新建采集配置'" width="600px">
+      <el-form :model="collectForm" label-width="100px">
+        <el-form-item label="采集名称" required>
+          <el-input v-model="collectForm.name" placeholder="请输入采集名称" />
+        </el-form-item>
+        <el-form-item label="数据来源URL" required>
+          <el-input v-model="collectForm.sourceUrl" placeholder="请输入来源URL" />
+        </el-form-item>
+        <el-form-item label="来源类型">
+          <el-select v-model="collectForm.sourceType" style="width: 100%;">
+            <el-option label="网页" value="web" />
+            <el-option label="API" value="api" />
+            <el-option label="文件" value="file" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="选择器规则">
+          <el-input v-model="collectForm.selectorRules" type="textarea" :rows="3" placeholder="CSS选择器或XPath" />
+        </el-form-item>
+        <el-form-item label="请求头(Headers)">
+          <el-input v-model="collectForm.headers" type="textarea" :rows="2" placeholder="JSON格式，如：{&quot;Authorization&quot;: &quot;Bearer xxx&quot;}" />
+        </el-form-item>
+        <el-form-item label="Cookies">
+          <el-input v-model="collectForm.cookies" type="textarea" :rows="2" placeholder="Cookie字符串" />
+        </el-form-item>
+        <el-form-item label="定时表达式">
+          <el-input v-model="collectForm.cronExpression" placeholder="如：0 0 * * * ?" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="closeModal('collect')">取消</el-button>
+        <el-button type="primary" @click="saveCollect">保存</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -425,10 +463,13 @@ const dataParses = ref([])
 const dataProcesses = ref([])
 const dataQueries = ref([])
 
-const modals = ref({ user: false })
+const modals = ref({ user: false, collect: false })
 const editingUser = ref(null)
+const editingCollect = ref(null)
 
 const userForm = ref({ username: '', password: '', realName: '', email: '', phone: '', role: 0 })
+const collectForm = ref({ name: '', sourceUrl: '', sourceType: 'web', selectorRules: '', headers: '', cookies: '', cronExpression: '' })
+const loading = ref(false)
 
 const currentDate = computed(() => {
   const now = new Date()
@@ -597,11 +638,23 @@ const loadLogs = async () => {
 }
 
 const loadDataCollects = async () => {
-  dataCollects.value = [
-    { id: 1, name: '客户数据采集', source: 'CRM系统', status: 'completed', collectTime: '2024-01-15 09:00:00', count: 1250 },
-    { id: 2, name: '订单数据采集', source: '电商平台', status: 'running', collectTime: '2024-01-15 10:00:00', count: 856 },
-    { id: 3, name: '产品数据采集', source: 'ERP系统', status: 'pending', collectTime: '2024-01-15 11:00:00', count: 0 }
-  ]
+  try {
+    const response = await fetch(`${API_BASE}/dataCollect`)
+    const result = await response.json()
+    if (result.code === 0) {
+      dataCollects.value = (result.data || []).map(item => ({
+        id: item.id,
+        name: item.name,
+        source: item.sourceUrl || '-',
+        status: item.status === 1 ? 'completed' : item.status === 2 ? 'failed' : 'pending',
+        collectTime: item.lastCollectTime ? new Date(item.lastCollectTime).toLocaleString('zh-CN') : '-',
+        count: item.dataCount || 0
+      }))
+    }
+  } catch (error) {
+    console.error('加载数据采集失败:', error)
+    dataCollects.value = []
+  }
 }
 
 const loadDataParses = async () => {
@@ -636,6 +689,95 @@ const showUserModal = () => {
 
 const closeModal = (type) => {
   modals.value[type] = false
+}
+
+// 数据采集相关方法
+const showCollectModal = (collect) => {
+  editingCollect.value = collect
+  if (collect) {
+    collectForm.value = {
+      name: collect.name,
+      sourceUrl: collect.source,
+      sourceType: 'web',
+      selectorRules: collect.selectorRules || '',
+      headers: '',
+      cookies: '',
+      cronExpression: ''
+    }
+  } else {
+    collectForm.value = { name: '', sourceUrl: '', sourceType: 'web', selectorRules: '', headers: '', cookies: '', cronExpression: '' }
+  }
+  modals.value.collect = true
+}
+
+const saveCollect = async () => {
+  if (!collectForm.value.name || !collectForm.value.sourceUrl) {
+    ElMessage.warning('请输入采集名称和来源URL')
+    return
+  }
+  try {
+    const url = editingCollect.value
+      ? `${API_BASE}/dataCollect/${editingCollect.value.id}`
+      : `${API_BASE}/dataCollect`
+    const method = editingCollect.value ? 'PUT' : 'POST'
+
+    const response = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(collectForm.value)
+    })
+    const result = await response.json()
+    if (result.code === 0) {
+      ElMessage.success(editingCollect.value ? '更新成功' : '创建成功')
+      closeModal('collect')
+      loadDataCollects()
+    } else {
+      ElMessage.error(result.message || '操作失败')
+    }
+  } catch (error) {
+    ElMessage.error('网络错误')
+  }
+}
+
+const executeCollect = async (collect) => {
+  try {
+    ElMessage.info('正在执行采集...')
+    const response = await fetch(`${API_BASE}/dataCollect/${collect.id}/execute`, {
+      method: 'POST'
+    })
+    const result = await response.json()
+    if (result.success || result.code === 0) {
+      ElMessage.success('采集执行成功')
+      loadDataCollects()
+    } else {
+      ElMessage.error(result.message || '采集执行失败')
+    }
+  } catch (error) {
+    ElMessage.error('网络错误')
+  }
+}
+
+const deleteCollect = async (id) => {
+  ElMessageBox.confirm('确定删除该采集配置吗？', '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(async () => {
+    try {
+      const response = await fetch(`${API_BASE}/dataCollect/${id}`, {
+        method: 'DELETE'
+      })
+      const result = await response.json()
+      if (result.code === 0) {
+        ElMessage.success('删除成功')
+        loadDataCollects()
+      } else {
+        ElMessage.error(result.message || '删除失败')
+      }
+    } catch (error) {
+      ElMessage.error('网络错误')
+    }
+  })
 }
 
 const switchMenu = (menu) => {

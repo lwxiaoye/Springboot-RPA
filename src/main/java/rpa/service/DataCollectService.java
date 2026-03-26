@@ -74,6 +74,7 @@ public class DataCollectService {
             if ((boolean) result.getOrDefault("success", false)) {
                 collect.setStatus(1);
                 collect.setLastCollectTime(System.currentTimeMillis());
+                collect.setDataCount(collect.getDataCount() + (Integer) result.getOrDefault("count", 0));
             } else {
                 collect.setStatus(2);
             }

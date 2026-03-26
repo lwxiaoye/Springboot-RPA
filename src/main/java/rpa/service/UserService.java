@@ -1,6 +1,7 @@
 package rpa.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import rpa.entity.User;
 import rpa.repository.UserRepository;
@@ -13,12 +14,22 @@ import java.util.List;
 public class UserService {
     
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     public Optional<User> login(String account, String password) {
         // 尝试通过用户名或手机号登录
         return userRepository.findByUsername(account)
                 .or(() -> userRepository.findByPhone(account))
-                .filter(user -> user.getPassword().equals(password));
+                .filter(user -> {
+                    String storedPassword = user.getPassword();
+                    // 兼容处理：如果密码是BCrypt加密则验证加密，否则直接比较明文
+                    if (storedPassword.startsWith("$2")) {
+                        return passwordEncoder.matches(password, storedPassword);
+                    } else {
+                        // 明文密码比较（兼容旧数据）
+                        return storedPassword.equals(password);
+                    }
+                });
     }
 
     public Optional<User> getUserByUsername(String username) {
@@ -60,10 +71,10 @@ public class UserService {
 
     public User updatePassword(Long id, String oldPassword, String newPassword) {
         return userRepository.findById(id).map(user -> {
-            if (!user.getPassword().equals(oldPassword)) {
+            if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
                 throw new RuntimeException("原密码错误");
             }
-            user.setPassword(newPassword);
+            user.setPassword(passwordEncoder.encode(newPassword));
             return userRepository.save(user);
         }).orElseThrow(() -> new RuntimeException("用户不存在"));
     }
@@ -71,9 +82,9 @@ public class UserService {
     public User resetPassword(Long id, String newPassword) {
         return userRepository.findById(id).map(user -> {
             LocalDateTime now = LocalDateTime.now();
-            user.setPassword(newPassword);
+            user.setPassword(passwordEncoder.encode(newPassword));
             user.setPasswordChangeTime(now);
-            user.setUpdateTime(now); // 使用本地时间直接替换原有的更新时间
+            user.setUpdateTime(now);
             return userRepository.save(user);
         }).orElseThrow(() -> new RuntimeException("用户不存在"));
     }
@@ -108,7 +119,7 @@ public class UserService {
     public User changePassword(Long userId, String oldPassword, String newPassword) {
         return userRepository.findById(userId).map(user -> {
             // 验证旧密码
-            if (!user.getPassword().equals(oldPassword)) {
+            if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
                 throw new RuntimeException("原密码错误");
             }
             
@@ -117,7 +128,7 @@ public class UserService {
                 throw new RuntimeException("密码不符合复杂度要求：必须包含字母、数字和特殊字符，长度 8-24 位");
             }
             
-            user.setPassword(newPassword);
+            user.setPassword(passwordEncoder.encode(newPassword));
             user.setPasswordChangeTime(LocalDateTime.now());
             return userRepository.save(user);
         }).orElseThrow(() -> new RuntimeException("用户不存在"));
@@ -165,6 +176,8 @@ public class UserService {
         if (user.getStatus() == null) {
             user.setStatus(1);
         }
+        // 密码加密存储
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
         return userRepository.save(user);
     }
 }

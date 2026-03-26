@@ -225,7 +225,7 @@ const handlePasswordLogin = async () => {
         loginFailCount.value = 0
 
         // 跳转到管理后台页面
-        router.push('/main')
+        router.push('/layout')
       } else {
         // 登录失败
         loginFailCount.value++
@@ -360,7 +360,7 @@ const checkLoginStatus = () => {
   const userInfo = localStorage.getItem('userInfo')
   if (token && userInfo) {
     // 已登录，跳转到角色管理页面
-    router.push('/role-management')
+        router.push('/profile')
   }
 }
 
