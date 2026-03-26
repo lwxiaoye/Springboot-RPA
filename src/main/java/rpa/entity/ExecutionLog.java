@@ -15,12 +15,23 @@ public class ExecutionLog {
     private Long taskId;
     private Long processId;
     private Long robotId;
-    
+
+    private String taskName;
+    private String robotName;
+
     private String action;
     private String status;
-    
+
     @Column(length = 2000)
     private String message;
-    
+
+    private LocalDateTime startTime;
+    private LocalDateTime endTime;
+
+    private String duration;
+
+    @Column(columnDefinition = "TEXT")
+    private String steps;
+
     private LocalDateTime createTime = LocalDateTime.now();
 }

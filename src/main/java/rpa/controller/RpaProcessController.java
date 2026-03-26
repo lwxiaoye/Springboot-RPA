@@ -53,14 +53,16 @@ public class RpaProcessController {
             String name = (String) request.get("name");
             String code = (String) request.get("code");
             String description = (String) request.get("description");
+            String version = (String) request.get("version");
+            String status = (String) request.get("status");
             Object creatorIdObj = request.get("creatorId");
             Long creatorId = null;
             if (creatorIdObj != null) {
                 creatorId = Long.valueOf(creatorIdObj.toString());
             }
             String creatorName = (String) request.get("creatorName");
-            
-            RpaProcess process = service.create(name, code, description, "", creatorId, creatorName);
+
+            RpaProcess process = service.create(name, code, description, version, status, creatorId, creatorName);
             response.put("code", 0);
             response.put("message", "创建成功");
             response.put("data", process);
@@ -79,8 +81,10 @@ public class RpaProcessController {
             String name = (String) request.get("name");
             String code = (String) request.get("code");
             String description = (String) request.get("description");
-            
-            RpaProcess process = service.updateWithCode(id, name, code, description);
+            String version = (String) request.get("version");
+            String status = (String) request.get("status");
+
+            RpaProcess process = service.update(id, name, code, description, version, status);
             response.put("code", 0);
             response.put("message", "更新成功");
             response.put("data", process);

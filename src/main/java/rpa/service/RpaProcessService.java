@@ -10,7 +10,7 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class RpaProcessService {
-    
+
     private final RpaProcessRepository repository;
 
     public List<RpaProcess> findAll() {
@@ -25,36 +25,20 @@ public class RpaProcessService {
         return repository.findById(id);
     }
 
-    public RpaProcess create(String name, String code, String description, String steps, Long creatorId, String creatorName) {
+    public RpaProcess create(String name, String code, String description, String version, String status, Long creatorId, String creatorName) {
         RpaProcess process = new RpaProcess();
         process.setName(name);
         process.setCode(code);
         process.setDescription(description);
-        process.setSteps(steps);
+        process.setVersion(version != null ? version : "1.0.0");
+        process.setStatus(status != null ? status : "draft");
         process.setCreatorId(creatorId);
         process.setCreatorName(creatorName);
+        process.setTaskCount(0);
         return repository.save(process);
     }
 
-    public RpaProcess update(Long id, String name, String description, String steps, String status) {
-        return repository.findById(id).map(process -> {
-            if (name != null) {
-                process.setName(name);
-            }
-            if (description != null) {
-                process.setDescription(description);
-            }
-            if (steps != null) {
-                process.setSteps(steps);
-            }
-            if (status != null) {
-                process.setStatus(status);
-            }
-            return repository.save(process);
-        }).orElseThrow(() -> new RuntimeException("流程不存在"));
-    }
-
-    public RpaProcess updateWithCode(Long id, String name, String code, String description) {
+    public RpaProcess update(Long id, String name, String code, String description, String version, String status) {
         return repository.findById(id).map(process -> {
             if (name != null) {
                 process.setName(name);
@@ -64,6 +48,12 @@ public class RpaProcessService {
             }
             if (description != null) {
                 process.setDescription(description);
+            }
+            if (version != null) {
+                process.setVersion(version);
+            }
+            if (status != null) {
+                process.setStatus(status);
             }
             return repository.save(process);
         }).orElseThrow(() -> new RuntimeException("流程不存在"));

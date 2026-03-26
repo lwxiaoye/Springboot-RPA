@@ -16,18 +16,22 @@ public class RpaProcess {
     private String name;
 
     private String code;
-    
+
     @Column(length = 2000)
     private String description;
 
     private String status = "active";
-    
+
     @Column(length = 5000)
     private String steps;
 
     private Long creatorId;
     private String creatorName;
-    
+
+    private String version = "1.0.0";
+
+    private Integer taskCount = 0;
+
     private LocalDateTime createTime = LocalDateTime.now();
     private LocalDateTime updateTime = LocalDateTime.now();
 }
