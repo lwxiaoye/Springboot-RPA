@@ -825,14 +825,19 @@ const saveUser = async () => {
         ElMessage.error(result.message || '更新失败')
       }
     } else {
-      if (!userForm.value.username || !userForm.value.password) {
-        ElMessage.warning('请输入用户名和密码')
+      // 新建用户时，若未填写密码，默认使用 123456
+      const userData = { ...userForm.value }
+      if (!userData.password || userData.password.trim() === '') {
+        userData.password = '123456'
+      }
+      if (!userData.username) {
+        ElMessage.warning('请输入用户名')
         return
       }
       const response = await fetch(`${API_BASE}/user/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(userForm.value)
+        body: JSON.stringify(userData)
       })
       const result = await response.json()
       if (result.code === 0) {

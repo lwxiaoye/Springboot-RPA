@@ -1116,7 +1116,7 @@ const processForm = reactive({ name: '', code: '', version: '1.0.0', description
 // ========== 验证规则 ==========
 const userRules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }, { min: 6, message: '密码至少6位', trigger: 'blur' }],
+  password: [{ min: 6, message: '密码至少 6 位', trigger: 'blur' }],
   realName: [{ required: true, message: '请输入真实姓名', trigger: 'blur' }],
   email: [{ type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' }]
 }
@@ -1404,7 +1404,10 @@ const saveUser = async () => {
       try {
         const url = editingUser.value ? `${API_BASE}/user/${editingUser.value.id}` : `${API_BASE}/user/register`
         const method = editingUser.value ? 'PUT' : 'POST'
-        const body = editingUser.value ? { realName: userForm.realName, email: userForm.email, phone: userForm.phone, role: userForm.role, status: userForm.status } : userForm
+        // 新建用户时，若未填写密码，默认使用 123456
+        const body = editingUser.value 
+          ? { realName: userForm.realName, email: userForm.email, phone: userForm.phone, role: userForm.role, status: userForm.status }
+          : { ...userForm, password: userForm.password || '123456' }
         const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
         const result = await res.json()
         if (result.code === 0) { ElMessage.success(editingUser.value ? '更新成功' : '创建成功'); userDialogVisible.value = false; loadUsers() }

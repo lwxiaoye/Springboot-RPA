@@ -384,10 +384,9 @@ public class UserController {
                 return response;
             }
 
+            // 若未提供密码，使用默认密码 123456
             if (password == null || password.isEmpty()) {
-                response.put("code", -1);
-                response.put("message", "请输入密码");
-                return response;
+                password = "123456";
             }
 
             if (password.length() < 6 || password.length() > 20) {
