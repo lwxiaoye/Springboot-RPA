@@ -12,6 +12,16 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.time.LocalDateTime;
 
+/**
+ * 数据查询服务类
+ * <p>
+ * 提供数据查询相关的业务逻辑处理，包括查询配置CRUD和执行查询任务。
+ * </p>
+ *
+ * @author RPA System
+ * @version 1.0.0
+ * @since 2024-01-01
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -20,14 +30,26 @@ public class DataQueryService {
     private final DataQueryRepository repository;
     private final CollectedDataRepository collectedDataRepository;
 
+    /**
+     * 查询所有查询配置
+     */
     public List<DataQuery> findAll() {
         return repository.findAll();
     }
 
+    /**
+     * 根据ID查询查询配置
+     */
     public Optional<DataQuery> findById(Long id) {
         return repository.findById(id);
     }
 
+    /**
+     * 创建查询配置
+     *
+     * @param request 配置信息
+     * @return 创建的配置
+     */
     public DataQuery create(Map<String, Object> request) {
         DataQuery query = new DataQuery();
         query.setName((String) request.get("name"));
@@ -41,6 +63,13 @@ public class DataQueryService {
         return repository.save(query);
     }
 
+    /**
+     * 更新查询配置
+     *
+     * @param id 配置ID
+     * @param request 更新信息
+     * @return 更新后的配置
+     */
     public DataQuery update(Long id, Map<String, Object> request) {
         return repository.findById(id).map(query -> {
             if (request.containsKey("name")) query.setName((String) request.get("name"));
@@ -53,10 +82,19 @@ public class DataQueryService {
         }).orElseThrow(() -> new RuntimeException("查询配置不存在"));
     }
 
+    /**
+     * 删除查询配置
+     */
     public void delete(Long id) {
         repository.deleteById(id);
     }
 
+    /**
+     * 执行查询任务
+     *
+     * @param id 配置ID
+     * @return 执行结果
+     */
     public Map<String, Object> executeQuery(Long id) {
         return repository.findById(id).map(query -> {
             Map<String, Object> result = doQuery(query);
@@ -71,6 +109,9 @@ public class DataQueryService {
         }).orElseThrow(() -> new RuntimeException("查询配置不存在"));
     }
 
+    /**
+     * 执行查询逻辑
+     */
     private Map<String, Object> doQuery(DataQuery query) {
         Map<String, Object> result = new HashMap<>();
 
@@ -135,6 +176,13 @@ public class DataQueryService {
         return result;
     }
 
+    /**
+     * 检查数据是否满足查询条件
+     *
+     * @param item 数据项
+     * @param conditionJson 查询条件（JSON格式）
+     * @return boolean 是否匹配
+     */
     private boolean matchesConditions(Map<String, String> item, String conditionJson) {
         if (conditionJson == null || conditionJson.isEmpty()) {
             return true;
@@ -159,6 +207,13 @@ public class DataQueryService {
         }
     }
 
+    /**
+     * 选择指定的列
+     *
+     * @param data 数据列表
+     * @param columns 列名（逗号分隔）
+     * @return 筛选后的数据
+     */
     private List<Map<String, String>> selectColumns(List<Map<String, String>> data, String columns) {
         List<String> columnList = Arrays.asList(columns.split(","));
 
@@ -174,6 +229,12 @@ public class DataQueryService {
         }).collect(Collectors.toList());
     }
 
+    /**
+     * 简单关键字查询
+     *
+     * @param keyword 搜索关键字
+     * @return 查询结果
+     */
     public Map<String, Object> simpleQuery(String keyword) {
         Map<String, Object> result = new HashMap<>();
 

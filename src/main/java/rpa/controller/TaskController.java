@@ -1,5 +1,22 @@
 package rpa.controller;
 
+/**
+ * 任务管理控制器
+ * <p>
+ * 提供任务相关的RESTful API接口，包括：
+ * <ul>
+ *   <li>任务管理：CRUD操作</li>
+ *   <li>任务分配：分配机器人执行任务</li>
+ *   <li>状态管理：更新任务执行状态</li>
+ *   <li>执行日志：自动记录任务状态变更日志</li>
+ * </ul>
+ * </p>
+ *
+ * @author RPA System
+ * @version 1.0.0
+ * @since 2024-01-01
+ */
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import rpa.entity.Task;

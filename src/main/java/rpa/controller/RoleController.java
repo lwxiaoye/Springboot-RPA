@@ -1,5 +1,22 @@
 package rpa.controller;
 
+/**
+ * 角色管理控制器
+ * <p>
+ * 提供角色相关的RESTful API接口，包括：
+ * <ul>
+ *   <li>角色管理：CRUD操作</li>
+ *   <li>权限配置：为角色分配权限</li>
+ *   <li>角色用户查询：查看某角色的所有用户</li>
+ *   <li>默认角色初始化：创建系统默认角色</li>
+ * </ul>
+ * </p>
+ *
+ * @author RPA System
+ * @version 1.0.0
+ * @since 2024-01-01
+ */
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import rpa.entity.Role;

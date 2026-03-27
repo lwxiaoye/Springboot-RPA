@@ -1,5 +1,20 @@
 package rpa.controller;
 
+/**
+ * 数据解析控制器
+ * <p>
+ * 提供数据解析相关的RESTful API接口，包括：
+ * <ul>
+ *   <li>解析配置管理：CRUD操作</li>
+ *   <li>执行解析：触发解析任务执行</li>
+ * </ul>
+ * </p>
+ *
+ * @author RPA System
+ * @version 1.0.0
+ * @since 2024-01-01
+ */
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import rpa.entity.DataParse;

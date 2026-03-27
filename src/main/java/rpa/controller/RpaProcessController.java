@@ -1,5 +1,17 @@
 package rpa.controller;
 
+/**
+ * RPA流程管理控制器
+ * <p>
+ * 提供RPA流程相关的RESTful API接口，包括流程的CRUD操作。
+ * 支持按创建者筛选流程列表。
+ * </p>
+ *
+ * @author RPA System
+ * @version 1.0.0
+ * @since 2024-01-01
+ */
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import rpa.entity.RpaProcess;

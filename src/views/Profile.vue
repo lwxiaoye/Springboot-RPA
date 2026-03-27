@@ -552,6 +552,19 @@ const router = useRouter()
 const route = useRouter()
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'
 
+// 带token的请求方法
+const authFetch = async (url, options = {}) => {
+  const token = localStorage.getItem('token')
+  const headers = {
+    'Content-Type': 'application/json',
+    ...options.headers
+  }
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
+  }
+  return fetch(url, { ...options, headers })
+}
+
 // 状态
 const activeMenu = ref('profile')
 const currentNav = ref('system')
@@ -666,15 +679,11 @@ const formatDate = (date) => {
 const loadUsers = async () => {
   loading.value = true
   try {
-    const res = await fetch(`${API_BASE}/user`)
+    const res = await authFetch(`${API_BASE}/user`)
     const result = await res.json()
     if (result.code === 0) users.value = result.data || []
   } catch {
-    users.value = [
-      { id: 1, username: 'admin', realName: '系统管理员', email: 'admin@rpa.com', phone: '13800138002', role: 1, status: 1 },
-      { id: 2, username: 'user01', realName: '张三', email: 'user01@rpa.com', phone: '13800138003', role: 0, status: 1 },
-      { id: 3, username: 'user02', realName: '李四', email: 'user02@rpa.com', phone: '13800138004', role: 0, status: 1 }
-    ]
+    users.value = []
   } finally {
     loading.value = false
   }
@@ -708,9 +717,8 @@ const saveUser = async () => {
       delete requestData.password
     }
 
-    const res = await fetch(url, {
+    const res = await authFetch(url, {
       method,
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(requestData)
     })
     const result = await res.json()
@@ -729,7 +737,7 @@ const saveUser = async () => {
 const deleteUser = async (id) => {
   try {
     await ElMessageBox.confirm('确定删除该用户吗？', '提示', { type: 'warning' })
-    const res = await fetch(`${API_BASE}/user/${id}`, { method: 'DELETE' })
+    const res = await authFetch(`${API_BASE}/user/${id}`, { method: 'DELETE' })
     const result = await res.json()
     if (result.code === 0) {
       ElMessage.success('删除成功')
@@ -744,7 +752,7 @@ const deleteUser = async (id) => {
 const loadRoles = async () => {
   loading.value = true
   try {
-    const res = await fetch(`${API_BASE}/role`)
+    const res = await authFetch(`${API_BASE}/role`)
     const result = await res.json()
     if (result.code === 0) {
       roles.value = result.data || []
@@ -778,9 +786,8 @@ const saveRole = async () => {
   try {
     const url = editingRole.value ? `${API_BASE}/role/${editingRole.value.id}` : `${API_BASE}/role`
     const method = editingRole.value ? 'PUT' : 'POST'
-    const res = await fetch(url, {
+    const res = await authFetch(url, {
       method,
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(roleForm)
     })
     const result = await res.json()
@@ -798,7 +805,7 @@ const saveRole = async () => {
 
 const loadPermissions = async () => {
   try {
-    const res = await fetch(`${API_BASE}/permission/tree`)
+    const res = await authFetch(`${API_BASE}/permission/tree`)
     const result = await res.json()
     if (result.code === 0) {
       permissionTree.value = result.data || []
@@ -815,7 +822,7 @@ const openPermissionDialog = async (role) => {
 
   // 获取角色当前权限
   try {
-    const res = await fetch(`${API_BASE}/role/${role.id}`)
+    const res = await authFetch(`${API_BASE}/role/${role.id}`)
     const result = await res.json()
     if (result.code === 0 && result.data.permissionIds) {
       nextTick(() => {
@@ -831,9 +838,8 @@ const savePermissions = async () => {
   if (!permissionTreeRef.value) return
   const checkedKeys = permissionTreeRef.value.getCheckedKeys()
   try {
-    const res = await fetch(`${API_BASE}/role/${editingRole.value.id}/permissions`, {
+    const res = await authFetch(`${API_BASE}/role/${editingRole.value.id}/permissions`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ permissionIds: checkedKeys })
     })
     const result = await res.json()
@@ -869,7 +875,7 @@ const viewRoleUsers = async (role) => {
   roleUsers.value = []
 
   try {
-    const res = await fetch(`${API_BASE}/role/${role.id}/users`)
+    const res = await authFetch(`${API_BASE}/role/${role.id}/users`)
     const result = await res.json()
     if (result.code === 0) {
       roleUsers.value = result.data || []
@@ -900,7 +906,7 @@ const goToAddUser = () => {
 
 const saveProfile = async () => {
   try {
-    const res = await fetch(`${API_BASE}/user/${currentUser.value.id}`, {
+    const res = await authFetch(`${API_BASE}/user/${currentUser.value.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -940,7 +946,7 @@ const changePassword = async () => {
     return
   }
   try {
-    const res = await fetch(`${API_BASE}/user/password/${currentUser.value.id}`, {
+    const res = await authFetch(`${API_BASE}/user/password/${currentUser.value.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -1020,10 +1026,12 @@ const handleAvatarUpload = async (event) => {
   const formData = new FormData()
   formData.append('avatar', file)
   
+  const token = localStorage.getItem('token')
   try {
-    // 使用正确的 API 路径，包含用户 ID
+    // 使用带 token 的请求
     const res = await fetch(`${API_BASE}/user/avatar/${currentUser.value.id}`, {
       method: 'POST',
+      headers: token ? { 'Authorization': `Bearer ${token}` } : {},
       body: formData
     })
     const result = await res.json()

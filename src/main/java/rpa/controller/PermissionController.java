@@ -1,5 +1,20 @@
 package rpa.controller;
 
+/**
+ * 权限管理控制器
+ * <p>
+ * 提供权限相关的RESTful API接口，包括：
+ * <ul>
+ *   <li>权限管理：CRUD操作</li>
+ *   <li>权限树：获取树形结构的权限列表</li>
+ * </ul>
+ * </p>
+ *
+ * @author RPA System
+ * @version 1.0.0
+ * @since 2024-01-01
+ */
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import rpa.entity.Permission;

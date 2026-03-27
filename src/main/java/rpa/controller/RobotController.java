@@ -1,5 +1,21 @@
 package rpa.controller;
 
+/**
+ * 机器人管理控制器
+ * <p>
+ * 提供机器人相关的RESTful API接口，包括：
+ * <ul>
+ *   <li>机器人管理：CRUD操作</li>
+ *   <li>状态管理：更新机器人状态（idle/busy/offline）</li>
+ *   <li>空闲机器人查询：获取所有空闲状态的机器人</li>
+ * </ul>
+ * </p>
+ *
+ * @author RPA System
+ * @version 1.0.0
+ * @since 2024-01-01
+ */
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import rpa.entity.Robot;

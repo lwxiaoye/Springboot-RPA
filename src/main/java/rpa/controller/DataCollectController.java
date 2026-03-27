@@ -1,5 +1,22 @@
 package rpa.controller;
 
+/**
+ * 数据采集控制器
+ * <p>
+ * 提供数据采集相关的RESTful API接口，包括：
+ * <ul>
+ *   <li>采集配置管理：CRUD操作</li>
+ *   <li>执行采集：触发采集任务执行</li>
+ *   <li>采集数据查询：查看已采集的数据</li>
+ *   <li>页面预览：预览目标网页内容</li>
+ * </ul>
+ * </p>
+ *
+ * @author RPA System
+ * @version 1.0.0
+ * @since 2024-01-01
+ */
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import rpa.entity.DataCollect;

@@ -680,20 +680,25 @@
           <div v-if="activeMenu === 'dataQuery'">
             <div class="content-header">
               <h2>数据查询</h2>
-              <p class="header-tip">查询采集数据</p>
+              <p class="header-tip">查询采集数据和加工后数据</p>
             </div>
 
             <!-- 查询表单 -->
             <div class="query-form-card">
               <el-form :model="queryFormData" inline class="query-form">
                 <el-form-item label="关键字">
-                  <el-input v-model="queryFormData.keyword" placeholder="纳税人识别号/企业名称" style="width: 180px;" />
+                  <el-input v-model="queryFormData.keyword" placeholder="数据名称/来源URL" style="width: 180px;" />
                 </el-form-item>
-                <el-form-item label="任务ID">
-                  <el-input v-model="queryFormData.taskId" placeholder="请输入" style="width: 120px;" />
+                <el-form-item label="数据来源">
+                  <el-select v-model="queryFormData.sourceType" placeholder="全部" clearable style="width: 120px;">
+                    <el-option label="原始数据" value="collected" />
+                    <el-option label="加工数据" value="processed" />
+                  </el-select>
                 </el-form-item>
-                <el-form-item label="税区ID">
-                  <el-input v-model="queryFormData.taxAreaId" placeholder="请输入" style="width: 120px;" />
+                <el-form-item label="采集配置">
+                  <el-select v-model="queryFormData.collectId" placeholder="全部" clearable filterable style="width: 180px;">
+                    <el-option v-for="c in dataCollects" :key="c.id" :label="c.name" :value="c.id" />
+                  </el-select>
                 </el-form-item>
                 <el-form-item label="数据状态">
                   <el-select v-model="queryFormData.dataStatus" placeholder="请选择" clearable style="width: 120px;">
@@ -702,48 +707,211 @@
                     <el-option label="解析失败" :value="2" />
                   </el-select>
                 </el-form-item>
-                <el-form-item label="创建时间">
-                  <el-date-picker v-model="queryFormData.startTime" type="datetime" placeholder="开始时间" style="width: 160px;" />
-                  <span style="margin: 0 10px;">至</span>
-                  <el-date-picker v-model="queryFormData.endTime" type="datetime" placeholder="结束时间" style="width: 160px;" />
-                </el-form-item>
                 <el-form-item>
                   <el-button type="primary" @click="doDataQuery">查询</el-button>
                   <el-button @click="resetQueryForm">重置</el-button>
+                  <el-button type="success" @click="loadProcessedData">刷新加工数据</el-button>
                 </el-form-item>
               </el-form>
             </div>
 
-            <el-table :data="paginatedQueryResults" v-loading="loading" stripe border class="data-table">
-              <el-table-column type="index" label="序号" width="70" align="center" />
-              <el-table-column prop="taskId" label="任务ID" width="100" />
-              <el-table-column prop="taxId" label="纳税人识别号" min-width="160" />
-              <el-table-column prop="companyName" label="企业名称" min-width="180" />
-              <el-table-column prop="taxAreaId" label="税区ID" width="100" />
-              <el-table-column prop="dataStatus" label="数据状态" width="100" align="center">
-                <template #default="{ row }">
-                  <el-tag size="small" :type="row.dataStatus === 1 ? 'success' : row.dataStatus === 2 ? 'danger' : 'info'">
-                    {{ ['', '已解析', '失败', '解析中'][row.dataStatus] || '未解析' }}
-                  </el-tag>
-                </template>
-              </el-table-column>
-              <el-table-column prop="collectTime" label="采集时间" min-width="160" />
-              <el-table-column label="操作" width="80" fixed="right" align="center">
-                <template #default="{ row }">
-                  <el-button link type="primary" @click="viewQueryDataDetail(row)">详情</el-button>
-                </template>
-              </el-table-column>
-            </el-table>
-            <el-pagination
-              v-model:current-page="dataQueryPage"
-              v-model:page-size="dataQueryPageSize"
-              :page-sizes="[10, 20, 50, 100]"
-              :total="queryResultTotal"
-              layout="total, sizes, prev, pager, next, jumper"
-              class="custom-pagination"
-            />
+            <el-tabs v-model="dataQueryTab" class="custom-tabs">
+              <el-tab-pane label="原始采集数据" name="collected">
+                <el-table :data="paginatedCollectedData" v-loading="loading" stripe border class="data-table">
+                  <el-table-column type="index" label="序号" width="70" align="center" />
+                  <el-table-column prop="collectName" label="采集名称" min-width="150" show-overflow-tooltip />
+                  <el-table-column prop="dataType" label="数据类型" width="100" />
+                  <el-table-column prop="sourceUrl" label="来源URL" min-width="200" show-overflow-tooltip />
+                  <el-table-column prop="rawData" label="原始数据" min-width="200" show-overflow-tooltip>
+                    <template #default="{ row }">
+                      <span style="font-size:12px;">{{ formatRawData(row.rawData) }}</span>
+                    </template>
+                  </el-table-column>
+                  <el-table-column prop="parseStatus" label="解析状态" width="100" align="center">
+                    <template #default="{ row }">
+                      <el-tag size="small" :type="row.parseStatus === 1 ? 'success' : row.parseStatus === 2 ? 'danger' : 'info'">
+                        {{ ['', '已解析', '失败', '解析中'][row.parseStatus] || '未解析' }}
+                      </el-tag>
+                    </template>
+                  </el-table-column>
+                  <el-table-column prop="collectTime" label="采集时间" min-width="160" />
+                  <el-table-column label="操作" width="80" fixed="right" align="center">
+                    <template #default="{ row }">
+                      <el-button link type="primary" @click="viewQueryDataDetail(row)">详情</el-button>
+                    </template>
+                  </el-table-column>
+                </el-table>
+                <el-pagination
+                  v-model:current-page="collectedDataPage"
+                  v-model:page-size="collectedDataPageSize"
+                  :page-sizes="[10, 20, 50, 100]"
+                  :total="collectedDataTotal"
+                  layout="total, sizes, prev, pager, next, jumper"
+                  class="custom-pagination"
+                />
+              </el-tab-pane>
+
+              <el-tab-pane label="加工后数据" name="processed">
+                <el-table :data="paginatedProcessedData" v-loading="loading" stripe border class="data-table">
+                  <el-table-column type="index" label="序号" width="70" align="center" />
+                  <el-table-column prop="name" label="数据名称" min-width="150" show-overflow-tooltip />
+                  <el-table-column prop="processName" label="加工流程" min-width="120" />
+                  <el-table-column prop="collectName" label="原始采集" min-width="120" />
+                  <el-table-column prop="dataCategory" label="数据分类" width="100" />
+                  <el-table-column prop="sourceType" label="来源类型" width="100" />
+                  <el-table-column prop="processedData" label="加工后数据" min-width="200" show-overflow-tooltip>
+                    <template #default="{ row }">
+                      <span style="font-size:12px;">{{ formatProcessedData(row.processedData) }}</span>
+                    </template>
+                  </el-table-column>
+                  <el-table-column prop="processTime" label="加工时间" min-width="160" />
+                  <el-table-column label="操作" width="80" fixed="right" align="center">
+                    <template #default="{ row }">
+                      <el-button link type="primary" @click="viewProcessedDataDetail(row)">详情</el-button>
+                    </template>
+                  </el-table-column>
+                </el-table>
+                <el-pagination
+                  v-model:current-page="processedDataPage"
+                  v-model:page-size="processedDataPageSize"
+                  :page-sizes="[10, 20, 50, 100]"
+                  :total="processedDataTotal"
+                  layout="total, sizes, prev, pager, next, jumper"
+                  class="custom-pagination"
+                />
+              </el-tab-pane>
+            </el-tabs>
           </div>
         </div>
+
+        <!-- ========== 通知管理 ========== -->
+        <div v-if="activeMenu === 'notification'" class="management-content">
+          <div class="content-header">
+            <h2>通知管理</h2>
+            <p class="header-tip">查看和管理各类系统通知，支持按类型筛选</p>
+          </div>
+
+          <!-- 左右布局容器 -->
+          <div class="notification-layout">
+        <!-- 左侧：操作栏 -->
+        <div class="notification-sidebar">
+          <div class="notif-sidebar-header">
+            <span class="sidebar-title">通知类型</span>
+          </div>
+          <div class="notif-type-list">
+            <div class="notif-type-item" :class="{ active: notifTab === 'collect' }" @click="switchNotifTab('collect')">
+              <div class="notif-type-icon collect-icon">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+              </div>
+              <div class="notif-type-info">
+                <div class="notif-type-name">采集通知</div>
+                <div class="notif-type-count">{{ notifCollectCount }} 条</div>
+              </div>
+              <div class="notif-unread-badge" v-if="notifCollectUnread > 0">{{ notifCollectUnread }}</div>
+            </div>
+            <div class="notif-type-item" :class="{ active: notifTab === 'temp' }" @click="switchNotifTab('temp')">
+              <div class="notif-type-icon temp-icon">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+              </div>
+              <div class="notif-type-info">
+                <div class="notif-type-name">临时通知</div>
+                <div class="notif-type-count">{{ notifTempCount }} 条</div>
+              </div>
+              <div class="notif-unread-badge" v-if="notifTempUnread > 0">{{ notifTempUnread }}</div>
+            </div>
+            <div class="notif-type-item" :class="{ active: notifTab === 'user' }" @click="switchNotifTab('user')">
+              <div class="notif-type-icon user-icon">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+              </div>
+              <div class="notif-type-info">
+                <div class="notif-type-name">用户操作</div>
+                <div class="notif-type-count">{{ notifUserCount }} 条</div>
+              </div>
+              <div class="notif-unread-badge" v-if="notifUserUnread > 0">{{ notifUserUnread }}</div>
+            </div>
+          </div>
+          
+          <div class="notif-filter-section">
+            <div class="filter-label">状态筛选</div>
+            <el-radio-group v-model="notifStatusFilter" size="default" @change="loadNotifications">
+              <el-radio-button label="">全部</el-radio-button>
+              <el-radio-button label="unread">未读</el-radio-button>
+              <el-radio-button label="read">已读</el-radio-button>
+            </el-radio-group>
+          </div>
+          
+          <div class="notif-actions">
+            <el-button size="small" @click="markNotifAllRead">全部标为已读</el-button>
+            <el-button size="small" type="danger" @click="clearReadNotifs">清空已读</el-button>
+          </div>
+        </div>
+
+        <!-- 右侧：图表+列表 -->
+        <div class="notification-main">
+          <!-- 统计卡片+折线图 -->
+          <div class="notification-overview">
+            <div class="notif-chart-wrapper" v-if="notifChartData.length > 0">
+              <div class="notif-chart-title">近7天通知趋势 - {{ notifTab === 'collect' ? '采集通知' : notifTab === 'temp' ? '临时通知' : notifTab === 'user' ? '用户操作' : '全部' }}</div>
+              <div ref="notifChartRef" class="notif-echarts"></div>
+            </div>
+            <div class="notif-chart-empty" v-else>
+              <p>暂无趋势数据</p>
+            </div>
+          </div>
+
+          <!-- 通知列表 -->
+          <div class="notif-list-header">
+            <span>通知列表</span>
+            <span class="notif-total">共 {{ notifTotal }} 条</span>
+          </div>
+          <el-table :data="paginatedNotifs" v-loading="notifLoading" stripe border class="data-table notif-table">
+            <el-table-column type="index" label="序号" width="60" align="center" />
+            <el-table-column label="类型" width="100">
+              <template #default="{ row }">
+                <el-tag size="small" :type="getNotifTypeTag(row.type)">{{ getNotifTypeText(row.type) }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="title" label="通知标题" min-width="150" show-overflow-tooltip />
+            <el-table-column prop="content" label="通知内容" min-width="200" show-overflow-tooltip />
+            <el-table-column prop="creatorName" label="发送者" width="90" align="center" />
+            <el-table-column label="状态" width="80" align="center">
+              <template #default="{ row }">
+                <el-tag size="small" :type="row.status === 'unread' ? 'danger' : 'info'">
+                  {{ row.status === 'unread' ? '未读' : '已读' }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="createTime" label="时间" width="160" />
+            <el-table-column label="操作" width="110" fixed="right" align="center">
+              <template #default="{ row }">
+                <el-button link type="primary" size="small" @click="viewNotifDetail(row)" v-if="row.status === 'unread'">标记已读</el-button>
+                <el-button link type="primary" size="small" @click="viewNotifDetail(row)" v-else>查看</el-button>
+                <el-button link type="danger" size="small" @click="deleteNotif(row.id)">删除</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+
+          <el-pagination
+            v-model:current-page="notifPage"
+            v-model:page-size="notifPageSize"
+            :page-sizes="[10, 20, 50]"
+            :total="notifTotal"
+            layout="total, sizes, prev, pager, next, jumper"
+            class="custom-pagination"
+          />
+        </div>
+      </div>
+
+      <!-- 通知详情弹窗 -->
+      <el-dialog v-model="notifDetailVisible" :title="notifDetailTitle" width="540px" class="custom-dialog">
+        <div class="notif-detail-content" v-html="notifDetailContent"></div>
+        <template #footer>
+          <el-button @click="notifDetailVisible = false">关闭</el-button>
+        </template>
+      </el-dialog>
+
+        </div>
+
       </main>
     </div>
 
@@ -1018,6 +1186,14 @@ use([CanvasRenderer, LineChart, PieChart, BarChart, TitleComponent, TooltipCompo
 const router = useRouter()
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'
 
+// 统一请求封装，自动携带 JWT token
+const request = async (url, options = {}) => {
+  const token = localStorage.getItem('token')
+  const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) }
+  if (token) headers['Authorization'] = `Bearer ${token}`
+  return fetch(url, { ...options, headers })
+}
+
 // ========== 状态 ==========
 const dropdownVisible = ref(false)
 const sidebarCollapsed = ref(false)
@@ -1070,22 +1246,281 @@ const dataCollectSearch = ref('')
 const dataParseSearch = ref('')
 const dataProcessSearch = ref('')
 const dataQuerySearch = ref('')
-const dataQueryPage = ref(1)
-const dataQueryPageSize = ref(10)
-const queryResultTotal = ref(0)
-const queryResults = ref([])
-const paginatedQueryResults = computed(() => {
-  const start = (dataQueryPage.value - 1) * dataQueryPageSize.value
-  return queryResults.value.slice(start, start + dataQueryPageSize.value)
+// ========== 数据查询 ==========
+const dataQueryTab = ref('collected')
+const collectedData = ref([])
+const processedData = ref([])
+const collectedDataPage = ref(1)
+const collectedDataPageSize = ref(10)
+const processedDataPage = ref(1)
+const processedDataPageSize = ref(10)
+
+// ========== 通知管理 ==========
+const notifTab = ref('collect')
+const notifStatusFilter = ref('')
+const notifList = ref([])
+const notifPage = ref(1)
+const notifPageSize = ref(10)
+const notifTotal = ref(0)
+const notifLoading = ref(false)
+const notifDetailVisible = ref(false)
+const notifDetailTitle = ref('')
+const notifDetailContent = ref('')
+const notifChartRef = ref(null)
+const notifChartData = ref([])
+const notifChartInstance = ref(null)
+// 统计
+const notifCollectCount = ref(0)
+const notifTempCount = ref(0)
+const notifUserCount = ref(0)
+const notifCollectUnread = ref(0)
+const notifTempUnread = ref(0)
+const notifUserUnread = ref(0)
+
+const collectedDataTotal = computed(() => collectedData.value.length)
+const processedDataTotal = computed(() => processedData.value.length)
+
+const paginatedCollectedData = computed(() => {
+  const start = (collectedDataPage.value - 1) * collectedDataPageSize.value
+  return collectedData.value.slice(start, start + collectedDataPageSize.value)
 })
+
+const paginatedProcessedData = computed(() => {
+  const start = (processedDataPage.value - 1) * processedDataPageSize.value
+  return processedData.value.slice(start, start + processedDataPageSize.value)
+})
+
+const paginatedNotifs = computed(() => {
+  const start = (notifPage.value - 1) * notifPageSize.value
+  return notifList.value.slice(start, start + notifPageSize.value)
+})
+
 const queryFormData = reactive({
   keyword: '',
-  taskId: '',
-  taxAreaId: '',
-  dataStatus: null,
-  startTime: null,
-  endTime: null
+  collectId: null,
+  sourceType: '',
+  dataStatus: null
 })
+
+const loadCollectedData = async () => {
+  loading.value = true
+  try {
+    const res = await request(`${API_BASE}/dataQuery/collectedData`)
+    const result = await res.json()
+    if (result.code === 0) {
+      collectedData.value = result.data || []
+    }
+  } catch {
+    collectedData.value = []
+  } finally {
+    loading.value = false
+  }
+}
+
+const loadProcessedData = async () => {
+  loading.value = true
+  try {
+    const res = await request(`${API_BASE}/dataQuery/processedData`)
+    const result = await res.json()
+    if (result.code === 0) {
+      processedData.value = result.data || []
+    }
+  } catch {
+    processedData.value = []
+  } finally {
+    loading.value = false
+  }
+}
+
+const doDataQuery = async () => {
+  loading.value = true
+  try {
+    if (dataQueryTab.value === 'collected') {
+      await loadCollectedData()
+    } else {
+      await loadProcessedData()
+    }
+  } catch { ElMessage.error('查询失败') }
+  finally { loading.value = false }
+}
+
+const resetQueryForm = () => {
+  queryFormData.keyword = ''
+  queryFormData.collectId = null
+  queryFormData.sourceType = ''
+  queryFormData.dataStatus = null
+  collectedData.value = []
+  processedData.value = []
+}
+
+const formatRawData = (rawData) => {
+  if (!rawData) return '-'
+  try {
+    const obj = JSON.parse(rawData)
+    return Object.keys(obj).slice(0, 3).map(k => `${k}:${obj[k]}`).join(', ') + '...'
+  } catch {
+    return rawData.substring(0, 50) + '...'
+  }
+}
+
+const formatProcessedData = (data) => {
+  if (!data) return '-'
+  try {
+    const obj = JSON.parse(data)
+    return Object.keys(obj).slice(0, 3).map(k => `${k}:${obj[k]}`).join(', ') + '...'
+  } catch {
+    return data.substring(0, 50) + '...'
+  }
+}
+
+const viewQueryDataDetail = (row) => {
+  detailTitle.value = '原始数据详情'
+  detailContent.value = `<pre style="max-height:400px;overflow:auto;font-size:12px;">${JSON.stringify(row, null, 2)}</pre>`
+  detailDialogVisible.value = true
+}
+
+const viewProcessedDataDetail = (row) => {
+  detailTitle.value = '加工数据详情'
+  detailContent.value = `<pre style="max-height:400px;overflow:auto;font-size:12px;">${JSON.stringify(row, null, 2)}</pre>`
+  detailDialogVisible.value = true
+}
+
+// ========== 通知管理 ==========
+const getNotifTypeText = (type) => ({ collect: '采集通知', temp: '临时通知', user: '用户操作' }[type] || type)
+const getNotifTypeTag = (type) => ({ collect: 'primary', temp: 'warning', user: 'success' }[type] || 'info')
+
+const switchNotifTab = async (tab) => {
+  notifTab.value = tab
+  notifPage.value = 1
+  notifStatusFilter.value = ''
+  await loadNotifications()
+  // 切换tab后重新渲染图表，只显示选中类型的趋势
+  renderNotifChart()
+}
+
+const loadNotificationStats = async () => {
+  try {
+    const res = await request(`${API_BASE}/notification/stats?days=7`)
+    const result = await res.json()
+    if (result.code === 0) {
+      const data = result.data
+      notifCollectCount.value = data.totals?.collect || 0
+      notifTempCount.value = data.totals?.temp || 0
+      notifUserCount.value = data.totals?.user || 0
+      notifCollectUnread.value = data.unreads?.collect || 0
+      notifTempUnread.value = data.unreads?.temp || 0
+      notifUserUnread.value = data.unreads?.user || 0
+      notifChartData.value = data.chartData || []
+      renderNotifChart()
+    }
+  } catch { /* silent */ }
+}
+
+const loadNotifications = async () => {
+  notifLoading.value = true
+  try {
+    const params = new URLSearchParams({ type: notifTab.value, page: notifPage.value, size: notifPageSize.value })
+    if (notifStatusFilter.value) params.set('status', notifStatusFilter.value)
+    const res = await request(`${API_BASE}/notification?${params}`)
+    const result = await res.json()
+    if (result.code === 0) {
+      notifList.value = result.data || []
+      notifTotal.value = result.total || 0
+    }
+  } catch { notifList.value = [] } finally { notifLoading.value = false }
+}
+
+const viewNotifDetail = async (row) => {
+  if (row.status === 'unread') {
+    await request(`${API_BASE}/notification/${row.id}/read`, { method: 'PUT' })
+    row.status = 'read'
+    // 更新未读数
+    if (notifTab.value === 'collect') notifCollectUnread.value = Math.max(0, notifCollectUnread.value - 1)
+    else if (notifTab.value === 'temp') notifTempUnread.value = Math.max(0, notifTempUnread.value - 1)
+    else notifUserUnread.value = Math.max(0, notifUserUnread.value - 1)
+  }
+  notifDetailTitle.value = row.title
+  notifDetailContent.value = `<p><strong>类型：</strong>${getNotifTypeText(row.type)}</p><p><strong>发送者：</strong>${row.creatorName || '-'}</p><p><strong>时间：</strong>${row.createTime || '-'}</p><hr/><p>${row.content || '-'}</p>`
+  notifDetailVisible.value = true
+}
+
+const markNotifAllRead = async () => {
+  try {
+    await request(`${API_BASE}/notification/readAll?type=${notifTab.value}`, { method: 'PUT' })
+    ElMessage.success('已全部标记为已读')
+    notifCollectUnread.value = 0
+    notifTempUnread.value = 0
+    notifUserUnread.value = 0
+    notifList.value.forEach(n => { n.status = 'read' })
+  } catch { ElMessage.error('操作失败') }
+}
+
+const clearReadNotifs = async () => {
+  const reads = notifList.value.filter(n => n.status === 'read')
+  if (reads.length === 0) { ElMessage.info('没有已读通知可清理'); return }
+  await ElMessageBox.confirm(`确定删除 ${reads.length} 条已读通知吗？`, '提示', { type: 'warning' })
+  try {
+    for (const n of reads) {
+      await request(`${API_BASE}/notification/${n.id}`, { method: 'DELETE' })
+    }
+    ElMessage.success('清理成功')
+    loadNotifications()
+    loadNotificationStats()
+  } catch { ElMessage.error('清理失败') }
+}
+
+const deleteNotif = async (id) => {
+  await ElMessageBox.confirm('确定删除该通知吗？', '提示', { type: 'warning' })
+  try {
+    await request(`${API_BASE}/notification/${id}`, { method: 'DELETE' })
+    ElMessage.success('删除成功')
+    loadNotifications()
+    loadNotificationStats()
+  } catch { ElMessage.error('删除失败') }
+}
+
+const renderNotifChart = () => {
+  if (!notifChartRef.value || notifChartData.value.length === 0) return
+  import('echarts').then(({ default: echarts }) => {
+    if (notifChartInstance.value) notifChartInstance.value.dispose()
+    const chart = echarts.init(notifChartRef.value)
+    notifChartInstance.value = chart
+    const dates = notifChartData.value.map(d => d.date)
+    const collectData = notifChartData.value.map(d => d.collect || 0)
+    const tempData = notifChartData.value.map(d => d.temp || 0)
+    const userData = notifChartData.value.map(d => d.user || 0)
+    
+    // 根据当前选中的通知类型决定显示哪些数据
+    const currentTab = notifTab.value
+    const series = []
+    const legendData = []
+    
+    if (currentTab === 'collect' || currentTab === '') {
+      series.push({ name: '采集通知', type: 'line', data: collectData, smooth: true, color: '#1890ff', areaStyle: { opacity: 0.2 } })
+      legendData.push('采集通知')
+    }
+    if (currentTab === 'temp' || currentTab === '') {
+      series.push({ name: '临时通知', type: 'line', data: tempData, smooth: true, color: '#fa8c16', areaStyle: { opacity: 0.2 } })
+      legendData.push('临时通知')
+    }
+    if (currentTab === 'user' || currentTab === '') {
+      series.push({ name: '用户操作', type: 'line', data: userData, smooth: true, color: '#52c41a', areaStyle: { opacity: 0.2 } })
+      legendData.push('用户操作')
+    }
+    
+    chart.setOption({
+      tooltip: { trigger: 'axis' },
+      legend: { data: legendData, bottom: 0 },
+      grid: { top: 10, right: 20, bottom: 40, left: 40 },
+      xAxis: { type: 'category', data: dates, axisLabel: { fontSize: 11 } },
+      yAxis: { type: 'value', name: '条数', axisLabel: { fontSize: 11 }, minInterval: 1 },
+      series: series
+    })
+  })
+}
+
+// 监听通知 tab 切换
+watch(notifTab, () => { loadNotifications() })
 
 // ========== 弹窗 ==========
 const userDialogVisible = ref(false)
@@ -1169,6 +1604,7 @@ const allSidebarMenus = [
       { key: 'dataQuery', label: '数据查询' }
     ]
   },
+  { key: 'notification', label: '通知管理', icon: '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>' },
   { key: 'users', label: '用户管理', icon: '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>', adminOnly: true }
 ]
 
@@ -1353,7 +1789,15 @@ const handleNavClick = (menu) => {
   else if (menu.key === 'system') switchMenu('users')
 }
 
-const switchMenu = (menu) => { activeMenu.value = menu }
+const switchMenu = (menu) => {
+  activeMenu.value = menu
+  if (menu === 'notification') {
+    notifPage.value = 1
+    notifStatusFilter.value = ''
+    loadNotificationStats()
+    loadNotifications()
+  }
+}
 
 const toggleSubmenu = (item) => {
   const idx = expandedSubmenus.value.indexOf(item.key)
@@ -1408,7 +1852,7 @@ const saveUser = async () => {
         const body = editingUser.value 
           ? { realName: userForm.realName, email: userForm.email, phone: userForm.phone, role: userForm.role, status: userForm.status }
           : { ...userForm, password: userForm.password || '123456' }
-        const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+        const res = await request(url, { method, body: JSON.stringify(body) })
         const result = await res.json()
         if (result.code === 0) { ElMessage.success(editingUser.value ? '更新成功' : '创建成功'); userDialogVisible.value = false; loadUsers() }
         else ElMessage.error(result.message || '操作失败')
@@ -1418,7 +1862,7 @@ const saveUser = async () => {
 }
 const toggleUserStatus = async (user) => {
   try {
-    const res = await fetch(`${API_BASE}/user/${user.id}/status`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: user.status === 1 ? 0 : 1 }) })
+    const res = await request(`${API_BASE}/user/${user.id}/status`, { method: 'PUT', body: JSON.stringify({ status: user.status === 1 ? 0 : 1 }) })
     const result = await res.json()
     if (result.code === 0) { ElMessage.success(user.status === 1 ? '已禁用' : '已启用'); loadUsers() }
     else ElMessage.error(result.message || '操作失败')
@@ -1427,7 +1871,7 @@ const toggleUserStatus = async (user) => {
 const deleteUser = async (id) => {
   await ElMessageBox.confirm('确定删除该用户吗？', '提示', { type: 'warning' })
   try {
-    const res = await fetch(`${API_BASE}/user/${id}`, { method: 'DELETE' })
+    const res = await request(`${API_BASE}/user/${id}`, { method: 'DELETE' })
     const result = await res.json()
     if (result.code === 0) { ElMessage.success('删除成功'); loadUsers() }
     else ElMessage.error(result.message || '删除失败')
@@ -1452,7 +1896,7 @@ const saveTask = async () => {
         const url = editingTask.value ? `${API_BASE}/task/${editingTask.value.id}` : `${API_BASE}/task`
         const method = editingTask.value ? 'PUT' : 'POST'
         const body = { name: taskForm.name, category: 'RPA任务', priority: taskForm.priority, processId: taskForm.processId, processName: process?.name, robotId: taskForm.robotId, robotName: robot?.name, inputData: taskForm.remark }
-        const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+        const res = await request(url, { method, body: JSON.stringify(body) })
         const result = await res.json()
         if (result.code === 0) { ElMessage.success(editingTask.value ? '更新成功' : '创建成功'); taskDialogVisible.value = false; loadTasks() }
         else ElMessage.error(result.message || '操作失败')
@@ -1468,7 +1912,7 @@ const viewTaskDetail = (task) => {
 const deleteTask = async (id) => {
   await ElMessageBox.confirm('确定删除该任务吗？', '提示', { type: 'warning' })
   try {
-    const res = await fetch(`${API_BASE}/task/${id}`, { method: 'DELETE' })
+    const res = await request(`${API_BASE}/task/${id}`, { method: 'DELETE' })
     const result = await res.json()
     if (result.code === 0) { ElMessage.success('删除成功'); loadTasks() }
     else ElMessage.error(result.message || '删除失败')
@@ -1490,7 +1934,7 @@ const saveRobot = async () => {
       try {
         const url = editingRobot.value ? `${API_BASE}/robot/${editingRobot.value.id}` : `${API_BASE}/robot`
         const method = editingRobot.value ? 'PUT' : 'POST'
-        const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(robotForm) })
+        const res = await request(url, { method, body: JSON.stringify(robotForm) })
         const result = await res.json()
         if (result.code === 0) { ElMessage.success(editingRobot.value ? '更新成功' : '注册成功'); robotDialogVisible.value = false; loadRobots() }
         else ElMessage.error(result.message || '操作失败')
@@ -1506,7 +1950,7 @@ const viewRobotDetail = (robot) => {
 const deleteRobot = async (id) => {
   await ElMessageBox.confirm('确定删除该机器人吗？', '提示', { type: 'warning' })
   try {
-    const res = await fetch(`${API_BASE}/robot/${id}`, { method: 'DELETE' })
+    const res = await request(`${API_BASE}/robot/${id}`, { method: 'DELETE' })
     const result = await res.json()
     if (result.code === 0) { ElMessage.success('删除成功'); loadRobots() }
     else ElMessage.error(result.message || '删除失败')
@@ -1522,17 +1966,17 @@ const showProcessModal = (process) => {
 }
 const saveProcess = async () => {
   if (!processFormRef.value) return
-  await taskFormRef.value.validate(async (valid) => {
+  await processFormRef.value.validate(async (valid) => {
     if (valid) {
       saveLoading.value = true
       try {
         if (editingProcess.value) {
-          const res = await fetch(`${API_BASE}/process/${editingProcess.value.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(processForm) })
+          const res = await request(`${API_BASE}/process/${editingProcess.value.id}`, { method: 'PUT', body: JSON.stringify(processForm) })
           const result = await res.json()
           if (result.code === 0) { ElMessage.success('更新成功'); processDialogVisible.value = false; loadProcesses() }
           else ElMessage.error(result.message || '操作失败')
         } else {
-          const res = await fetch(`${API_BASE}/process`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...processForm, creatorId: currentUser.value.id, creatorName: currentUser.value.realName || currentUser.value.username }) })
+          const res = await request(`${API_BASE}/process`, { method: 'POST', body: JSON.stringify({ ...processForm, creatorId: currentUser.value.id, creatorName: currentUser.value.realName || currentUser.value.username }) })
           const result = await res.json()
           if (result.code === 0) { ElMessage.success('创建成功'); processDialogVisible.value = false; loadProcesses() }
           else ElMessage.error(result.message || '操作失败')
@@ -1549,7 +1993,7 @@ const viewProcessDetail = (process) => {
 const deleteProcess = async (id) => {
   await ElMessageBox.confirm('确定删除该流程吗？', '提示', { type: 'warning' })
   try {
-    const res = await fetch(`${API_BASE}/process/${id}`, { method: 'DELETE' })
+    const res = await request(`${API_BASE}/process/${id}`, { method: 'DELETE' })
     const result = await res.json()
     if (result.code === 0) { ElMessage.success('删除成功'); loadProcesses() }
     else ElMessage.error(result.message || '删除失败')
@@ -1590,7 +2034,7 @@ const saveDataCollect = async () => {
   try {
     const url = editingDataCollect.value ? `${API_BASE}/dataCollect/${editingDataCollect.value.id}` : `${API_BASE}/dataCollect`
     const method = editingDataCollect.value ? 'PUT' : 'POST'
-    const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dataCollectForm) })
+    const res = await request(url, { method, body: JSON.stringify(dataCollectForm) })
     const result = await res.json()
     if (result.code === 0) { ElMessage.success(editingDataCollect.value ? '更新成功' : '创建成功'); dataCollectDialogVisible.value = false; loadDataCollects() }
     else ElMessage.error(result.message || '操作失败')
@@ -1599,7 +2043,7 @@ const saveDataCollect = async () => {
 const runDataCollect = async (item) => {
   loading.value = true
   try {
-    const res = await fetch(`${API_BASE}/dataCollect/${item.id}/execute`, { method: 'POST' })
+    const res = await request(`${API_BASE}/dataCollect/${item.id}/execute`, { method: 'POST' })
     const result = await res.json()
     if (result.success) { ElMessage.success(`采集完成，共获取 ${result.count || 0} 条数据`) }
     else ElMessage.error(result.message || '采集失败')
@@ -1608,7 +2052,7 @@ const runDataCollect = async (item) => {
 const deleteDataCollect = async (id) => {
   await ElMessageBox.confirm('确定删除该采集配置吗？', '提示', { type: 'warning' })
   try {
-    const res = await fetch(`${API_BASE}/dataCollect/${id}`, { method: 'DELETE' })
+    const res = await request(`${API_BASE}/dataCollect/${id}`, { method: 'DELETE' })
     const result = await res.json()
     if (result.code === 0) { ElMessage.success('删除成功'); loadDataCollects() }
     else ElMessage.error(result.message || '删除失败')
@@ -1617,7 +2061,7 @@ const deleteDataCollect = async (id) => {
 const viewCollectData = async (item) => {
   loading.value = true
   try {
-    const res = await fetch(`${API_BASE}/dataCollect/${item.id}/data`)
+    const res = await request(`${API_BASE}/dataCollect/${item.id}/data`)
     const result = await res.json()
     if (result.code === 0) {
       detailTitle.value = `采集数据 - ${item.name} (${result.count || 0}条)`
@@ -1645,7 +2089,7 @@ const saveDataParse = async () => {
   try {
     const url = editingDataParse.value ? `${API_BASE}/dataParse/${editingDataParse.value.id}` : `${API_BASE}/dataParse`
     const method = editingDataParse.value ? 'PUT' : 'POST'
-    const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dataParseForm) })
+    const res = await request(url, { method, body: JSON.stringify(dataParseForm) })
     const result = await res.json()
     if (result.code === 0) { ElMessage.success(editingDataParse.value ? '更新成功' : '创建成功'); dataParseDialogVisible.value = false; loadDataParses() }
     else ElMessage.error(result.message || '操作失败')
@@ -1654,7 +2098,7 @@ const saveDataParse = async () => {
 const runDataParse = async (item) => {
   loading.value = true
   try {
-    const res = await fetch(`${API_BASE}/dataParse/${item.id}/execute`, { method: 'POST' })
+    const res = await request(`${API_BASE}/dataParse/${item.id}/execute`, { method: 'POST' })
     const result = await res.json()
     if (result.success) { ElMessage.success(`解析完成，成功 ${result.successCount || 0}} 条，失败 ${result.failCount || 0} 条`) }
     else ElMessage.error(result.message || '解析失败')
@@ -1663,7 +2107,7 @@ const runDataParse = async (item) => {
 const deleteDataParse = async (id) => {
   await ElMessageBox.confirm('确定删除该解析配置吗？', '提示', { type: 'warning' })
   try {
-    const res = await fetch(`${API_BASE}/dataParse/${id}`, { method: 'DELETE' })
+    const res = await request(`${API_BASE}/dataParse/${id}`, { method: 'DELETE' })
     const result = await res.json()
     if (result.code === 0) { ElMessage.success('删除成功'); loadDataParses() }
     else ElMessage.error(result.message || '删除失败')
@@ -1682,7 +2126,7 @@ const saveDataProcess = async () => {
   try {
     const url = editingDataProcess.value ? `${API_BASE}/dataProcess/${editingDataProcess.value.id}` : `${API_BASE}/dataProcess`
     const method = editingDataProcess.value ? 'PUT' : 'POST'
-    const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dataProcessForm) })
+    const res = await request(url, { method, body: JSON.stringify(dataProcessForm) })
     const result = await res.json()
     if (result.code === 0) { ElMessage.success(editingDataProcess.value ? '更新成功' : '创建成功'); dataProcessDialogVisible.value = false; loadDataProcesses() }
     else ElMessage.error(result.message || '操作失败')
@@ -1691,7 +2135,7 @@ const saveDataProcess = async () => {
 const runDataProcess = async (item) => {
   loading.value = true
   try {
-    const res = await fetch(`${API_BASE}/dataProcess/${item.id}/execute`, { method: 'POST' })
+    const res = await request(`${API_BASE}/dataProcess/${item.id}/execute`, { method: 'POST' })
     const result = await res.json()
     if (result.success) { ElMessage.success(`加工完成，处理 ${result.count || 0} 条数据`) }
     else ElMessage.error(result.message || '加工失败')
@@ -1700,7 +2144,7 @@ const runDataProcess = async (item) => {
 const deleteDataProcess = async (id) => {
   await ElMessageBox.confirm('确定删除该加工配置吗？', '提示', { type: 'warning' })
   try {
-    const res = await fetch(`${API_BASE}/dataProcess/${id}`, { method: 'DELETE' })
+    const res = await request(`${API_BASE}/dataProcess/${id}`, { method: 'DELETE' })
     const result = await res.json()
     if (result.code === 0) { ElMessage.success('删除成功'); loadDataProcesses() }
     else ElMessage.error(result.message || '删除失败')
@@ -1719,7 +2163,7 @@ const saveDataQuery = async () => {
   try {
     const url = editingDataQuery.value ? `${API_BASE}/dataQuery/${editingDataQuery.value.id}` : `${API_BASE}/dataQuery`
     const method = editingDataQuery.value ? 'PUT' : 'POST'
-    const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dataQueryForm) })
+    const res = await request(url, { method, body: JSON.stringify(dataQueryForm) })
     const result = await res.json()
     if (result.code === 0) { ElMessage.success(editingDataQuery.value ? '更新成功' : '创建成功'); dataQueryDialogVisible.value = false; loadDataQueries() }
     else ElMessage.error(result.message || '操作失败')
@@ -1728,7 +2172,7 @@ const saveDataQuery = async () => {
 const runDataQuery = async (item) => {
   loading.value = true
   try {
-    const res = await fetch(`${API_BASE}/dataQuery/${item.id}/execute`, { method: 'POST' })
+    const res = await request(`${API_BASE}/dataQuery/${item.id}/execute`, { method: 'POST' })
     const result = await res.json()
     if (result.success) { 
       if (result.data && result.data.length > 0) {
@@ -1745,7 +2189,7 @@ const runDataQuery = async (item) => {
 const deleteDataQuery = async (id) => {
   await ElMessageBox.confirm('确定删除该查询配置吗？', '提示', { type: 'warning' })
   try {
-    const res = await fetch(`${API_BASE}/dataQuery/${id}`, { method: 'DELETE' })
+    const res = await request(`${API_BASE}/dataQuery/${id}`, { method: 'DELETE' })
     const result = await res.json()
     if (result.code === 0) { ElMessage.success('删除成功'); loadDataQueries() }
     else ElMessage.error(result.message || '删除失败')
@@ -1761,7 +2205,7 @@ const loadUserFromStorage = () => {
 const loadUsers = async () => {
   loading.value = true
   try {
-    const res = await fetch(`${API_BASE}/user`)
+    const res = await request(`${API_BASE}/user`)
     const result = await res.json()
     if (result.code === 0) users.value = result.data || []
   } catch { users.value = [{ id: 1, username: 'admin', realName: '系统管理员', email: 'admin@rpa.com', phone: '13800138001', role: 1, status: 1 }] }
@@ -1771,7 +2215,7 @@ const loadUsers = async () => {
 const loadTasks = async () => {
   loading.value = true
   try {
-    const res = await fetch(`${API_BASE}/task`)
+    const res = await request(`${API_BASE}/task`)
     const result = await res.json()
     if (result.code === 0) tasks.value = result.data || []
   } catch { tasks.value = [] }
@@ -1782,7 +2226,7 @@ const loadTasks = async () => {
 const loadRobots = async () => {
   loading.value = true
   try {
-    const res = await fetch(`${API_BASE}/robot`)
+    const res = await request(`${API_BASE}/robot`)
     const result = await res.json()
     if (result.code === 0) robots.value = result.data || []
   } catch { robots.value = [] }
@@ -1792,7 +2236,7 @@ const loadRobots = async () => {
 const loadProcesses = async () => {
   loading.value = true
   try {
-    const res = await fetch(`${API_BASE}/process`)
+    const res = await request(`${API_BASE}/process`)
     const result = await res.json()
     if (result.code === 0) processes.value = result.data || []
   } catch { processes.value = [] }
@@ -1802,54 +2246,17 @@ const loadProcesses = async () => {
 const loadLogs = async () => {
   loading.value = true
   try {
-    const res = await fetch(`${API_BASE}/log`)
+    const res = await request(`${API_BASE}/log`)
     const result = await res.json()
     if (result.code === 0) logs.value = result.data || []
   } catch { logs.value = [] }
   finally { loading.value = false }
 }
 
-const doDataQuery = async () => {
-  loading.value = true
-  try {
-    const params = new URLSearchParams()
-    if (queryFormData.keyword) params.append('keyword', queryFormData.keyword)
-    if (queryFormData.taskId) params.append('taskId', queryFormData.taskId)
-    if (queryFormData.taxAreaId) params.append('taxAreaId', queryFormData.taxAreaId)
-    if (queryFormData.dataStatus !== null) params.append('dataStatus', queryFormData.dataStatus)
-    if (queryFormData.startTime) params.append('startTime', new Date(queryFormData.startTime).toISOString())
-    if (queryFormData.endTime) params.append('endTime', new Date(queryFormData.endTime).toISOString())
-    const res = await fetch(`${API_BASE}/dataQuery/collectedData?${params.toString()}`)
-    const result = await res.json()
-    if (result.code === 0) {
-      queryResults.value = result.data || []
-      queryResultTotal.value = queryResults.value.length
-    }
-  } catch { ElMessage.error('查询失败') }
-  finally { loading.value = false }
-}
-
-const resetQueryForm = () => {
-  queryFormData.keyword = ''
-  queryFormData.taskId = ''
-  queryFormData.taxAreaId = ''
-  queryFormData.dataStatus = null
-  queryFormData.startTime = null
-  queryFormData.endTime = null
-  queryResults.value = []
-  queryResultTotal.value = 0
-}
-
-const viewQueryDataDetail = (row) => {
-  detailTitle.value = '数据详情'
-  detailContent.value = `<pre style="max-height:400px;overflow:auto;font-size:12px;">${JSON.stringify(row, null, 2)}</pre>`
-  detailDialogVisible.value = true
-}
-
 const loadDataCollects = async () => {
   loading.value = true
   try {
-    const res = await fetch(`${API_BASE}/dataCollect`)
+    const res = await request(`${API_BASE}/dataCollect`)
     const result = await res.json()
     if (result.code === 0) {
       dataCollects.value = result.data || []
@@ -1868,7 +2275,7 @@ const loadDataCollects = async () => {
 const loadDataParses = async () => {
   loading.value = true
   try {
-    const res = await fetch(`${API_BASE}/dataParse`)
+    const res = await request(`${API_BASE}/dataParse`)
     const result = await res.json()
     if (result.code === 0) {
       dataParses.value = result.data || []
@@ -1887,7 +2294,7 @@ const loadDataParses = async () => {
 const loadDataProcesses = async () => {
   loading.value = true
   try {
-    const res = await fetch(`${API_BASE}/dataProcess`)
+    const res = await request(`${API_BASE}/dataProcess`)
     const result = await res.json()
     if (result.code === 0) {
       dataProcesses.value = result.data || []
@@ -1906,7 +2313,7 @@ const loadDataProcesses = async () => {
 const loadDataQueries = async () => {
   loading.value = true
   try {
-    const res = await fetch(`${API_BASE}/dataQuery`)
+    const res = await request(`${API_BASE}/dataQuery`)
     const result = await res.json()
     if (result.code === 0) dataQueries.value = result.data || []
   } catch { dataQueries.value = [] }
@@ -2098,7 +2505,42 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
 
 .overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 99; }
 
+/* 通知管理 - 左右布局 */
+.notification-layout { display: flex; gap: 20px; max-width: 1400px; }
+.notification-sidebar { width: 240px; flex-shrink: 0; background: #fff; border-radius: 12px; padding: 16px; border: 1px solid #f0f0f0; }
+.notif-sidebar-header { padding-bottom: 12px; border-bottom: 1px solid #f0f0f0; margin-bottom: 12px; }
+.sidebar-title { font-size: 14px; font-weight: 600; color: #1a1a1a; }
+.notif-type-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+.notif-type-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; border: 2px solid transparent; cursor: pointer; transition: all .25s; background: #fafafa; }
+.notif-type-item:hover { border-color: #e6e6e6; }
+.notif-type-item.active { border-color: #1890ff; background: #f0f7ff; }
+.notif-type-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.collect-icon { background: linear-gradient(135deg, #e6f4ff, #bae0ff); color: #1890ff; }
+.temp-icon { background: linear-gradient(135deg, #fff7e6, #ffd591); color: #fa8c16; }
+.user-icon { background: linear-gradient(135deg, #f6ffed, #d9f7be); color: #52c41a; }
+.notif-type-info { flex: 1; }
+.notif-type-name { font-size: 13px; color: #262626; font-weight: 500; }
+.notif-type-count { font-size: 12px; color: #8c8c8c; margin-top: 2px; }
+.notif-unread-badge { background: #ff4d4f; color: #fff; font-size: 11px; font-weight: 600; padding: 2px 6px; border-radius: 10px; min-width: 18px; text-align: center; }
+.notif-filter-section { margin-bottom: 16px; }
+.filter-label { font-size: 13px; color: #8c8c8c; margin-bottom: 8px; }
+.notif-actions { display: flex; flex-direction: column; gap: 8px; }
+.notif-actions .el-button { width: 100%; }
+
+.notification-main { flex: 1; min-width: 0; }
+.notification-overview { background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 16px; border: 1px solid #f0f0f0; }
+.notif-chart-wrapper { }
+.notif-chart-title { font-size: 14px; font-weight: 600; color: #1a1a1a; margin-bottom: 8px; }
+.notif-echarts { width: 100%; height: 200px; }
+.notif-chart-empty { height: 200px; display: flex; align-items: center; justify-content: center; color: #8c8c8c; font-size: 14px; }
+.notif-list-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding: 0 4px; }
+.notif-list-header span:first-child { font-size: 14px; font-weight: 600; color: #1a1a1a; }
+.notif-total { font-size: 13px; color: #8c8c8c; font-weight: 400; }
+.notif-table { margin-bottom: 12px; }
+.notif-detail-content { font-size: 14px; color: #262626; line-height: 1.8; }
+.notif-detail-content p { margin: 8px 0; }
+
 /* 响应式 */
-@media (max-width: 1200px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } .charts-row { grid-template-columns: 1fr; } .status-row { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 1200px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } .charts-row { grid-template-columns: 1fr; } .status-row { grid-template-columns: repeat(2, 1fr); } .notification-layout { flex-direction: column; } .notification-sidebar { width: 100%; } }
 @media (max-width: 768px) { .main-nav { display: none; } .stats-grid { grid-template-columns: 1fr; } .status-row { grid-template-columns: repeat(2, 1fr); } }
 </style>

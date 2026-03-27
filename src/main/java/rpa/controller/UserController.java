@@ -1,8 +1,26 @@
 package rpa.controller;
 
+/**
+ * 用户管理控制器
+ * <p>
+ * 提供用户相关的RESTful API接口，包括：
+ * <ul>
+ *   <li>登录认证：支持用户名/手机号登录，返回JWT Token</li>
+ *   <li>用户CRUD：创建、查询、更新、删除用户</li>
+ *   <li>密码管理：修改密码、重置密码、密码重置验证码</li>
+ *   <li>头像管理：上传和获取用户头像</li>
+ * </ul>
+ * </p>
+ *
+ * @author RPA System
+ * @version 1.0.0
+ * @since 2024-01-01
+ */
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import rpa.config.JwtUtils;
 import rpa.entity.User;
 import rpa.service.UserService;
 import rpa.repository.UserRepository;
@@ -26,6 +44,7 @@ public class UserController {
 
     private final UserService userService;
     private final UserRepository userRepository;
+    private final JwtUtils jwtUtils;
 
     @PostMapping("/login")
     public Map<String, Object> login(@RequestBody Map<String, String> request) {
@@ -83,6 +102,12 @@ public class UserController {
             data.put("username", user.getUsername());
             data.put("realName", user.getRealName());
             data.put("role", user.getRole());
+            data.put("avatar", user.getAvatar());
+
+            // 生成JWT token
+            String token = jwtUtils.generateToken(user.getUsername(), user.getRole());
+            data.put("token", token);
+
             data.put("avatar", user.getAvatar()); // 返回头像信息
             data.put("status", user.getStatus()); // 返回用户状态
             response.put("data", data);
@@ -92,7 +117,7 @@ public class UserController {
             if (disabledUserOpt.isEmpty()) {
                 disabledUserOpt = userRepository.findByPhone(account);
             }
-            
+
             if (disabledUserOpt.isPresent() && disabledUserOpt.get().getStatus() == 0) {
                 response.put("code", -1);
                 response.put("message", "该账号已被禁用，请联系管理员");
@@ -130,14 +155,14 @@ public class UserController {
             Integer role = request.get("role") != null ? ((Number) request.get("role")).intValue() : null;
             Integer status = request.get("status") != null ? ((Number) request.get("status")).intValue() : null;
             String avatar = request.containsKey("avatar") ? (String) request.get("avatar") : null; // 支持清除头像
-            
+
             User user = userService.updateProfile(id, realName, email, phone);
             
             // 更新头像（包括设置为 null）
             if (request.containsKey("avatar")) {
                 userService.updateAvatar(id, avatar);
             }
-            
+
             // 更新角色
             if (role != null) {
                 user = userService.updateUserRole(id, role);

@@ -19,6 +19,30 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+/**
+ * 数据初始化配置类
+ * <p>
+ * 实现CommandLineRunner接口，在Spring Boot应用启动时执行初始化操作。
+ * 负责初始化系统的基础数据，包括：
+ * <ul>
+ *   <li>权限数据：系统菜单、按钮等权限定义</li>
+ *   <li>角色数据：管理员、运营人员、普通用户等角色</li>
+ *   <li>管理员账户：默认创建admin用户（密码：123456）</li>
+ * </ul>
+ * </p>
+ * <p>
+ * 初始化策略：
+ * <ul>
+ *   <li>幂等性检查：每次启动只初始化一次，已存在则跳过</li>
+ *   <li>异常处理：初始化失败不影响应用启动</li>
+ * </ul>
+ * </p>
+ *
+ * @author RPA System
+ * @version 1.0.0
+ * @since 2024-01-01
+ * @see CommandLineRunner
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -29,6 +53,19 @@ public class DataInitializer implements CommandLineRunner {
     private final PermissionRepository permissionRepository;
     private final PasswordEncoder passwordEncoder;
 
+    /**
+     * 应用启动时执行的初始化方法
+     * <p>
+     * 按顺序执行：
+     * <ol>
+     *   <li>initPermissions - 初始化权限数据</li>
+     *   <li>initRoles - 初始化角色数据</li>
+     *   <li>initAdminUser - 初始化管理员用户</li>
+     * </ol>
+     * </p>
+     *
+     * @param args 命令行参数
+     */
     @Override
     @Transactional
     public void run(String... args) {
@@ -37,6 +74,18 @@ public class DataInitializer implements CommandLineRunner {
         initAdminUser();
     }
 
+    /**
+     * 初始化权限数据
+     * <p>
+     * 创建系统所需的权限列表，包括：
+     * <ul>
+     *   <li>系统管理模块：用户管理、角色管理、资源管理</li>
+     *   <li>RPA运营模块：任务管理、机器人管理、流程管理、执行日志</li>
+     *   <li>数据管理模块：数据采集、数据解析、数据加工、数据查询</li>
+     * </ul>
+     * 每个权限包含名称、编码、类型、URL、排序和父子关系。
+     * </p>
+     */
     private void initPermissions() {
         // 检查是否已存在SYSTEM权限，如果存在则跳过
         Optional<Permission> existingSystem = permissionRepository.findById(1L);
@@ -86,6 +135,17 @@ public class DataInitializer implements CommandLineRunner {
         }
     }
 
+    /**
+     * 创建权限实体对象
+     *
+     * @param name 权限名称
+     * @param code 权限编码（唯一）
+     * @param type 权限类型（menu/button/api）
+     * @param url 权限对应的URL路径
+     * @param sort 排序号
+     * @param parentId 父权限ID
+     * @return Permission 权限实体
+     */
     private Permission createPermission(String name, String code, String type, String url, Integer sort, Long parentId) {
         Permission p = new Permission();
         p.setName(name);
@@ -98,6 +158,17 @@ public class DataInitializer implements CommandLineRunner {
         return p;
     }
 
+    /**
+     * 初始化角色数据
+     * <p>
+     * 创建系统默认的三个角色：
+     * <ul>
+     *   <li>ROLE_ADMIN (系统管理员)：拥有所有权限</li>
+     *   <li>ROLE_OPERATOR (运营人员)：拥有除用户、角色、资源管理外的所有权限</li>
+     *   <li>ROLE_USER (普通用户)：只拥有菜单访问权限</li>
+     * </ul>
+     * </p>
+     */
     private void initRoles() {
         // 检查是否已存在管理员角色
         Optional<Role> existingAdmin = roleRepository.findByCode("ROLE_ADMIN");
@@ -158,6 +229,19 @@ public class DataInitializer implements CommandLineRunner {
         }
     }
 
+    /**
+     * 初始化管理员用户
+     * <p>
+     * 创建或更新系统管理员账户：
+     * <ul>
+     *   <li>用户名：admin</li>
+     *   <li>密码：123456</li>
+     *   <li>角色：ROLE_ADMIN</li>
+     *   <li>状态：启用</li>
+     * </ul>
+     * 如果用户已存在，会检查密码是否已加密，未加密则更新为加密格式。
+     * </p>
+     */
     private void initAdminUser() {
         try {
             Optional<User> existingAdmin = userRepository.findByUsername("admin");

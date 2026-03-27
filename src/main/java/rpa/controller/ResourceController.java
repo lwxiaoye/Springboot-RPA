@@ -1,5 +1,16 @@
 package rpa.controller;
 
+/**
+ * 资源管理控制器
+ * <p>
+ * 提供资源相关的RESTful API接口，包括资源的CRUD操作。
+ * </p>
+ *
+ * @author RPA System
+ * @version 1.0.0
+ * @since 2024-01-01
+ */
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import rpa.service.ResourceService;

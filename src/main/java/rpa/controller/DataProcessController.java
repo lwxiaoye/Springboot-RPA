@@ -1,5 +1,20 @@
 package rpa.controller;
 
+/**
+ * 数据加工控制器
+ * <p>
+ * 提供数据加工相关的RESTful API接口，包括：
+ * <ul>
+ *   <li>加工配置管理：CRUD操作</li>
+ *   <li>执行加工：触发加工任务执行</li>
+ * </ul>
+ * </p>
+ *
+ * @author RPA System
+ * @version 1.0.0
+ * @since 2024-01-01
+ */
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import rpa.entity.DataProcess;
