@@ -91,25 +91,33 @@
       :close-on-click-modal="false"
     >
       <el-form :model="resetForm" label-width="80px" style="margin-top:20px">
-        <el-form-item label="用户名">
-          <el-input v-model="resetForm.username" placeholder="请输入用户名" />
+        <el-form-item label="手机号">
+          <el-input v-model="resetForm.phone" placeholder="请输入注册手机号" />
         </el-form-item>
         <el-form-item label="验证码">
           <div style="display:flex;gap:10px">
             <el-input
               v-model="resetForm.code"
-              placeholder="6位验证码"
+              placeholder="6 位验证码"
               style="flex:1"
+              maxlength="6"
             />
-            <el-button size="default" @click="getResetCode">获取验证码</el-button>
+            <el-button 
+              size="default" 
+              @click="getResetCode"
+              :disabled="!resetForm.phone || countdown > 0"
+            >
+              {{ countdown > 0 ? `${countdown}秒后重发` : '获取验证码' }}
+            </el-button>
           </div>
         </el-form-item>
         <el-form-item label="新密码">
           <el-input
             v-model="resetForm.newPassword"
             type="password"
-            placeholder="输入新密码（至少6位）"
+            placeholder="输入新密码（6-20 位）"
             show-password
+            maxlength="20"
           />
         </el-form-item>
       </el-form>
@@ -149,11 +157,12 @@ const passwordForm = reactive({
 // 忘记密码弹窗
 const forgetVisible = ref(false)
 const resetForm = reactive({
-  username: '',
+  phone: '',
   code: '',
   newPassword: ''
 })
 const resetCode = ref('')
+const countdown = ref(0) // 倒计时
 
 // 验证规则
 const passwordRules = {
@@ -255,27 +264,35 @@ const handlePasswordLogin = async () => {
 // 忘记密码 - 重置密码
 const openForget = () => {
   forgetVisible.value = true
-  resetForm.username = ''
+  resetForm.phone = ''
   resetForm.code = ''
   resetForm.newPassword = ''
+  countdown.value = 0
 }
 
 // 获取验证码
 const getResetCode = async () => {
-  if (!resetForm.username) {
-    ElMessage.warning('请输入用户名')
+  if (!resetForm.phone) {
+    ElMessage.warning('请输入手机号')
+    return
+  }
+
+  // 验证手机号格式
+  const phoneRegex = /^[0-9]{11}$/
+  if (!phoneRegex.test(resetForm.phone)) {
+    ElMessage.warning('请输入正确的 11 位手机号')
     return
   }
 
   try {
     // 调用后端发送验证码接口
-    const response = await fetch(`${API_BASE_URL}/user/send-code`, {
+    const response = await fetch(`${API_BASE_URL}/user/send-reset-code`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        username: resetForm.username
+        account: resetForm.phone
       })
     })
 
@@ -287,21 +304,27 @@ const getResetCode = async () => {
       if (result.data?.code) {
         resetCode.value = result.data.code
       }
+      // 开始倒计时
+      countdown.value = 60
+      const timer = setInterval(() => {
+        countdown.value--
+        if (countdown.value <= 0) {
+          clearInterval(timer)
+        }
+      }, 1000)
     } else {
       ElMessage.error(result.message || '发送验证码失败')
     }
   } catch (error) {
     console.error('发送验证码失败:', error)
-    // 演示模式：生成模拟验证码
-    resetCode.value = Math.floor(100000 + Math.random() * 900000).toString()
-    ElMessage.success(`验证码已发送（演示用：${resetCode.value}）`)
+    ElMessage.error('网络错误，请稍后重试')
   }
 }
 
 // 重置密码
 const resetPassword = async () => {
-  if (!resetForm.username) {
-    ElMessage.warning('请输入用户名')
+  if (!resetForm.phone) {
+    ElMessage.warning('请输入手机号')
     return
   }
   if (!resetForm.code) {
@@ -312,20 +335,21 @@ const resetPassword = async () => {
     ElMessage.error('验证码错误')
     return
   }
-  if (!resetForm.newPassword || resetForm.newPassword.length < 6) {
-    ElMessage.warning('新密码长度不能少于6位')
+  if (!resetForm.newPassword || resetForm.newPassword.length < 6 || resetForm.newPassword.length > 20) {
+    ElMessage.warning('新密码长度必须在 6-20 位之间')
     return
   }
 
   loading.value = true
   try {
-    const response = await fetch(`${API_BASE_URL}/user/reset-password`, {
+    // 调用后端重置密码接口
+    const response = await fetch(`${API_BASE_URL}/user/reset-password-by-code`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        username: resetForm.username,
+        account: resetForm.phone,
         code: resetForm.code,
         newPassword: resetForm.newPassword
       })

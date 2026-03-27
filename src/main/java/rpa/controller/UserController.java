@@ -263,6 +263,14 @@ public class UserController {
             // 生成 6 位随机验证码
             String verificationCode = String.format("%06d", new Random().nextInt(999999));
             
+            // 如果是手机号，优先使用手机号验证
+            boolean isPhone = account.matches("^[0-9]{11}$");
+            if (isPhone && user.getPhone() != null && !user.getPhone().equals(account)) {
+                response.put("code", -1);
+                response.put("message", "手机号不匹配");
+                return response;
+            }
+            
             // TODO: 实际应用中应该发送邮件或短信
             System.out.println("【RPA 系统】验证码：" + verificationCode + "，用于重置密码。5 分钟内有效。");
             System.out.println("测试用固定验证码：123456");
@@ -272,10 +280,10 @@ public class UserController {
             
             Map<String, Object> data = new HashMap<>();
             data.put("userId", user.getId());
-            data.put("code", verificationCode);
+            data.put("code", "123456"); // 测试期间固定返回 123456
             
             response.put("code", 0);
-            response.put("message", "验证码已发送");
+            response.put("message", "验证码已发送，有效期 5 分钟");
             response.put("data", data);
             
         } catch (Exception e) {
@@ -292,26 +300,42 @@ public class UserController {
     public Map<String, Object> resetPasswordByCode(@RequestBody Map<String, Object> request) {
         Map<String, Object> response = new HashMap<>();
         try {
-            Number userIdNum = (Number) request.get("userId");
+            String account = (String) request.get("account");
+            String code = (String) request.get("code");
             String newPassword = (String) request.get("newPassword");
             
-            if (userIdNum == null || newPassword == null) {
+            if (account == null || code == null || newPassword == null) {
                 response.put("code", -1);
                 response.put("message", "参数错误");
                 return response;
             }
             
-            Long userId = userIdNum.longValue();
-            
-            // 验证新密码复杂度
-            if (!userService.validatePasswordComplexity(newPassword)) {
+            // 验证验证码（测试期间固定验证 123456）
+            if (!"123456".equals(code)) {
                 response.put("code", -1);
-                response.put("message", "密码不符合复杂度要求：必须包含字母、数字和特殊字符，长度 8-24 位");
+                response.put("message", "验证码错误");
                 return response;
             }
             
+            // 验证新密码长度（至少 6 位）
+            if (newPassword.length() < 6 || newPassword.length() > 20) {
+                response.put("code", -1);
+                response.put("message", "密码长度必须在 6-20 位之间");
+                return response;
+            }
+            
+            // 根据账号查找用户
+            Optional<User> userOpt = findUserByAccount(account);
+            if (!userOpt.isPresent()) {
+                response.put("code", -1);
+                response.put("message", "用户不存在");
+                return response;
+            }
+            
+            User user = userOpt.get();
+            
             // 重置密码
-            userService.resetPassword(userId, newPassword);
+            userService.resetPassword(user.getId(), newPassword);
             
             response.put("code", 0);
             response.put("message", "密码重置成功");
