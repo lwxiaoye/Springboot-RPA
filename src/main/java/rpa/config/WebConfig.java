@@ -16,7 +16,10 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // 映射头像资源路径
+        // 映射头像资源路径 - 支持两种路径格式，确保前后端一致
+        registry.addResourceHandler("/user/avatar/image/**")
+                .addResourceLocations("file:uploads/avatars/");
+        // 兼容带 /api 前缀的访问
         registry.addResourceHandler("/api/user/avatar/image/**")
                 .addResourceLocations("file:uploads/avatars/");
     }

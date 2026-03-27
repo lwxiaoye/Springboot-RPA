@@ -1010,13 +1010,15 @@ const handleAvatarUpload = async (event) => {
   const file = event.target.files[0]
   if (!file) return
   
+  console.log('📤 准备上传头像:', file.name, '大小:', (file.size / 1024).toFixed(2), 'KB')
+  
   if (file.size > 2 * 1024 * 1024) {
     ElMessage.warning('头像大小不能超过 2MB')
     return
   }
   
   const formData = new FormData()
-  formData.append('avatar', file)  // 修改为 avatar 以匹配后端参数
+  formData.append('avatar', file)
   
   try {
     // 使用正确的 API 路径，包含用户 ID
@@ -1025,14 +1027,20 @@ const handleAvatarUpload = async (event) => {
       body: formData
     })
     const result = await res.json()
-    console.log('头像上传响应:', result)  // 添加日志便于调试
+    console.log('📥 头像上传响应:', result)
+    
     if (result.code === 0) {
-      // 从返回的数据中获取 imageUrl (已包含完整路径 /api/user/avatar/image/xxx)
+      // 从返回的数据中获取 imageUrl (已经是完整路径 /api/user/avatar/image/xxx)
       const imageUrl = result.data?.imageUrl || result.data
-      console.log('获取到的 imageUrl:', imageUrl)
+      console.log('✅ 获取到的 imageUrl:', imageUrl)
+      
       // 构建完整的头像 URL（需要加上后端服务器地址）
-      userAvatarUrl.value = `${API_BASE}${imageUrl.replace('/api', '')}`  // 去除重复的 /api
-      console.log('设置的头像 URL:', userAvatarUrl.value)
+      // API_BASE 通常是 http://localhost:8080/api
+      // imageUrl 是 /api/user/avatar/image/xxx
+      // 最终需要：http://localhost:8080/api/user/avatar/image/xxx
+      userAvatarUrl.value = `${API_BASE}${imageUrl.replace('/api', '')}`
+      console.log('✅ 设置的头像 URL:', userAvatarUrl.value)
+      
       currentUser.value.avatar = imageUrl
       localStorage.setItem('userInfo', JSON.stringify(currentUser.value))
       ElMessage.success('头像更新成功')
@@ -1042,10 +1050,13 @@ const handleAvatarUpload = async (event) => {
         window.location.reload()
       }, 1500)
     } else {
+      console.error('❌ 上传失败:', result.message)
       ElMessage.error(result.message || '上传失败')
     }
   } catch (error) {
-    console.error('头像上传错误:', error)
+    console.error('❌ 头像上传错误:', error)
+    ElMessage.error('上传失败，请检查网络连接')
+    
     // 如果上传失败，使用本地预览
     const reader = new FileReader()
     reader.onload = (e) => {
@@ -1066,10 +1077,10 @@ const loadUserFromStorage = () => {
         // avatar 存储的是 /api/user/avatar/image/xxx 格式
         // 需要构建完整的 URL：http://localhost:8080/api/user/avatar/image/xxx
         userAvatarUrl.value = `${API_BASE}${user.avatar.replace('/api', '')}`
-        console.log('从本地存储加载头像 URL:', userAvatarUrl.value)
+        console.log('✅ 从本地存储加载头像 URL:', userAvatarUrl.value)
       }
     } catch (e) {
-      console.error('解析本地存储失败:', e)
+      console.error('❌ 解析本地存储失败:', e)
     }
   }
   profileForm.realName = currentUser.value.realName
@@ -1306,10 +1317,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
 }
 
 .avatar-card .avatar-body {
-  padding: 30px 20px;
+  padding: 40px 20px;
   display: flex;
   justify-content: center;
   align-items: center;
+  background: linear-gradient(180deg, #fafafa 0%, #fff 100%);
 }
 
 .avatar-display {
@@ -1334,38 +1346,53 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
+  border: 3px solid #e6f4ff;
 }
 
 .avatar-large.has-avatar {
   background-color: #f0f0f0;
+  border-color: #1890ff;
 }
 
 .avatar-large:hover {
-  box-shadow: 0 8px 24px rgba(24, 144, 255, 0.4);
-  transform: scale(1.05);
+  box-shadow: 0 8px 24px rgba(24, 144, 255, 0.5), 0 0 0 4px rgba(24, 144, 255, 0.1);
+  transform: scale(1.05) rotate(2deg);
+  border-color: #40a9ff;
 }
 
 .upload-btn {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 16px;
-  background: #f5f7fa;
-  border: 1px dashed #d9d9d9;
-  border-radius: 8px;
+  padding: 10px 18px;
+  background: linear-gradient(135deg, #f5f7fa, #fff);
+  border: 2px dashed #d9d9d9;
+  border-radius: 10px;
   color: #595961;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   font-size: 13px;
+  font-weight: 500;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .upload-btn:hover {
-  background: #e6f4ff;
+  background: linear-gradient(135deg, #e6f4ff, #f0f4ff);
   border-color: #1890ff;
   color: #1890ff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(24, 144, 255, 0.2);
+}
+
+.upload-btn svg {
+  transition: transform 0.3s ease;
+}
+
+.upload-btn:hover svg {
+  transform: scale(1.1) rotate(-5deg);
 }
 
 /* 信息列表 */

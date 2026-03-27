@@ -13,6 +13,7 @@ import java.util.Random;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -437,7 +438,10 @@ public class UserController {
                                             @RequestParam("avatar") MultipartFile file) {
         Map<String, Object> response = new HashMap<>();
         
+        System.out.println("📥 收到头像上传请求：userId=" + id + ", fileName=" + file.getOriginalFilename());
+        
         if (file.isEmpty()) {
+            System.err.println("❌ 上传的文件为空");
             response.put("code", -1);
             response.put("message", "请选择文件");
             return response;
@@ -445,6 +449,7 @@ public class UserController {
         
         // 检查文件大小（2MB）
         if (file.getSize() > 2 * 1024 * 1024) {
+            System.err.println("❌ 文件大小超过限制：" + file.getSize() + " bytes");
             response.put("code", -1);
             response.put("message", "文件大小不能超过 2MB");
             return response;
@@ -453,6 +458,7 @@ public class UserController {
         // 检查文件类型
         String contentType = file.getContentType();
         if (contentType == null || !contentType.startsWith("image/")) {
+            System.err.println("❌ 文件类型不支持：" + contentType);
             response.put("code", -1);
             response.put("message", "只支持图片文件");
             return response;
@@ -461,17 +467,22 @@ public class UserController {
         try {
             // 保存到本地文件系统
             String fileName = saveAvatarFile(file, id);
+            System.out.println("✅ 头像文件已保存：" + fileName);
             
             // 更新用户信息
-            userService.updateAvatar(id, "/api/user/avatar/image/" + fileName);
+            String avatarPath = "/api/user/avatar/image/" + fileName;
+            userService.updateAvatar(id, avatarPath);
+            System.out.println("✅ 用户头像已更新：userId=" + id + ", path=" + avatarPath);
             
             response.put("code", 0);
             response.put("message", "头像上传成功");
             Map<String, String> data = new HashMap<>();
-            data.put("imageUrl", "/user/avatar/image/" + fileName);  // 返回相对路径，由前端拼接 API_BASE
+            data.put("imageUrl", avatarPath);  // 返回完整的 API 路径
             response.put("data", data);
             
         } catch (IOException e) {
+            System.err.println("❌ 上传失败：" + e.getMessage());
+            e.printStackTrace();
             response.put("code", -1);
             response.put("message", "上传失败：" + e.getMessage());
         }
@@ -492,10 +503,13 @@ public class UserController {
      * 保存头像文件到本地
      */
     private String saveAvatarFile(MultipartFile file, Long userId) throws IOException {
-        // 创建上传目录
-        Path uploadPath = Paths.get("uploads/avatars");
+        // 使用绝对路径，避免相对路径问题
+        String uploadDir = System.getProperty("user.dir") + File.separator + "uploads" + File.separator + "avatars";
+        Path uploadPath = Paths.get(uploadDir);
+        
         if (!Files.exists(uploadPath)) {
             Files.createDirectories(uploadPath);
+            System.out.println("✅ 创建上传目录：" + uploadDir);
         }
         
         // 生成文件名：userId_timestamp.ext
