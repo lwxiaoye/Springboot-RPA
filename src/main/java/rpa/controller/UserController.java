@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import rpa.entity.User;
 import rpa.service.UserService;
+import rpa.repository.UserRepository;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -23,6 +24,7 @@ import java.time.format.DateTimeFormatter;
 public class UserController {
 
     private final UserService userService;
+    private final UserRepository userRepository;
 
     @PostMapping("/login")
     public Map<String, Object> login(@RequestBody Map<String, String> request) {
@@ -81,10 +83,22 @@ public class UserController {
             data.put("realName", user.getRealName());
             data.put("role", user.getRole());
             data.put("avatar", user.getAvatar()); // 返回头像信息
+            data.put("status", user.getStatus()); // 返回用户状态
             response.put("data", data);
         } else {
-            response.put("code", -1);
-            response.put("message", "用户名/手机号或密码错误");
+            // 检查用户是否存在但被禁用
+            Optional<User> disabledUserOpt = userRepository.findByUsername(account);
+            if (disabledUserOpt.isEmpty()) {
+                disabledUserOpt = userRepository.findByPhone(account);
+            }
+            
+            if (disabledUserOpt.isPresent() && disabledUserOpt.get().getStatus() == 0) {
+                response.put("code", -1);
+                response.put("message", "该账号已被禁用，请联系管理员");
+            } else {
+                response.put("code", -1);
+                response.put("message", "用户名/手机号或密码错误");
+            }
         }
         return response;
     }
@@ -114,8 +128,14 @@ public class UserController {
             String phone = (String) request.get("phone");
             Integer role = request.get("role") != null ? ((Number) request.get("role")).intValue() : null;
             Integer status = request.get("status") != null ? ((Number) request.get("status")).intValue() : null;
+            String avatar = request.containsKey("avatar") ? (String) request.get("avatar") : null; // 支持清除头像
             
             User user = userService.updateProfile(id, realName, email, phone);
+            
+            // 更新头像（包括设置为 null）
+            if (request.containsKey("avatar")) {
+                userService.updateAvatar(id, avatar);
+            }
             
             // 更新角色
             if (role != null) {
@@ -418,15 +438,14 @@ public class UserController {
         try {
             // 保存到本地文件系统
             String fileName = saveAvatarFile(file, id);
-            String imageUrl = "/api/user/avatar/image/" + fileName;
             
             // 更新用户信息
-            userService.updateAvatar(id, imageUrl);
+            userService.updateAvatar(id, "/api/user/avatar/image/" + fileName);
             
             response.put("code", 0);
             response.put("message", "头像上传成功");
             Map<String, String> data = new HashMap<>();
-            data.put("imageUrl", imageUrl);
+            data.put("imageUrl", "/user/avatar/image/" + fileName);  // 返回相对路径，由前端拼接 API_BASE
             response.put("data", data);
             
         } catch (IOException e) {

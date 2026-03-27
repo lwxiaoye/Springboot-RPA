@@ -83,53 +83,98 @@
         <div v-if="activeMenu === 'profile'" class="content-panel">
           <div class="panel-header">
             <div class="header-info">
-              <h2>个人信息</h2>
+              <h2>个人中心</h2>
               <p>管理您的个人账户信息和安全设置</p>
+            </div>
+            <div class="header-actions">
+              <el-button type="danger" @click="handleLogout" class="logout-btn">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
+                退出登录
+              </el-button>
             </div>
           </div>
 
           <div class="profile-content">
-            <div class="profile-card main-card">
-              <div class="card-header">
-                <span>基本信息</span>
-                <el-button type="primary" @click="editProfileVisible = true">
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
-                  编辑信息
-                </el-button>
+            <!-- 左侧信息卡片 -->
+            <div class="profile-left">
+              <!-- 用户头像卡片 -->
+              <div class="profile-card avatar-card">
+                <div class="avatar-header">
+                  <span>我的头像</span>
+                </div>
+                <div class="avatar-body">
+                  <div class="avatar-display">
+                    <div class="avatar-large" :class="{ 'has-avatar': userAvatarUrl }" :style="userAvatarUrl ? { backgroundImage: `url(${userAvatarUrl})` } : {}">
+                      <span v-if="!userAvatarUrl">{{ userInitials }}</span>
+                      <img v-else :src="userAvatarUrl" :alt="currentUser.realName || currentUser.username" @error="handleAvatarError" style="display: none;" />
+                    </div>
+                    <label class="upload-btn">
+                      <input type="file" accept="image/*" @change="handleAvatarUpload" style="display: none;" />
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></svg>
+                      <span>更换头像</span>
+                    </label>
+                  </div>
+                </div>
               </div>
-              <div class="card-body">
-                <div class="info-grid">
-                  <div class="info-row">
-                    <div class="info-item">
-                      <label>用户名</label>
+
+              <!-- 基本信息卡片 -->
+              <div class="profile-card main-card">
+                <div class="card-header">
+                  <div class="header-title">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                    <span>基本信息</span>
+                  </div>
+                  <el-button type="primary" @click="editProfileVisible = true" class="edit-btn">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                    编辑
+                  </el-button>
+                </div>
+                <div class="card-body">
+                  <div class="info-list">
+                    <div class="info-item-row">
+                      <div class="info-label">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                        <span>用户名</span>
+                      </div>
                       <div class="info-value">{{ currentUser.username }}</div>
                     </div>
-                    <div class="info-item">
-                      <label>真实姓名</label>
+                    <div class="info-item-row">
+                      <div class="info-label">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                        <span>真实姓名</span>
+                      </div>
                       <div class="info-value">{{ currentUser.realName || '-' }}</div>
                     </div>
-                  </div>
-                  <div class="info-row">
-                    <div class="info-item">
-                      <label>邮箱</label>
+                    <div class="info-item-row">
+                      <div class="info-label">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+                        <span>邮箱</span>
+                      </div>
                       <div class="info-value">{{ currentUser.email || '-' }}</div>
                     </div>
-                    <div class="info-item">
-                      <label>手机号</label>
+                    <div class="info-item-row">
+                      <div class="info-label">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M17.71 7.71L12 2h-1v7.59L6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 11 14.41V22h1l5.71-5.71-4.3-4.29 4.3-4.29zM13 5.83l1.88 1.88L13 9.59V5.83zm1.88 10.46L13 18.17v-3.76l1.88 1.88z"/></svg>
+                        <span>手机号</span>
+                      </div>
                       <div class="info-value">{{ currentUser.phone || '-' }}</div>
                     </div>
-                  </div>
-                  <div class="info-row">
-                    <div class="info-item">
-                      <label>角色</label>
+                    <div class="info-item-row">
+                      <div class="info-label">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12.65 10A5.99 5.99 0 0 0 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6a5.99 5.99 0 0 0 5.65-4H17v4h4v-4h2v-4H12.65zM7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg>
+                        <span>角色</span>
+                      </div>
                       <div class="info-value">
-                        <el-tag size="small" :type="currentUser.role === 1 ? 'danger' : 'default'">
+                        <el-tag size="small" :type="currentUser.role === 1 ? 'danger' : 'default'" class="role-tag">
                           {{ getRoleText(currentUser.role) }}
                         </el-tag>
                       </div>
                     </div>
-                    <div class="info-item">
-                      <label>创建时间</label>
+                    <div class="info-item-row">
+                      <div class="info-label">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+                        <span>注册时间</span>
+                      </div>
                       <div class="info-value">{{ formatDate(currentUser.createTime) }}</div>
                     </div>
                   </div>
@@ -137,24 +182,52 @@
               </div>
             </div>
 
-            <div class="profile-card security-card">
-              <div class="card-header">
-                <span>账户安全</span>
-              </div>
-              <div class="card-body">
-                <div class="security-item" @click="passwordVisible = true">
-                  <div class="security-left">
-                    <div class="security-icon">
-                      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
-                    </div>
-                    <div class="security-text">
-                      <span class="security-title">登录密码</span>
-                      <span class="security-desc">定期更换密码可以保护账户安全</span>
+            <!-- 右侧安全卡片 -->
+            <div class="profile-right">
+              <div class="profile-card security-card">
+                <div class="card-header">
+                  <div class="header-title">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+                    <span>账户安全</span>
+                  </div>
+                </div>
+                <div class="card-body">
+                  <div class="security-items">
+                    <div class="security-item" @click="passwordVisible = true">
+                      <div class="security-icon">
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+                      </div>
+                      <div class="security-content">
+                        <div class="security-title">登录密码</div>
+                        <div class="security-desc">定期更换密码可以保护账户安全</div>
+                      </div>
+                      <div class="security-action">
+                        <span>修改</span>
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
+                      </div>
                     </div>
                   </div>
-                  <div class="security-action">
-                    <span>修改</span>
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
+                </div>
+              </div>
+
+              <!-- 账户统计 -->
+              <div class="profile-card stats-card">
+                <div class="card-header">
+                  <div class="header-title">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
+                    <span>账户统计</span>
+                  </div>
+                </div>
+                <div class="card-body">
+                  <div class="stats-grid">
+                    <div class="stat-box">
+                      <div class="stat-number">{{ accountAge }}</div>
+                      <div class="stat-label">账户天数</div>
+                    </div>
+                    <div class="stat-box">
+                      <div class="stat-number">{{ lastLoginDays }}</div>
+                      <div class="stat-label">最后登录</div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -199,8 +272,24 @@
                 <el-tag size="small" :type="row.status === 1 ? 'success' : 'danger'">{{ row.status === 1 ? '正常' : '禁用' }}</el-tag>
               </template>
             </el-table-column>
-            <el-table-column label="操作" width="120" align="center">
+            <el-table-column label="操作" width="200" align="center">
               <template #default="{ row }">
+                <el-button 
+                  v-if="row.status === 1" 
+                  link 
+                  type="warning" 
+                  @click="toggleUserStatus(row)"
+                >
+                  禁用
+                </el-button>
+                <el-button 
+                  v-else 
+                  link 
+                  type="success" 
+                  @click="toggleUserStatus(row)"
+                >
+                  启用
+                </el-button>
                 <el-button link type="primary" @click="openUserDialog(row)">编辑</el-button>
                 <el-button link type="danger" @click="deleteUser(row.id)">删除</el-button>
               </template>
@@ -494,6 +583,9 @@ const currentUser = ref({
 const profileForm = reactive({ realName: '', email: '', phone: '' })
 const passwordForm = reactive({ oldPassword: '', newPassword: '', confirmPassword: '' })
 const userForm = reactive({ username: '', realName: '', email: '', phone: '', role: 0 })
+
+// 头像相关
+const userAvatarUrl = ref('')
 
 // 用户列表
 const users = ref([])
@@ -871,17 +963,148 @@ const changePassword = async () => {
   }
 }
 
+// 账户统计
+const accountAge = computed(() => {
+  if (!currentUser.value.createTime) return '0'
+  const days = Math.floor((new Date() - new Date(currentUser.value.createTime)) / (1000 * 60 * 60 * 24))
+  return days > 0 ? days : '0'
+})
+
+const lastLoginDays = ref('今天')
+
+// 处理头像上传失败
+const handleAvatarError = async (event) => {
+  const imgElement = event.target
+  const failedSrc = imgElement.src
+  console.error('❌ 头像图片加载失败:')
+  console.error('  - 请求的 URL:', failedSrc)
+  console.error('  - 错误事件:', event)
+  
+  // 检查是否是文件不存在的问题
+  if (failedSrc.includes('/api/user/avatar/image/')) {
+    console.warn('⚠️ 头像文件可能不存在，尝试清除数据库中的无效记录...')
+    
+    // 清除本地存储中的头像信息
+    userAvatarUrl.value = ''
+    currentUser.value.avatar = null
+    localStorage.setItem('userInfo', JSON.stringify(currentUser.value))
+    
+    // 调用后端 API 清除数据库中的头像路径
+    try {
+      await fetch(`${API_BASE}/user/${currentUser.value.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ avatar: null })
+      })
+      console.log('✅ 已清除数据库中的无效头像路径')
+    } catch (error) {
+      console.error('清除数据库头像路径失败:', error)
+    }
+    
+    ElMessage.warning('头像文件不存在，已恢复默认头像')
+  }
+}
+
+// 处理头像上传
+const handleAvatarUpload = async (event) => {
+  const file = event.target.files[0]
+  if (!file) return
+  
+  if (file.size > 2 * 1024 * 1024) {
+    ElMessage.warning('头像大小不能超过 2MB')
+    return
+  }
+  
+  const formData = new FormData()
+  formData.append('avatar', file)  // 修改为 avatar 以匹配后端参数
+  
+  try {
+    // 使用正确的 API 路径，包含用户 ID
+    const res = await fetch(`${API_BASE}/user/avatar/${currentUser.value.id}`, {
+      method: 'POST',
+      body: formData
+    })
+    const result = await res.json()
+    console.log('头像上传响应:', result)  // 添加日志便于调试
+    if (result.code === 0) {
+      // 从返回的数据中获取 imageUrl (已包含完整路径 /api/user/avatar/image/xxx)
+      const imageUrl = result.data?.imageUrl || result.data
+      console.log('获取到的 imageUrl:', imageUrl)
+      // 构建完整的头像 URL（需要加上后端服务器地址）
+      userAvatarUrl.value = `${API_BASE}${imageUrl.replace('/api', '')}`  // 去除重复的 /api
+      console.log('设置的头像 URL:', userAvatarUrl.value)
+      currentUser.value.avatar = imageUrl
+      localStorage.setItem('userInfo', JSON.stringify(currentUser.value))
+      ElMessage.success('头像更新成功')
+      
+      // 延迟刷新页面，确保数据库已更新
+      setTimeout(() => {
+        window.location.reload()
+      }, 1500)
+    } else {
+      ElMessage.error(result.message || '上传失败')
+    }
+  } catch (error) {
+    console.error('头像上传错误:', error)
+    // 如果上传失败，使用本地预览
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      userAvatarUrl.value = e.target.result
+      ElMessage.warning('头像上传失败，已使用本地预览')
+    }
+    reader.readAsDataURL(file)
+  }
+}
+
 const loadUserFromStorage = () => {
   const userStr = localStorage.getItem('userInfo')
   if (userStr) {
     try {
       const user = JSON.parse(userStr)
       currentUser.value = { ...currentUser.value, ...user }
-    } catch {}
+      if (user.avatar) {
+        // avatar 存储的是 /api/user/avatar/image/xxx 格式
+        // 需要构建完整的 URL：http://localhost:8080/api/user/avatar/image/xxx
+        userAvatarUrl.value = `${API_BASE}${user.avatar.replace('/api', '')}`
+        console.log('从本地存储加载头像 URL:', userAvatarUrl.value)
+      }
+    } catch (e) {
+      console.error('解析本地存储失败:', e)
+    }
   }
   profileForm.realName = currentUser.value.realName
   profileForm.email = currentUser.value.email
   profileForm.phone = currentUser.value.phone
+}
+
+// 切换用户状态
+const toggleUserStatus = async (user) => {
+  const newStatus = user.status === 1 ? 0 : 1
+  
+  try {
+    const res = await fetch(`${API_BASE}/user/${user.id}/status`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: newStatus })
+    })
+    
+    const result = await res.json()
+    
+    if (result.code === 0) {
+      ElMessage.success(`用户已${newStatus === 1 ? '启用' : '禁用'}`)
+      // 更新本地数据
+      user.status = newStatus
+    } else {
+      // 恢复原状态
+      user.status = newStatus === 1 ? 0 : 1
+      ElMessage.error(result.message || '操作失败')
+    }
+  } catch (error) {
+    console.error('切换用户状态错误:', error)
+    // 恢复原状态
+    user.status = newStatus === 1 ? 0 : 1
+    ElMessage.error('网络错误，请重试')
+  }
 }
 
 onMounted(() => {
@@ -956,30 +1179,347 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
 .content-panel { animation: fadeIn .3s ease; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-.panel-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; }
-.header-info h2 { font-size: 20px; font-weight: 600; color: #1a1a1a; margin-bottom: 4px; }
-.header-info p { font-size: 13px; color: #8c8c8c; }
+.panel-header { 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.header-info h2 { 
+  font-size: 24px; 
+  font-weight: 600; 
+  color: #1a1a1a; 
+  margin-bottom: 4px;
+}
+
+.header-info p { 
+  font-size: 14px; 
+  color: #8c8c8c;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  height: auto;
+  font-size: 14px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #ff4d4f, #e64545);
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(255, 77, 79, 0.2);
+}
+
+.logout-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 77, 79, 0.3);
+}
 
 /* 个人信息卡片 */
-.profile-content { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; }
-.profile-card { background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.04); border: 1px solid #f0f0f0; overflow: hidden; }
-.card-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #f0f0f0; font-size: 15px; font-weight: 600; color: #1a1a1a; }
-.card-header .el-button { display: flex; align-items: center; gap: 6px; }
-.card-body { padding: 20px; }
-.info-grid { display: flex; flex-direction: column; gap: 20px; }
-.info-row { display: flex; gap: 40px; }
-.info-item { flex: 1; }
-.info-item label { display: block; font-size: 12px; color: #8c8c8c; margin-bottom: 6px; }
-.info-item .info-value { font-size: 14px; color: #262626; font-weight: 500; padding: 8px 12px; background: #fafafa; border-radius: 6px; }
+.profile-content {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 20px;
+}
+
+.profile-left {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.profile-right {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.profile-card {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+  border: 1px solid #f0f0f0;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.profile-card:hover {
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+  transform: translateY(-2px);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a1a1a;
+  background: #fafafa;
+}
+
+.header-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-title svg {
+  color: #1890ff;
+}
+
+.card-header .edit-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  font-size: 13px;
+  height: auto;
+}
+
+.card-body {
+  padding: 20px;
+}
+
+/* 头像卡片 */
+.avatar-card .avatar-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a1a1a;
+  background: linear-gradient(to right, #fafafa, #fff);
+}
+
+.avatar-card .avatar-body {
+  padding: 30px 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.avatar-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.avatar-large {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1890ff, #0050b3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 48px;
+  font-weight: 700;
+  box-shadow: 0 4px 16px rgba(24, 144, 255, 0.3);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.avatar-large.has-avatar {
+  background-color: #f0f0f0;
+}
+
+.avatar-large:hover {
+  box-shadow: 0 8px 24px rgba(24, 144, 255, 0.4);
+  transform: scale(1.05);
+}
+
+.upload-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: #f5f7fa;
+  border: 1px dashed #d9d9d9;
+  border-radius: 8px;
+  color: #595961;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 13px;
+}
+
+.upload-btn:hover {
+  background: #e6f4ff;
+  border-color: #1890ff;
+  color: #1890ff;
+}
+
+/* 信息列表 */
+.info-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.info-item-row {
+  display: flex;
+  align-items: center;
+  padding: 14px 18px;
+  background: #fafafa;
+  border-radius: 8px;
+  transition: all 0.2s;
+  margin-bottom: 8px;
+}
+
+.info-item-row:hover {
+  background: linear-gradient(135deg, #f0f4ff, #fafafa);
+  transform: translateX(2px);
+}
+
+.info-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 120px;
+  font-size: 13px;
+  color: #8c8c8c;
+}
+
+.info-label svg {
+  color: #1890ff;
+  flex-shrink: 0;
+}
+
+.info-value {
+  flex: 1;
+  font-size: 14px;
+  color: #262626;
+  font-weight: 500;
+}
+
+.role-tag {
+  font-weight: 500;
+}
 
 /* 安全设置 */
-.security-item { display: flex; justify-content: space-between; align-items: center; padding: 16px; background: #fafafa; border-radius: 10px; cursor: pointer; transition: all .2s; }
-.security-item:hover { background: #f0f4ff; }
-.security-left { display: flex; align-items: center; gap: 16px; }
-.security-icon { width: 44px; height: 44px; background: linear-gradient(135deg, #1890ff, #0050b3); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #fff; }
-.security-title { font-size: 14px; font-weight: 500; color: #262626; display: block; margin-bottom: 4px; }
-.security-desc { font-size: 12px; color: #8c8c8c; }
-.security-action { display: flex; align-items: center; gap: 4px; font-size: 13px; color: #1890ff; }
+.security-items {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.security-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px;
+  background: #fafafa;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+  border: 1px solid #f0f0f0;
+}
+
+.security-item:hover {
+  background: linear-gradient(135deg, #f0f4ff, #fafafa);
+  border-color: #bae7ff;
+  transform: translateX(4px);
+  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.1);
+}
+
+.security-icon {
+  width: 50px;
+  height: 50px;
+  background: linear-gradient(135deg, #1890ff, #0050b3);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(24, 144, 255, 0.25);
+}
+
+.security-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.security-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #262626;
+  margin-bottom: 4px;
+}
+
+.security-desc {
+  font-size: 12px;
+  color: #8c8c8c;
+}
+
+.security-action {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: #1890ff;
+  font-weight: 500;
+}
+
+/* 统计卡片 */
+.stats-card .card-header {
+  background: linear-gradient(to right, #fafafa, #fff);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.stat-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  background: linear-gradient(135deg, #f5f7fa, #fff);
+  border-radius: 12px;
+  border: 1px solid #f0f0f0;
+  transition: all 0.3s;
+}
+
+.stat-box:hover {
+  background: linear-gradient(135deg, #e6f4ff, #f0f4ff);
+  border-color: #bae7ff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(24, 144, 255, 0.1);
+}
+
+.stat-number {
+  font-size: 32px;
+  font-weight: 700;
+  color: #1890ff;
+  margin-bottom: 6px;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: #8c8c8c;
+}
 
 /* 工具栏 */
 .toolbar { display: flex; gap: 12px; margin-bottom: 16px; }
@@ -1050,6 +1590,27 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
 .dropdown-enter-from, .dropdown-leave-to { opacity: 0; transform: translateY(-8px); }
 
 /* 响应式 */
-@media (max-width: 1200px) { .profile-content { grid-template-columns: 1fr; } .role-grid { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 768px) { .sidebar { width: 180px; } .role-grid { grid-template-columns: 1fr; } }
+@media (max-width: 1200px) {
+  .profile-content {
+    grid-template-columns: 1fr;
+  }
+  .profile-right {
+    order: -1;
+  }
+  .role-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: 180px;
+  }
+  .role-grid {
+    grid-template-columns: 1fr;
+  }
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
 </style>

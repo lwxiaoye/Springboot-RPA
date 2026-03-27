@@ -21,8 +21,13 @@ public class UserService {
         return userRepository.findByUsername(account)
                 .or(() -> userRepository.findByPhone(account))
                 .filter(user -> {
+                    // 检查用户状态，禁用的用户无法登录
+                    if (user.getStatus() != null && user.getStatus() == 0) {
+                        return false;
+                    }
+                        
                     String storedPassword = user.getPassword();
-                    // 兼容处理：如果密码是BCrypt加密则验证加密，否则直接比较明文
+                    // 兼容处理：如果密码是 BCrypt 加密则验证加密，否则直接比较明文
                     if (storedPassword.startsWith("$2")) {
                         return passwordEncoder.matches(password, storedPassword);
                     } else {

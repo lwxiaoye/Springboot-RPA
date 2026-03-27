@@ -199,31 +199,33 @@ const handlePasswordLogin = async () => {
       if (result.code === 0) {
         // 登录成功
         ElMessage.success(result.message || '登录成功！')
-
+      
         // 保存用户信息到本地存储
         const userInfo = {
           id: result.data?.id,
           username: result.data?.username,
           realName: result.data?.realName,
           role: result.data?.role,
+          status: result.data?.status,  // 保存用户状态
+          avatar: result.data?.avatar,  // 保存头像信息
           loginTime: new Date().toISOString()
         }
         localStorage.setItem('userInfo', JSON.stringify(userInfo))
-
-        // 保存token
+      
+        // 保存 token
         if (result.data?.token) {
           localStorage.setItem('token', result.data.token)
         }
-
+      
         if (rememberMe.value) {
           localStorage.setItem('rememberedUser', passwordForm.username)
         } else {
           localStorage.removeItem('rememberedUser')
         }
-
+      
         // 重置失败计数
         loginFailCount.value = 0
-
+      
         // 跳转到管理后台页面
         router.push('/layout')
       } else {
