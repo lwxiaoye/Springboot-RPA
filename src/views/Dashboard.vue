@@ -110,275 +110,145 @@
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column label="操作" width="280">
-              <template #default="{ row }">
-                <el-button size="small" @click="editUser(row)">编辑</el-button>
-                <el-button size="small" :type="row.status === 1 ? 'warning' : 'success'" @click="toggleUserStatus(row)">
-                  {{ row.status === 1 ? '禁用' : '启用' }}
-                </el-button>
-                <el-button size="small" type="danger" @click="deleteUser(row.id)">删除</el-button>
-              </template>
-            </el-table-column>
-          </el-table>
-        </div>
-
-        <!-- 任务管理 -->
-        <div v-if="activeMenu === 'tasks'" class="content-section">
-          <div class="section-header">
-            <h2 class="section-title">任务管理</h2>
-          </div>
-          <el-table :data="tasks" style="width: 100%">
-            <el-table-column prop="id" label="ID" width="80" />
-            <el-table-column prop="name" label="任务名称" />
-            <el-table-column prop="status" label="状态">
-              <template #default="{ row }">
-                <el-tag :type="getStatusType(row.status)">{{ getStatusText(row.status) }}</el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column prop="createTime" label="创建时间" />
-            <el-table-column label="操作" width="150">
-              <template #default="{ row }">
-                <el-button size="small">查看</el-button>
-                <el-button size="small" type="primary">编辑</el-button>
-              </template>
-            </el-table-column>
-          </el-table>
-        </div>
-
-        <!-- 机器人管理 -->
-        <div v-if="activeMenu === 'robots'" class="content-section">
-          <div class="section-header">
-            <h2 class="section-title">机器人管理</h2>
-          </div>
-          <el-table :data="robots" style="width: 100%">
-            <el-table-column prop="id" label="ID" width="80" />
-            <el-table-column prop="name" label="机器人名称" />
-            <el-table-column prop="status" label="状态">
-              <template #default="{ row }">
-                <el-tag :type="getStatusType(row.status)">{{ getStatusText(row.status) }}</el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column prop="ip" label="IP地址" />
-            <el-table-column prop="createTime" label="创建时间" />
-            <el-table-column label="操作" width="150">
-              <template #default="{ row }">
-                <el-button size="small">查看</el-button>
-                <el-button size="small" type="primary">管理</el-button>
-              </template>
-            </el-table-column>
-          </el-table>
-        </div>
-
-        <!-- 流程管理 -->
-        <div v-if="activeMenu === 'processes'" class="content-section">
-          <div class="section-header">
-            <h2 class="section-title">流程管理</h2>
-          </div>
-          <el-table :data="processes" style="width: 100%">
-            <el-table-column prop="id" label="ID" width="80" />
-            <el-table-column prop="name" label="流程名称" />
-            <el-table-column prop="version" label="版本" width="100" />
-            <el-table-column prop="status" label="状态">
-              <template #default="{ row }">
-                <el-tag :type="getStatusType(row.status)">{{ getStatusText(row.status) }}</el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column prop="createTime" label="创建时间" />
-            <el-table-column label="操作" width="150">
-              <template #default="{ row }">
-                <el-button size="small">查看</el-button>
-                <el-button size="small" type="primary">编辑</el-button>
-              </template>
-            </el-table-column>
-          </el-table>
-        </div>
-
-        <!-- 执行日志 -->
-        <div v-if="activeMenu === 'logs'" class="content-section">
-          <div class="section-header">
-            <h2 class="section-title">执行日志</h2>
-          </div>
-          <el-table :data="logs" style="width: 100%">
-            <el-table-column prop="id" label="ID" width="80" />
-            <el-table-column prop="taskName" label="任务名称" />
-            <el-table-column prop="robotName" label="机器人" />
-            <el-table-column prop="status" label="状态">
-              <template #default="{ row }">
-                <el-tag :type="getStatusType(row.status)">{{ getStatusText(row.status) }}</el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column prop="startTime" label="开始时间" />
-            <el-table-column prop="endTime" label="结束时间">
-              <template #default="{ row }">{{ row.endTime || '-' }}</template>
-            </el-table-column>
-            <el-table-column label="操作" width="100">
-              <template #default="{ row }">
-                <el-button size="small" type="primary">详情</el-button>
-              </template>
-            </el-table-column>
-          </el-table>
-        </div>
-
-        <!-- 数据采集 -->
-        <div v-if="activeMenu === 'dataCollect'" class="content-section">
-          <div class="section-header">
-            <h2 class="section-title">数据采集</h2>
-            <el-button type="primary" @click="showCollectModal()">+ 新建采集</el-button>
-          </div>
-          <el-table :data="dataCollects" style="width: 100%" v-loading="loading">
-            <el-table-column prop="id" label="ID" width="80" />
-            <el-table-column prop="name" label="采集名称" />
-            <el-table-column prop="source" label="数据来源" />
-            <el-table-column prop="status" label="状态">
-              <template #default="{ row }">
-                <el-tag :type="getStatusType(row.status)">{{ getStatusText(row.status) }}</el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column prop="collectTime" label="采集时间" />
-            <el-table-column prop="count" label="数据量" width="100" />
-            <el-table-column label="操作" width="180">
-              <template #default="{ row }">
-                <el-button size="small" type="primary" @click="executeCollect(row)">执行</el-button>
-                <el-button size="small" @click="showCollectModal(row)">编辑</el-button>
-                <el-button size="small" type="danger" @click="deleteCollect(row.id)">删除</el-button>
-              </template>
-            </el-table-column>
-          </el-table>
-        </div>
-
-        <!-- 数据解析 -->
-        <div v-if="activeMenu === 'dataParse'" class="content-section">
-          <div class="section-header">
-            <h2 class="section-title">数据解析</h2>
-          </div>
-          <el-table :data="dataParses" style="width: 100%">
-            <el-table-column prop="id" label="ID" width="80" />
-            <el-table-column prop="name" label="解析名称" />
-            <el-table-column prop="rule" label="解析规则" />
-            <el-table-column prop="status" label="状态">
-              <template #default="{ row }">
-                <el-tag :type="getStatusType(row.status)">{{ getStatusText(row.status) }}</el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column prop="parseTime" label="解析时间" />
-            <el-table-column prop="successRate" label="成功率" />
-            <el-table-column label="操作" width="100">
-              <template #default="{ row }">
-                <el-button size="small" type="primary">查看</el-button>
-              </template>
-            </el-table-column>
-          </el-table>
-        </div>
-
-        <!-- 数据加工 -->
-        <div v-if="activeMenu === 'dataProcess'" class="content-section">
-          <div class="section-header">
-            <h2 class="section-title">数据加工</h2>
-          </div>
-          <el-table :data="dataProcesses" style="width: 100%">
-            <el-table-column prop="id" label="ID" width="80" />
-            <el-table-column prop="name" label="加工名称" />
-            <el-table-column prop="method" label="加工方法" />
-            <el-table-column prop="status" label="状态">
-              <template #default="{ row }">
-                <el-tag :type="getStatusType(row.status)">{{ getStatusText(row.status) }}</el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column prop="processTime" label="加工时间" />
-            <el-table-column prop="processedCount" label="处理数量" />
-            <el-table-column label="操作" width="100">
-              <template #default="{ row }">
-                <el-button size="small" type="primary">查看</el-button>
-              </template>
-            </el-table-column>
-          </el-table>
-        </div>
-
-        <!-- 数据查询 -->
-        <div v-if="activeMenu === 'dataQuery'" class="content-section">
-          <div class="section-header">
-            <h2 class="section-title">数据查询</h2>
-          </div>
-          <el-table :data="dataQueries" style="width: 100%">
-            <el-table-column prop="id" label="ID" width="80" />
-            <el-table-column prop="name" label="查询名称" />
-            <el-table-column prop="condition" label="查询条件" />
-            <el-table-column prop="queryTime" label="查询时间" />
-            <el-table-column prop="resultCount" label="结果数量" />
-            <el-table-column label="操作" width="100">
-              <template #default="{ row }">
-                <el-button size="small" type="primary">查看</el-button>
-              </template>
-            </el-table-column>
+            <el-table-column prop="createTime" label="创建时间" min-width="160" />
           </el-table>
         </div>
       </div>
 
-    <!-- 用户编辑弹窗 -->
-    <el-dialog v-model="modals.user" :title="editingUser ? '编辑用户' : '新建用户'" width="500px">
-      <el-form :model="userForm" label-width="80px">
-        <el-form-item label="用户名" v-if="!editingUser">
-          <el-input v-model="userForm.username" placeholder="请输入用户名" />
-        </el-form-item>
-        <el-form-item label="密码" v-if="!editingUser">
-          <el-input v-model="userForm.password" type="password" placeholder="请输入密码" show-password />
-        </el-form-item>
-        <el-form-item label="真实姓名">
-          <el-input v-model="userForm.realName" placeholder="请输入真实姓名" />
-        </el-form-item>
-        <el-form-item label="邮箱">
-          <el-input v-model="userForm.email" placeholder="请输入邮箱" />
-        </el-form-item>
-        <el-form-item label="电话">
-          <el-input v-model="userForm.phone" placeholder="请输入电话" />
-        </el-form-item>
-        <el-form-item label="角色">
-          <el-select v-model="userForm.role" style="width: 100%;">
-            <el-option :label="'普通用户'" :value="0" />
-            <el-option :label="'管理员'" :value="1" />
-          </el-select>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="closeModal('user')">取消</el-button>
-        <el-button type="primary" @click="saveUser">保存</el-button>
-      </template>
-    </el-dialog>
+      <!-- 统计卡片 -->
+      <div class="stats-grid">
+        <div class="stat-card stat-card-primary">
+          <div class="stat-header">
+            <span class="stat-trend up" v-if="statsChange.tasks > 0">+{{ statsChange.tasks }}%</span>
+            <span class="stat-trend down" v-else-if="statsChange.tasks < 0">{{ statsChange.tasks }}%</span>
+          </div>
+          <div class="stat-value">{{ stats.tasks }}</div>
+          <div class="stat-label">总任务数</div>
+          <div class="stat-chart-mini">
+            <div class="mini-bar" v-for="(val, idx) in [40, 60, 45, 70, 55, 80, 65]" :key="idx" :style="{ height: val + '%' }"></div>
+          </div>
+        </div>
+        <div class="stat-card stat-card-info">
+          <div class="stat-header">
+            <span class="stat-trend up" v-if="statsChange.robots > 0">+{{ statsChange.robots }}%</span>
+          </div>
+          <div class="stat-value">{{ stats.robots }}</div>
+          <div class="stat-label">机器人总数</div>
+          <div class="stat-chart-mini">
+            <div class="mini-bar" v-for="(val, idx) in [50, 70, 60, 80, 75, 90, 85]" :key="idx" :style="{ height: val + '%' }"></div>
+          </div>
+        </div>
+        <div class="stat-card stat-card-success">
+          <div class="stat-header">
+            <span class="stat-trend up" v-if="statsChange.processes > 0">+{{ statsChange.processes }}%</span>
+          </div>
+          <div class="stat-value">{{ stats.processes }}</div>
+          <div class="stat-label">流程总数</div>
+          <div class="stat-chart-mini">
+            <div class="mini-bar" v-for="(val, idx) in [60, 50, 75, 65, 85, 70, 90]" :key="idx" :style="{ height: val + '%' }"></div>
+          </div>
+        </div>
+        <div class="stat-card stat-card-warning">
+          <div class="stat-header">
+            <span class="stat-trend" v-if="statsChange.logs > 0">+{{ statsChange.logs }}%</span>
+          </div>
+          <div class="stat-value">{{ stats.logs }}</div>
+          <div class="stat-label">日志总数</div>
+          <div class="stat-chart-mini">
+            <div class="mini-bar" v-for="(val, idx) in [45, 65, 55, 75, 60, 85, 70]" :key="idx" :style="{ height: val + '%' }"></div>
+          </div>
+        </div>
+      </div>
 
-    <!-- 数据采集编辑弹窗 -->
-    <el-dialog v-model="modals.collect" :title="editingCollect ? '编辑采集配置' : '新建采集配置'" width="600px">
-      <el-form :model="collectForm" label-width="100px">
-        <el-form-item label="采集名称" required>
-          <el-input v-model="collectForm.name" placeholder="请输入采集名称" />
-        </el-form-item>
-        <el-form-item label="数据来源URL" required>
-          <el-input v-model="collectForm.sourceUrl" placeholder="请输入来源URL" />
-        </el-form-item>
-        <el-form-item label="来源类型">
-          <el-select v-model="collectForm.sourceType" style="width: 100%;">
-            <el-option label="网页" value="web" />
-            <el-option label="API" value="api" />
-            <el-option label="文件" value="file" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="选择器规则">
-          <el-input v-model="collectForm.selectorRules" type="textarea" :rows="3" placeholder="CSS选择器或XPath" />
-        </el-form-item>
-        <el-form-item label="请求头(Headers)">
-          <el-input v-model="collectForm.headers" type="textarea" :rows="2" placeholder="JSON格式，如：{&quot;Authorization&quot;: &quot;Bearer xxx&quot;}" />
-        </el-form-item>
-        <el-form-item label="Cookies">
-          <el-input v-model="collectForm.cookies" type="textarea" :rows="2" placeholder="Cookie字符串" />
-        </el-form-item>
-        <el-form-item label="定时表达式">
-          <el-input v-model="collectForm.cronExpression" placeholder="如：0 0 * * * ?" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="closeModal('collect')">取消</el-button>
-        <el-button type="primary" @click="saveCollect">保存</el-button>
-      </template>
-    </el-dialog>
+      <!-- 图表区域 -->
+      <div class="charts-section">
+        <div class="chart-card chart-line">
+          <div class="chart-header">
+            <h3>任务执行趋势</h3>
+            <div class="chart-actions">
+              <span 
+                v-for="period in ['近7天', '近30天', '近90天']" 
+                :key="period"
+                class="period-btn"
+                :class="{ active: selectedPeriod === period }"
+                @click="selectedPeriod = period"
+              >{{ period }}</span>
+            </div>
+          </div>
+          <div class="chart-body">
+            <v-chart :option="lineChartOption" autoresize style="height: 300px;"></v-chart>
+          </div>
+        </div>
+        <div class="chart-card chart-bar">
+          <div class="chart-header">
+            <h3>任务状态分布</h3>
+          </div>
+          <div class="chart-body">
+            <v-chart :option="barChartOption" autoresize style="height: 300px;"></v-chart>
+          </div>
+        </div>
+      </div>
+
+      <!-- 任务状态概览 + 系统信息 并排布局 -->
+      <div class="status-system-wrapper">
+        <!-- 任务状态概览 - 2x2网格 -->
+        <div class="status-overview">
+          <div class="status-card">
+            <div class="status-header running">
+              <span class="status-dot"></span>
+              <span>运行中</span>
+            </div>
+            <div class="status-value">{{ taskStatus.running }}</div>
+          </div>
+          <div class="status-card">
+            <div class="status-header pending">
+              <span class="status-dot"></span>
+              <span>待执行</span>
+            </div>
+            <div class="status-value">{{ taskStatus.pending }}</div>
+          </div>
+          <div class="status-card">
+            <div class="status-header completed">
+              <span class="status-dot"></span>
+              <span>已完成</span>
+            </div>
+            <div class="status-value">{{ taskStatus.completed }}</div>
+          </div>
+          <div class="status-card">
+            <div class="status-header failed">
+              <span class="status-dot"></span>
+              <span>失败</span>
+            </div>
+            <div class="status-value">{{ taskStatus.failed }}</div>
+          </div>
+        </div>
+
+        <!-- 系统信息卡片 - 放在右侧 -->
+        <div class="info-card system-info-card">
+          <div class="card-header">
+            <h3>系统信息</h3>
+          </div>
+          <div class="system-info-list">
+            <div class="info-row">
+              <span class="info-label">系统版本</span>
+              <span class="info-value">{{ systemInfo.version }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">运行时间</span>
+              <span class="info-value">{{ systemInfo.runTime }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">数据源</span>
+              <span class="info-value">{{ systemInfo.dataSource }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">最后更新</span>
+              <span class="info-value">{{ systemInfo.lastUpdate }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -416,13 +286,57 @@ const statsChange = ref({ tasks: 12, robots: 5, processes: 8, logs: 15 })
 const taskStatus = ref({ running: 0, pending: 0, completed: 0, failed: 0 })
 const selectedPeriod = ref('近7天')
 
-const modals = ref({ user: false, collect: false })
-const editingUser = ref(null)
-const editingCollect = ref(null)
+// 快捷入口数据 - 只保留4个核心功能，带描述文字
+const quickEntries = ref([
+  { 
+    key: 'createTask', 
+    label: '创建任务', 
+    desc: '快速创建新的RPA任务',
+    icon: 'Plus', 
+    path: '/rpa/tasks/create', 
+    iconClass: 'icon-create' 
+  },
+  { 
+    key: 'flowDefine', 
+    label: '流程定义', 
+    desc: '定义和管理RPA流程',
+    icon: 'Setting', 
+    path: '/rpa/processes', 
+    iconClass: 'icon-flow' 
+  },
+  { 
+    key: 'robotList', 
+    label: '机器人列表', 
+    desc: '查看和管理机器人',
+    icon: 'Monitor', 
+    path: '/rpa/robots', 
+    iconClass: 'icon-robot' 
+  },
+  { 
+    key: 'dataQuery', 
+    label: '数据查询', 
+    desc: '查询已处理的数据',
+    icon: 'DataAnalysis', 
+    path: '/data/query', 
+    iconClass: 'icon-query' 
+  }
+])
 
-const userForm = ref({ username: '', password: '', realName: '', email: '', phone: '', role: 0 })
-const collectForm = ref({ name: '', sourceUrl: '', sourceType: 'web', selectorRules: '', headers: '', cookies: '', cronExpression: '' })
-const loading = ref(false)
+// 最近任务数据
+const recentTasks = ref([
+  { id: 1, name: 'TASK_20260116_001', processName: '股票信息采集', stockName: '平安银行', status: 'running', createTime: '2026-01-16 14:20:00' },
+  { id: 2, name: 'TASK_20260116_002', processName: '股票信息采集', stockName: '万科A', status: 'completed', createTime: '2026-01-16 14:15:00' },
+  { id: 3, name: 'TASK_20260116_003', processName: '股票数据录入', stockName: '浦发银行', status: 'pending', createTime: '2026-01-16 14:10:00' },
+  { id: 4, name: 'TASK_20260116_004', processName: '股票信息采集', stockName: '招商银行', status: 'completed', createTime: '2026-01-16 14:05:00' },
+  { id: 5, name: 'TASK_20260116_005', processName: '股票信息采集', stockName: '中国平安', status: 'failed', createTime: '2026-01-16 14:00:00' }
+])
+
+const systemInfo = ref({
+  version: 'v1.0.0',
+  runTime: '15天8小时',
+  dataSource: '东方财富网',
+  lastUpdate: '2026-01-16 14:30:00'
+})
 
 const currentDate = computed(() => {
   const now = new Date()
@@ -583,346 +497,10 @@ const loadStats = async () => {
   }
 }
 
-const loadTasks = async () => {
-  try {
-    const response = await fetch(`${API_BASE}/task`)
-    const result = await response.json()
-    if (result.code === 0) {
-      tasks.value = result.data || []
-    }
-  } catch (error) {
-    console.error('加载任务失败:', error)
-    tasks.value = [
-      { id: 1, name: '数据同步任务', status: 'running', createTime: '2024-01-15 10:00:00' },
-      { id: 2, name: '报表生成任务', status: 'pending', createTime: '2024-01-15 11:00:00' },
-      { id: 3, name: '邮件发送任务', status: 'completed', createTime: '2024-01-15 09:00:00' },
-      { id: 4, name: '文件下载任务', status: 'failed', createTime: '2024-01-14 15:00:00' }
-    ]
-  }
-}
-
-const loadRobots = async () => {
-  try {
-    const response = await fetch(`${API_BASE}/robot`)
-    const result = await response.json()
-    if (result.code === 0) {
-      robots.value = result.data || []
-    }
-  } catch (error) {
-    console.error('加载机器人失败:', error)
-    robots.value = [
-      { id: 1, name: 'Robot-001', status: 'active', ip: '192.168.1.101', createTime: '2024-01-10' },
-      { id: 2, name: 'Robot-002', status: 'idle', ip: '192.168.1.102', createTime: '2024-01-11' },
-      { id: 3, name: 'Robot-003', status: 'active', ip: '192.168.1.103', createTime: '2024-01-12' }
-    ]
-  }
-}
-
-const loadProcesses = async () => {
-  try {
-    const response = await fetch(`${API_BASE}/process`)
-    const result = await response.json()
-    if (result.code === 0) {
-      processes.value = result.data || []
-    }
-  } catch (error) {
-    console.error('加载流程失败:', error)
-    processes.value = [
-      { id: 1, name: '客户信息录入流程', version: '1.0', status: 'active', createTime: '2024-01-05' },
-      { id: 2, name: '订单处理流程', version: '2.1', status: 'active', createTime: '2024-01-08' },
-      { id: 3, name: '发票审核流程', version: '1.2', status: 'pending', createTime: '2024-01-12' }
-    ]
-  }
-}
-
-const loadLogs = async () => {
-  try {
-    const response = await fetch(`${API_BASE}/log`)
-    const result = await response.json()
-    if (result.code === 0) {
-      logs.value = result.data || []
-    }
-  } catch (error) {
-    console.error('加载日志失败:', error)
-    logs.value = [
-      { id: 1, taskName: '数据同步任务', robotName: 'Robot-001', status: 'completed', startTime: '2024-01-15 10:00:00', endTime: '2024-01-15 10:15:00' },
-      { id: 2, taskName: '报表生成任务', robotName: 'Robot-002', status: 'running', startTime: '2024-01-15 11:00:00', endTime: null },
-      { id: 3, taskName: '文件下载任务', robotName: 'Robot-003', status: 'failed', startTime: '2024-01-14 15:00:00', endTime: '2024-01-14 15:05:00' }
-    ]
-  }
-}
-
-const loadDataCollects = async () => {
-  try {
-    const response = await fetch(`${API_BASE}/dataCollect`)
-    const result = await response.json()
-    if (result.code === 0) {
-      dataCollects.value = (result.data || []).map(item => ({
-        id: item.id,
-        name: item.name,
-        source: item.sourceUrl || '-',
-        status: item.status === 1 ? 'completed' : item.status === 2 ? 'failed' : 'pending',
-        collectTime: item.lastCollectTime ? new Date(item.lastCollectTime).toLocaleString('zh-CN') : '-',
-        count: item.dataCount || 0
-      }))
-    }
-  } catch (error) {
-    console.error('加载数据采集失败:', error)
-    dataCollects.value = []
-  }
-}
-
-const loadDataParses = async () => {
-  dataParses.value = [
-    { id: 1, name: '客户信息解析', rule: '正则表达式', status: 'completed', parseTime: '2024-01-15 09:30:00', successRate: '98.5%' },
-    { id: 2, name: '订单详情解析', rule: 'JSON解析', status: 'running', parseTime: '2024-01-15 10:30:00', successRate: '95.2%' },
-    { id: 3, name: '产品规格解析', rule: 'XML解析', status: 'completed', parseTime: '2024-01-14 16:00:00', successRate: '99.1%' }
-  ]
-}
-
-const loadDataProcesses = async () => {
-  dataProcesses.value = [
-    { id: 1, name: '数据清洗', method: '去重+格式化', status: 'completed', processTime: '2024-01-15 10:00:00', processedCount: 1235 },
-    { id: 2, name: '数据转换', method: '格式转换', status: 'running', processTime: '2024-01-15 11:00:00', processedCount: 500 },
-    { id: 3, name: '数据聚合', method: '分组统计', status: 'pending', processTime: '2024-01-15 12:00:00', processedCount: 0 }
-  ]
-}
-
-const loadDataQueries = async () => {
-  dataQueries.value = [
-    { id: 1, name: '客户信息查询', condition: '按地区筛选', queryTime: '2024-01-15 10:15:00', resultCount: 256 },
-    { id: 2, name: '订单统计查询', condition: '按日期统计', queryTime: '2024-01-15 10:20:00', resultCount: 89 },
-    { id: 3, name: '产品库存查询', condition: '按仓库查询', queryTime: '2024-01-15 10:25:00', resultCount: 1567 }
-  ]
-}
-
-const showUserModal = () => {
-  editingUser.value = null
-  modals.value.user = true
-  userForm.value = { username: '', password: '', realName: '', email: '', phone: '', role: 0 }
-}
-
-const closeModal = (type) => {
-  modals.value[type] = false
-}
-
-// 数据采集相关方法
-const showCollectModal = (collect) => {
-  editingCollect.value = collect
-  if (collect) {
-    collectForm.value = {
-      name: collect.name,
-      sourceUrl: collect.source,
-      sourceType: 'web',
-      selectorRules: collect.selectorRules || '',
-      headers: '',
-      cookies: '',
-      cronExpression: ''
-    }
-  } else {
-    collectForm.value = { name: '', sourceUrl: '', sourceType: 'web', selectorRules: '', headers: '', cookies: '', cronExpression: '' }
-  }
-  modals.value.collect = true
-}
-
-const saveCollect = async () => {
-  if (!collectForm.value.name || !collectForm.value.sourceUrl) {
-    ElMessage.warning('请输入采集名称和来源URL')
-    return
-  }
-  try {
-    const url = editingCollect.value
-      ? `${API_BASE}/dataCollect/${editingCollect.value.id}`
-      : `${API_BASE}/dataCollect`
-    const method = editingCollect.value ? 'PUT' : 'POST'
-
-    const response = await fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(collectForm.value)
-    })
-    const result = await response.json()
-    if (result.code === 0) {
-      ElMessage.success(editingCollect.value ? '更新成功' : '创建成功')
-      closeModal('collect')
-      loadDataCollects()
-    } else {
-      ElMessage.error(result.message || '操作失败')
-    }
-  } catch (error) {
-    ElMessage.error('网络错误')
-  }
-}
-
-const executeCollect = async (collect) => {
-  try {
-    ElMessage.info('正在执行采集...')
-    const response = await fetch(`${API_BASE}/dataCollect/${collect.id}/execute`, {
-      method: 'POST'
-    })
-    const result = await response.json()
-    if (result.success || result.code === 0) {
-      ElMessage.success('采集执行成功')
-      loadDataCollects()
-    } else {
-      ElMessage.error(result.message || '采集执行失败')
-    }
-  } catch (error) {
-    ElMessage.error('网络错误')
-  }
-}
-
-const deleteCollect = async (id) => {
-  ElMessageBox.confirm('确定删除该采集配置吗？', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(async () => {
-    try {
-      const response = await fetch(`${API_BASE}/dataCollect/${id}`, {
-        method: 'DELETE'
-      })
-      const result = await response.json()
-      if (result.code === 0) {
-        ElMessage.success('删除成功')
-        loadDataCollects()
-      } else {
-        ElMessage.error(result.message || '删除失败')
-      }
-    } catch (error) {
-      ElMessage.error('网络错误')
-    }
-  })
-}
-
-const switchMenu = (menu) => {
-  activeMenu.value = menu
-}
-
-const goToPersonal = () => {
-  dropdownVisible.value = false
-  activeMenu.value = 'dashboard'
-  ElMessage.info('已返回首页')
-}
-
-const handleLogout = () => {
-  dropdownVisible.value = false
-  ElMessageBox.confirm('确定要退出登录吗？', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
-    localStorage.removeItem('userInfo')
-    localStorage.removeItem('token')
-    ElMessage.success('已退出登录')
-    setTimeout(() => {
-      router.push('/login')
-    }, 500)
-  })
-}
-
-const toggleDropdown = () => {
-  dropdownVisible.value = !dropdownVisible.value
-}
-
-const saveUser = async () => {
-  try {
-    if (editingUser.value) {
-      const response = await fetch(`${API_BASE}/user/${editingUser.value.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(userForm.value)
-      })
-      const result = await response.json()
-      if (result.code === 0) {
-        ElMessage.success('更新成功')
-      } else {
-        ElMessage.error(result.message || '更新失败')
-      }
-    } else {
-      // 新建用户时，若未填写密码，默认使用 123456
-      const userData = { ...userForm.value }
-      if (!userData.password || userData.password.trim() === '') {
-        userData.password = '123456'
-      }
-      if (!userData.username) {
-        ElMessage.warning('请输入用户名')
-        return
-      }
-      const response = await fetch(`${API_BASE}/user/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(userData)
-      })
-      const result = await response.json()
-      if (result.code === 0) {
-        ElMessage.success('创建成功')
-      } else {
-        ElMessage.error(result.message || '创建失败')
-      }
-    }
-    closeModal('user')
-    await loadUsers()
-  } catch (error) {
-    ElMessage.error('网络错误')
-  }
-}
-
-const editUser = (user) => {
-  editingUser.value = user
-  modals.value.user = true
-  userForm.value = {
-    username: user.username,
-    password: '',
-    realName: user.realName || '',
-    email: user.email || '',
-    phone: user.phone || '',
-    role: user.role || 0
-  }
-}
-
-const toggleUserStatus = async (user) => {
-  const newStatus = user.status === 1 ? 0 : 1
-  try {
-    const response = await fetch(`${API_BASE}/user/${user.id}/status`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: newStatus })
-    })
-    const result = await response.json()
-    if (result.code === 0) {
-      ElMessage.success(newStatus === 1 ? '已启用' : '已禁用')
-      await loadUsers()
-    } else {
-      ElMessage.error(result.message || '操作失败')
-    }
-  } catch (error) {
-    ElMessage.error('网络错误')
-  }
-}
-
-const deleteUser = async (id) => {
-  ElMessageBox.confirm('确定删除该用户吗？', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(async () => {
-    try {
-      const response = await fetch(`${API_BASE}/user/${id}`, {
-        method: 'DELETE'
-      })
-      const result = await response.json()
-      if (result.code === 0) {
-        ElMessage.success('删除成功')
-        await loadUsers()
-      } else {
-        ElMessage.error(result.message || '删除失败')
-      }
-    } catch (error) {
-      ElMessage.error('网络错误')
-    }
-  })
-}
+onMounted(() => {
+  loadUserFromStorage()
+  loadStats()
+})
 </script>
 
 <style scoped>
