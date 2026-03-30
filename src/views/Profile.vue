@@ -415,6 +415,9 @@
         <el-form-item label="用户名" v-if="!editingUser">
           <el-input v-model="userForm.username" placeholder="请输入用户名" />
         </el-form-item>
+        <el-form-item label="密码" v-if="!editingUser">
+          <el-input v-model="userForm.password" type="password" show-password placeholder="请输入密码" />
+        </el-form-item>
         <el-form-item label="真实姓名">
           <el-input v-model="userForm.realName" placeholder="请输入真实姓名" />
         </el-form-item>
@@ -595,7 +598,7 @@ const currentUser = ref({
 // 表单
 const profileForm = reactive({ realName: '', email: '', phone: '' })
 const passwordForm = reactive({ oldPassword: '', newPassword: '', confirmPassword: '' })
-const userForm = reactive({ username: '', realName: '', email: '', phone: '', role: 0 })
+const userForm = reactive({ username: '', password: '', realName: '', email: '', phone: '', role: 0 })
 
 // 头像相关
 const userAvatarUrl = ref('')
@@ -692,9 +695,9 @@ const loadUsers = async () => {
 const openUserDialog = (user) => {
   editingUser.value = user
   if (user) {
-    Object.assign(userForm, { username: user.username, realName: user.realName, email: user.email, phone: user.phone, role: user.role })
+    Object.assign(userForm, { username: user.username, password: '', realName: user.realName, email: user.email, phone: user.phone, role: user.role })
   } else {
-    Object.assign(userForm, { username: '', realName: '', email: '', phone: '', role: 0 })
+    Object.assign(userForm, { username: '', password: '', realName: '', email: '', phone: '', role: 0 })
   }
   userDialogVisible.value = true
 }
@@ -715,6 +718,11 @@ const saveUser = async () => {
       // 编辑时只传需要更新的字段
       delete requestData.username
       delete requestData.password
+    } else {
+      // 新建用户时，若未填写密码，默认使用 123456
+      if (!requestData.password || requestData.password.trim() === '') {
+        requestData.password = '123456'
+      }
     }
 
     const res = await authFetch(url, {
