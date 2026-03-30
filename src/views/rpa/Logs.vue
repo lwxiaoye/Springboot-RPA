@@ -84,6 +84,8 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { Search } from '@element-plus/icons-vue'
 
+import { apiGet } from '../../utils/api.js'
+
 const loading = ref(false)
 const logs = ref([])
 const searchKeyword = ref('')
@@ -124,16 +126,18 @@ const filteredLogs = computed(() => {
 
 const loadLogs = async () => {
   loading.value = true
-  setTimeout(() => {
-    logs.value = [
-      { id: 1, taskName: '数据同步任务', robotName: 'Robot-001', action: '执行任务', status: 'success', message: '任务执行成功，同步了1250条数据', startTime: '2026-03-26 09:00:00', endTime: '2026-03-26 09:15:23', duration: '15分23秒' },
-      { id: 2, taskName: '报表生成任务', robotName: 'Robot-002', action: '生成报表', status: 'running', message: '正在生成日报表...', startTime: '2026-03-26 10:00:00', endTime: null, duration: '进行中' },
-      { id: 3, taskName: '邮件发送任务', robotName: 'Robot-001', action: '发送邮件', status: 'failed', message: '邮件发送失败：SMTP连接超时', startTime: '2026-03-26 08:30:00', endTime: '2026-03-26 08:30:45', duration: '45秒' },
-      { id: 4, taskName: '数据备份任务', robotName: 'Robot-003', action: '备份数据', status: 'success', message: '数据备份成功，备份文件大小2.3GB', startTime: '2026-03-26 02:00:00', endTime: '2026-03-26 02:35:12', duration: '35分12秒' }
-    ]
-    pagination.total = logs.value.length
+  try {
+    const result = await apiGet('/log')
+    if (result.code === 0) {
+      logs.value = result.data || []
+      pagination.total = logs.value.length
+    }
+  } catch {
+    logs.value = []
+    pagination.total = 0
+  } finally {
     loading.value = false
-  }, 300)
+  }
 }
 
 const viewDetail = (log) => {

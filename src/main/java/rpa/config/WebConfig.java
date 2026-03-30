@@ -11,7 +11,8 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  * 配置Spring MVC的视图控制器和静态资源处理。
  * 主要功能：
  * <ul>
- *   <li>根路径"/"转发到Dashboard页面</li>
+ *   <li>根路径"/"转发到登录页面</li>
+ *   <li>"/dashboard.html"映射到dashboard视图</li>
  *   <li>"/login.html"映射到login视图</li>
  * </ul>
  * </p>
@@ -29,7 +30,8 @@ public class WebConfig implements WebMvcConfigurer {
      * <p>
      * 配置URL到视图的映射关系：
      * <ul>
-     *   <li>/ -> 转发到 /dashboard.html</li>
+     *   <li>/ -> 转发到登录页面</li>
+     *   <li>/dashboard.html -> dashboard视图</li>
      *   <li>/login.html -> login视图</li>
      * </ul>
      * </p>
@@ -38,8 +40,9 @@ public class WebConfig implements WebMvcConfigurer {
      */
     @Override
     public void addViewControllers(ViewControllerRegistry registry) {
-        registry.addViewController("/").setViewName("forward:/dashboard.html");
+        registry.addViewController("/").setViewName("forward:/login.html");
         registry.addViewController("/login.html").setViewName("login");
+        registry.addViewController("/dashboard.html").setViewName("dashboard");
     }
 
     @Override

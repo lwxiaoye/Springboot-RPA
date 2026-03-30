@@ -23,7 +23,7 @@
     <el-table :data="filteredData" v-loading="loading" border stripe>
       <el-table-column type="index" label="序号" width="60" align="center" />
       <el-table-column prop="name" label="加工名称" min-width="160" />
-      <el-table-column prop="method" label="加工方法" min-width="140" />
+      <el-table-column prop="processType" label="加工类型" width="100" align="center" />
       <el-table-column prop="status" label="状态" width="90" align="center">
         <template #default="{ row }">
           <el-tag :type="getStatusType(row.status)" size="small">
@@ -32,8 +32,8 @@
         </template>
       </el-table-column>
       <el-table-column prop="processedCount" label="处理数量" width="100" align="center" />
-      <el-table-column prop="processTime" label="处理时间" min-width="160">
-        <template #default="{ row }">{{ row.processTime || '-' }}</template>
+      <el-table-column prop="lastProcessTime" label="处理时间" min-width="160">
+        <template #default="{ row }">{{ row.lastProcessTime ? new Date(row.lastProcessTime).toLocaleString() : '-' }}</template>
       </el-table-column>
       <el-table-column label="操作" width="180" fixed="right" align="center">
         <template #default="{ row }">
@@ -66,16 +66,16 @@
         <el-form-item label="加工名称" prop="name">
           <el-input v-model="dataForm.name" placeholder="请输入加工名称" />
         </el-form-item>
-        <el-form-item label="加工方法" prop="method">
-          <el-select v-model="dataForm.method" placeholder="请选择加工方法" style="width: 100%">
-            <el-option label="数据清洗" value="数据清洗" />
-            <el-option label="数据转换" value="数据转换" />
-            <el-option label="数据聚合" value="数据聚合" />
-            <el-option label="数据脱敏" value="数据脱敏" />
+        <el-form-item label="加工类型">
+          <el-select v-model="dataForm.processType" placeholder="请选择加工类型" style="width: 100%">
+            <el-option label="数据清洗" value="清洗" />
+            <el-option label="数据转换" value="转换" />
+            <el-option label="数据聚合" value="聚合" />
+            <el-option label="数据脱敏" value="脱敏" />
           </el-select>
         </el-form-item>
-        <el-form-item label="加工配置">
-          <el-input v-model="dataForm.config" type="textarea" :rows="4" placeholder="请输入加工配置" />
+        <el-form-item label="加工规则">
+          <el-input v-model="dataForm.processRules" type="textarea" :rows="4" placeholder="请输入加工规则（JSON格式），如：{&quot;rules&quot;: [&quot;去重&quot;, &quot;格式化&quot;]}" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -91,6 +91,8 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Search, Plus } from '@element-plus/icons-vue'
 
+import { apiGet, apiPost, apiPut, apiDelete } from '../../utils/api.js'
+
 const loading = ref(false)
 const submitLoading = ref(false)
 const dataList = ref([])
@@ -105,16 +107,15 @@ const pagination = reactive({ page: 1, size: 10, total: 0 })
 
 const dataForm = reactive({
   name: '',
-  method: '',
-  config: ''
+  sourceIds: '',
+  processType: '清洗',
+  processRules: '',
+  outputTable: ''
 })
 
 const formRules = {
-  name: [{ required: true, message: '请输入加工名称', trigger: 'blur' }],
-  method: [{ required: true, message: '请选择加工方法', trigger: 'change' }]
+  name: [{ required: true, message: '请输入加工名称', trigger: 'blur' }]
 }
-
-const dialogTitle = computed(() => isEdit.value ? '编辑加工' : '新建加工')
 
 const getStatusText = (s) => {
   const map = { success: '成功', running: '运行中', pending: '待执行', failed: '失败' }
@@ -139,21 +140,24 @@ const filteredData = computed(() => {
 
 const loadData = async () => {
   loading.value = true
-  setTimeout(() => {
-    dataList.value = [
-      { id: 1, name: '数据清洗', method: '数据清洗', status: 'success', processedCount: 1235, processTime: '2026-03-26 10:00:00', config: '{"rules":["去重","格式化"]}' },
-      { id: 2, name: '数据转换', method: '数据转换', status: 'running', processedCount: 500, processTime: '2026-03-26 11:00:00', config: '{"format":"JSON->CSV"}' },
-      { id: 3, name: '数据聚合', method: '数据聚合', status: 'pending', processedCount: 0, processTime: null, config: '{"groupBy":"category","aggregate":"sum"}' }
-    ]
-    pagination.total = dataList.value.length
+  try {
+    const result = await apiGet('/dataProcess')
+    if (result.code === 0) {
+      dataList.value = result.data || []
+      pagination.total = dataList.value.length
+    }
+  } catch {
+    dataList.value = []
+    pagination.total = 0
+  } finally {
     loading.value = false
-  }, 300)
+  }
 }
 
 const showCreateModal = () => {
   isEdit.value = false
   currentEditId.value = null
-  Object.assign(dataForm, { name: '', method: '', config: '' })
+  Object.assign(dataForm, { name: '', sourceIds: '', processType: '清洗', processRules: '', outputTable: '' })
   dialogVisible.value = true
 }
 
@@ -162,8 +166,10 @@ const editTask = (item) => {
   currentEditId.value = item.id
   Object.assign(dataForm, {
     name: item.name,
-    method: item.method,
-    config: item.config
+    sourceIds: item.sourceIds,
+    processType: item.processType,
+    processRules: item.processRules,
+    outputTable: item.outputTable
   })
   dialogVisible.value = true
 }
@@ -173,46 +179,77 @@ const submitTask = async () => {
   await formRef.value.validate(async (valid) => {
     if (valid) {
       submitLoading.value = true
-      setTimeout(() => {
+      try {
         if (isEdit.value) {
-          const index = dataList.value.findIndex(d => d.id === currentEditId.value)
-          if (index !== -1) {
-            dataList.value[index] = { ...dataList.value[index], ...dataForm }
-          }
-          ElMessage.success('更新成功')
-        } else {
-          dataList.value.unshift({
-            id: Date.now(),
-            ...dataForm,
-            status: 'pending',
-            processedCount: 0,
-            processTime: null
+          const result = await apiPut(`/dataProcess/${currentEditId.value}`, {
+            name: dataForm.name,
+            sourceIds: dataForm.sourceIds,
+            processType: dataForm.processType,
+            processRules: dataForm.processRules,
+            outputTable: dataForm.outputTable
           })
-          pagination.total++
-          ElMessage.success('创建成功')
+          if (result.code === 0) {
+            ElMessage.success('更新成功')
+            dialogVisible.value = false
+            await loadData()
+          } else {
+            ElMessage.error(result.message || '更新失败')
+          }
+        } else {
+          const result = await apiPost('/dataProcess', {
+            name: dataForm.name,
+            sourceIds: dataForm.sourceIds,
+            processType: dataForm.processType,
+            processRules: dataForm.processRules,
+            outputTable: dataForm.outputTable
+          })
+          if (result.code === 0) {
+            ElMessage.success('创建成功')
+            dialogVisible.value = false
+            await loadData()
+          } else {
+            ElMessage.error(result.message || '创建失败')
+          }
         }
-        dialogVisible.value = false
+      } catch {
+        ElMessage.error('请求失败')
+      } finally {
         submitLoading.value = false
-      }, 500)
+      }
     }
   })
 }
 
-const runTask = (item) => {
-  ElMessage.success(`已启动加工任务: ${item.name}`)
-  const index = dataList.value.findIndex(d => d.id === item.id)
-  if (index !== -1) {
-    dataList.value[index].status = 'running'
+const runTask = async (item) => {
+  try {
+    const result = await apiPost(`/dataProcess/${item.id}/execute`)
+    if (result.code === 0 || result.success) {
+      ElMessage.success(`加工任务已启动: ${item.name}`)
+      await loadData()
+    } else {
+      ElMessage.error(result.message || '执行失败')
+    }
+  } catch {
+    ElMessage.error('请求失败')
   }
 }
 
-const deleteTask = (item) => {
-  const index = dataList.value.findIndex(d => d.id === item.id)
-  if (index !== -1) {
-    dataList.value.splice(index, 1)
-    pagination.total--
+const deleteTask = async (item) => {
+  try {
+    const result = await apiDelete(`/dataProcess/${item.id}`)
+    if (result.code === 0) {
+      const index = dataList.value.findIndex(d => d.id === item.id)
+      if (index !== -1) {
+        dataList.value.splice(index, 1)
+        pagination.total--
+      }
+      ElMessage.success('删除成功')
+    } else {
+      ElMessage.error(result.message || '删除失败')
+    }
+  } catch {
+    ElMessage.error('请求失败')
   }
-  ElMessage.success('删除成功')
 }
 
 const handleSizeChange = (size) => { pagination.size = size; pagination.page = 1 }

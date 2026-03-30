@@ -235,8 +235,8 @@ const handlePasswordLogin = async () => {
         // 重置失败计数
         loginFailCount.value = 0
       
-        // 跳转到管理后台页面
-        router.push('/layout')
+        // 跳转到仪表盘页面
+        router.push('/dashboard')
       } else {
         // 登录失败
         loginFailCount.value++
@@ -385,8 +385,8 @@ const checkLoginStatus = () => {
   const token = localStorage.getItem('token')
   const userInfo = localStorage.getItem('userInfo')
   if (token && userInfo) {
-    // 已登录，跳转到角色管理页面
-        router.push('/profile')
+    // 已登录，跳转到仪表盘页面
+    router.push('/dashboard')
   }
 }
 

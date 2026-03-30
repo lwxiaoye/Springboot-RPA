@@ -81,6 +81,16 @@
             <el-option label="服务器机器人" value="Server" />
           </el-select>
         </el-form-item>
+        <el-form-item label="状态" prop="status">
+          <el-select v-model="robotForm.status" placeholder="请选择状态" style="width: 100%">
+            <el-option label="空闲" value="idle" />
+            <el-option label="忙碌" value="busy" />
+            <el-option label="离线" value="offline" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="能力">
+          <el-input v-model="robotForm.capabilities" type="textarea" :rows="2" placeholder="请输入机器人能力描述" />
+        </el-form-item>
         <el-form-item label="IP地址" prop="ip">
           <el-input v-model="robotForm.ip" placeholder="请输入IP地址，如：192.168.1.100" />
         </el-form-item>
@@ -122,10 +132,11 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Search, Plus } from '@element-plus/icons-vue'
 
+import { apiGet, apiPost, apiPut, apiDelete } from '../../utils/api.js'
+
 const loading = ref(false)
 const submitLoading = ref(false)
 const robots = ref([])
-
 const searchKeyword = ref('')
 const statusFilter = ref('')
 const dialogVisible = ref(false)
@@ -140,6 +151,8 @@ const pagination = reactive({ page: 1, size: 10, total: 0 })
 const robotForm = reactive({
   name: '',
   type: 'Desktop',
+  status: 'idle',
+  capabilities: '',
   ip: '',
   hostname: '',
   port: 8080,
@@ -178,20 +191,24 @@ const filteredRobots = computed(() => {
 
 const loadRobots = async () => {
   loading.value = true
-  setTimeout(() => {
-    robots.value = [
-      { id: 1, name: 'Robot-001', ip: '192.168.1.101', hostname: 'WORKSTATION-01', type: 'Desktop', status: 'active', cpuUsage: 45, memoryUsage: 62, port: 8080, lastHeartbeat: '2026-03-26 10:30:00', description: '主任务执行机器人' },
-      { id: 2, name: 'Robot-002', ip: '192.168.1.102', hostname: 'SERVER-01', type: 'Server', status: 'idle', cpuUsage: 12, memoryUsage: 34, port: 8080, lastHeartbeat: '2026-03-26 10:28:00', description: '备用机器人' }
-    ]
-    pagination.total = robots.value.length
+  try {
+    const result = await apiGet('/robot')
+    if (result.code === 0) {
+      robots.value = result.data || []
+      pagination.total = robots.value.length
+    }
+  } catch {
+    robots.value = []
+    pagination.total = 0
+  } finally {
     loading.value = false
-  }, 300)
+  }
 }
 
 const showCreateModal = () => {
   isEdit.value = false
   currentEditId.value = null
-  Object.assign(robotForm, { name: '', type: 'Desktop', ip: '', hostname: '', port: 8080, description: '' })
+  Object.assign(robotForm, { name: '', type: 'Desktop', status: 'idle', capabilities: '', ip: '', hostname: '', port: 8080, description: '' })
   dialogVisible.value = true
 }
 
@@ -201,6 +218,8 @@ const editRobot = (robot) => {
   Object.assign(robotForm, {
     name: robot.name,
     type: robot.type,
+    status: robot.status || 'idle',
+    capabilities: robot.capabilities,
     ip: robot.ip,
     hostname: robot.hostname,
     port: robot.port,
@@ -219,39 +238,69 @@ const submitRobot = async () => {
   await formRef.value.validate(async (valid) => {
     if (valid) {
       submitLoading.value = true
-      setTimeout(() => {
+      try {
         if (isEdit.value) {
-          const index = robots.value.findIndex(r => r.id === currentEditId.value)
-          if (index !== -1) {
-            robots.value[index] = { ...robots.value[index], ...robotForm }
-          }
-          ElMessage.success('更新成功')
-        } else {
-          robots.value.unshift({
-            id: Date.now(),
-            ...robotForm,
-            status: 'idle',
-            cpuUsage: 0,
-            memoryUsage: 0,
-            lastHeartbeat: new Date().toLocaleString()
+          const result = await apiPut(`/robot/${currentEditId.value}`, {
+            name: robotForm.name,
+            type: robotForm.type,
+            status: robotForm.status,
+            capabilities: robotForm.capabilities,
+            ip: robotForm.ip,
+            hostname: robotForm.hostname,
+            port: robotForm.port,
+            description: robotForm.description
           })
-          pagination.total++
-          ElMessage.success('注册成功')
+          if (result.code === 0) {
+            ElMessage.success('更新成功')
+            dialogVisible.value = false
+            await loadRobots()
+          } else {
+            ElMessage.error(result.message || '更新失败')
+          }
+        } else {
+          const result = await apiPost('/robot', {
+            name: robotForm.name,
+            type: robotForm.type,
+            status: robotForm.status,
+            capabilities: robotForm.capabilities,
+            ip: robotForm.ip,
+            hostname: robotForm.hostname,
+            port: robotForm.port,
+            description: robotForm.description
+          })
+          if (result.code === 0) {
+            ElMessage.success('注册成功')
+            dialogVisible.value = false
+            await loadRobots()
+          } else {
+            ElMessage.error(result.message || '注册失败')
+          }
         }
-        dialogVisible.value = false
+      } catch {
+        ElMessage.error('请求失败')
+      } finally {
         submitLoading.value = false
-      }, 500)
+      }
     }
   })
 }
 
-const deleteRobot = (robot) => {
-  const index = robots.value.findIndex(r => r.id === robot.id)
-  if (index !== -1) {
-    robots.value.splice(index, 1)
-    pagination.total--
+const deleteRobot = async (robot) => {
+  try {
+    const result = await apiDelete(`/robot/${robot.id}`)
+    if (result.code === 0) {
+      const index = robots.value.findIndex(r => r.id === robot.id)
+      if (index !== -1) {
+        robots.value.splice(index, 1)
+        pagination.total--
+      }
+      ElMessage.success('删除成功')
+    } else {
+      ElMessage.error(result.message || '删除失败')
+    }
+  } catch {
+    ElMessage.error('请求失败')
   }
-  ElMessage.success('删除成功')
 }
 
 const handleSizeChange = (size) => { pagination.size = size; pagination.page = 1 }

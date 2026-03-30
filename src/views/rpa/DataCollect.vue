@@ -24,10 +24,8 @@
     <el-table :data="filteredData" v-loading="loading" border stripe>
       <el-table-column type="index" label="序号" width="60" align="center" />
       <el-table-column prop="name" label="采集名称" min-width="160" />
-      <el-table-column prop="source" label="数据来源" min-width="140" />
-      <el-table-column prop="schedule" label="采集计划" min-width="140">
-        <template #default="{ row }">{{ row.schedule || '-' }}</template>
-      </el-table-column>
+      <el-table-column prop="sourceUrl" label="数据来源" min-width="160" show-overflow-tooltip />
+      <el-table-column prop="sourceType" label="类型" width="100" align="center" />
       <el-table-column prop="status" label="状态" width="90" align="center">
         <template #default="{ row }">
           <el-tag :type="getStatusType(row.status)" size="small">
@@ -35,9 +33,9 @@
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="count" label="数据量" width="100" align="center" />
+      <el-table-column prop="dataCount" label="数据量" width="90" align="center" />
       <el-table-column prop="lastCollectTime" label="最后采集" min-width="160">
-        <template #default="{ row }">{{ row.lastCollectTime || '-' }}</template>
+        <template #default="{ row }">{{ row.lastCollectTime ? new Date(row.lastCollectTime).toLocaleString() : '-' }}</template>
       </el-table-column>
       <el-table-column label="操作" width="180" fixed="right" align="center">
         <template #default="{ row }">
@@ -70,24 +68,29 @@
         <el-form-item label="采集名称" prop="name">
           <el-input v-model="dataForm.name" placeholder="请输入采集名称" />
         </el-form-item>
-        <el-form-item label="数据来源" prop="source">
-          <el-select v-model="dataForm.source" placeholder="请选择数据来源" style="width: 100%">
+        <el-form-item label="来源URL" prop="sourceUrl">
+          <el-input v-model="dataForm.sourceUrl" placeholder="请输入数据来源URL，如：https://example.com/api" />
+        </el-form-item>
+        <el-form-item label="来源类型">
+          <el-select v-model="dataForm.sourceType" placeholder="请选择来源类型" style="width: 100%">
             <el-option label="CRM系统" value="CRM系统" />
             <el-option label="ERP系统" value="ERP系统" />
             <el-option label="电商平台" value="电商平台" />
             <el-option label="外部API" value="外部API" />
+            <el-option label="网页" value="网页" />
           </el-select>
         </el-form-item>
-        <el-form-item label="采集计划" prop="schedule">
-          <el-select v-model="dataForm.schedule" placeholder="请选择采集计划" style="width: 100%">
-            <el-option label="每天 00:00" value="每天 00:00" />
-            <el-option label="每小时" value="每小时" />
-            <el-option label="每30分钟" value="每30分钟" />
-            <el-option label="手动执行" value="手动执行" />
-          </el-select>
+        <el-form-item label="选择器规则">
+          <el-input v-model="dataForm.selectorRules" type="textarea" :rows="3" placeholder="请输入CSS选择器或XPath规则" />
         </el-form-item>
-        <el-form-item label="采集配置">
-          <el-input v-model="dataForm.config" type="textarea" :rows="3" placeholder="请输入采集配置（JSON格式）" />
+        <el-form-item label="请求头">
+          <el-input v-model="dataForm.headers" type="textarea" :rows="2" placeholder="如：Content-Type: application/json" />
+        </el-form-item>
+        <el-form-item label="Cookie">
+          <el-input v-model="dataForm.cookies" type="textarea" :rows="2" placeholder="如有登录Cookie，请在此输入" />
+        </el-form-item>
+        <el-form-item label="定时规则">
+          <el-input v-model="dataForm.cronExpression" placeholder="Cron表达式，如：0 0 * * * (每天)" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -103,10 +106,10 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Search, Plus } from '@element-plus/icons-vue'
 
+import { apiGet, apiPost, apiPut, apiDelete } from '../../utils/api.js'
 const loading = ref(false)
 const submitLoading = ref(false)
 const dataList = ref([])
-const searchKeyword = ref('')
 const statusFilter = ref('')
 const dialogVisible = ref(false)
 const isEdit = ref(false)
@@ -117,14 +120,17 @@ const pagination = reactive({ page: 1, size: 10, total: 0 })
 
 const dataForm = reactive({
   name: '',
-  source: '',
-  schedule: '手动执行',
-  config: ''
+  sourceUrl: '',
+  sourceType: '',
+  selectorRules: '',
+  headers: '',
+  cookies: '',
+  cronExpression: ''
 })
 
 const formRules = {
   name: [{ required: true, message: '请输入采集名称', trigger: 'blur' }],
-  source: [{ required: true, message: '请选择数据来源', trigger: 'change' }]
+  sourceUrl: [{ required: true, message: '请输入数据来源URL', trigger: 'blur' }]
 }
 
 const dialogTitle = computed(() => isEdit.value ? '编辑采集' : '新建采集')
@@ -152,21 +158,24 @@ const filteredData = computed(() => {
 
 const loadData = async () => {
   loading.value = true
-  setTimeout(() => {
-    dataList.value = [
-      { id: 1, name: '客户数据采集', source: 'CRM系统', schedule: '每天 00:00', status: 'success', count: 1250, lastCollectTime: '2026-03-26 00:00:00', config: '{"api":"/api/customers","fields":["name","phone"]}' },
-      { id: 2, name: '订单数据采集', source: '电商平台', schedule: '每小时', status: 'running', count: 856, lastCollectTime: '2026-03-26 09:00:00', config: '{"api":"/api/orders","pageSize":100}' },
-      { id: 3, name: '产品数据采集', source: 'ERP系统', schedule: '每天 08:00', status: 'pending', count: 0, lastCollectTime: '2026-03-25 08:00:00', config: '{"api":"/api/products"}' }
-    ]
-    pagination.total = dataList.value.length
+  try {
+    const result = await apiGet('/dataCollect')
+    if (result.code === 0) {
+      dataList.value = result.data || []
+      pagination.total = dataList.value.length
+    }
+  } catch {
+    dataList.value = []
+    pagination.total = 0
+  } finally {
     loading.value = false
-  }, 300)
+  }
 }
 
 const showCreateModal = () => {
   isEdit.value = false
   currentEditId.value = null
-  Object.assign(dataForm, { name: '', source: '', schedule: '手动执行', config: '' })
+  Object.assign(dataForm, { name: '', sourceUrl: '', sourceType: '', selectorRules: '', headers: '', cookies: '', cronExpression: '' })
   dialogVisible.value = true
 }
 
@@ -175,9 +184,12 @@ const editTask = (item) => {
   currentEditId.value = item.id
   Object.assign(dataForm, {
     name: item.name,
-    source: item.source,
-    schedule: item.schedule,
-    config: item.config
+    sourceUrl: item.sourceUrl,
+    sourceType: item.sourceType,
+    selectorRules: item.selectorRules,
+    headers: item.headers,
+    cookies: item.cookies,
+    cronExpression: item.cronExpression
   })
   dialogVisible.value = true
 }
@@ -187,47 +199,81 @@ const submitTask = async () => {
   await formRef.value.validate(async (valid) => {
     if (valid) {
       submitLoading.value = true
-      setTimeout(() => {
+      try {
         if (isEdit.value) {
-          const index = dataList.value.findIndex(d => d.id === currentEditId.value)
-          if (index !== -1) {
-            dataList.value[index] = { ...dataList.value[index], ...dataForm }
-          }
-          ElMessage.success('更新成功')
-        } else {
-          dataList.value.unshift({
-            id: Date.now(),
-            ...dataForm,
-            status: 'pending',
-            count: 0,
-            lastCollectTime: null
+          const result = await apiPut(`/dataCollect/${currentEditId.value}`, {
+            name: dataForm.name,
+            sourceUrl: dataForm.sourceUrl,
+            sourceType: dataForm.sourceType,
+            selectorRules: dataForm.selectorRules,
+            headers: dataForm.headers,
+            cookies: dataForm.cookies,
+            cronExpression: dataForm.cronExpression
           })
-          pagination.total++
-          ElMessage.success('创建成功')
+          if (result.code === 0) {
+            ElMessage.success('更新成功')
+            dialogVisible.value = false
+            await loadData()
+          } else {
+            ElMessage.error(result.message || '更新失败')
+          }
+        } else {
+          const result = await apiPost('/dataCollect', {
+            name: dataForm.name,
+            sourceUrl: dataForm.sourceUrl,
+            sourceType: dataForm.sourceType,
+            selectorRules: dataForm.selectorRules,
+            headers: dataForm.headers,
+            cookies: dataForm.cookies,
+            cronExpression: dataForm.cronExpression
+          })
+          if (result.code === 0) {
+            ElMessage.success('创建成功')
+            dialogVisible.value = false
+            await loadData()
+          } else {
+            ElMessage.error(result.message || '创建失败')
+          }
         }
-        dialogVisible.value = false
+      } catch {
+        ElMessage.error('请求失败')
+      } finally {
         submitLoading.value = false
-      }, 500)
+      }
     }
   })
 }
 
-const runTask = (item) => {
-  ElMessage.success(`已启动采集任务: ${item.name}`)
-  // 模拟更新状态
-  const index = dataList.value.findIndex(d => d.id === item.id)
-  if (index !== -1) {
-    dataList.value[index].status = 'running'
+const runTask = async (item) => {
+  try {
+    const result = await apiPost(`/dataCollect/${item.id}/execute`)
+    if (result.code === 0 || result.success) {
+      ElMessage.success(`采集任务已启动: ${item.name}`)
+      await loadData()
+    } else {
+      ElMessage.error(result.message || '执行失败')
+    }
+  } catch {
+    ElMessage.error('请求失败')
   }
 }
 
-const deleteTask = (item) => {
-  const index = dataList.value.findIndex(d => d.id === item.id)
-  if (index !== -1) {
-    dataList.value.splice(index, 1)
-    pagination.total--
+const deleteTask = async (item) => {
+  try {
+    const result = await apiDelete(`/dataCollect/${item.id}`)
+    if (result.code === 0) {
+      const index = dataList.value.findIndex(d => d.id === item.id)
+      if (index !== -1) {
+        dataList.value.splice(index, 1)
+        pagination.total--
+      }
+      ElMessage.success('删除成功')
+    } else {
+      ElMessage.error(result.message || '删除失败')
+    }
+  } catch {
+    ElMessage.error('请求失败')
   }
-  ElMessage.success('删除成功')
 }
 
 const handleSizeChange = (size) => { pagination.size = size; pagination.page = 1 }

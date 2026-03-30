@@ -13,6 +13,7 @@ import Tasks from '../views/rpa/Tasks.vue'
 import Robots from '../views/rpa/Robots.vue'
 import Processes from '../views/rpa/Processes.vue'
 import Logs from '../views/rpa/Logs.vue'
+import Notifications from '../views/rpa/Notifications.vue'
 import DataCollect from '../views/rpa/DataCollect.vue'
 import DataParse from '../views/rpa/DataParse.vue'
 import DataProcess from '../views/rpa/DataProcess.vue'
@@ -40,6 +41,7 @@ const routes = [
             { path: 'robots', name: 'Robots', component: Robots },
             { path: 'processes', name: 'Processes', component: Processes },
             { path: 'logs', name: 'Logs', component: Logs },
+            { path: 'notifications', name: 'Notifications', component: Notifications },
             { path: 'data-collect', name: 'DataCollect', component: DataCollect },
             { path: 'data-parse', name: 'DataParse', component: DataParse },
             { path: 'data-process', name: 'DataProcess', component: DataProcess },

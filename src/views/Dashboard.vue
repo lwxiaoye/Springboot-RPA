@@ -262,6 +262,7 @@ import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { LineChart, BarChart } from 'echarts/charts'
 import { TitleComponent, TooltipComponent, LegendComponent, GridComponent } from 'echarts/components'
+import { apiGet } from '../utils/api.js'
 
 use([CanvasRenderer, LineChart, BarChart, TitleComponent, TooltipComponent, LegendComponent, GridComponent])
 
@@ -464,19 +465,20 @@ const loadUserFromStorage = () => {
   }
 }
 
+// 获取统计数据
 const loadStats = async () => {
   try {
     const [taskRes, robotRes, processRes, logRes] = await Promise.all([
-      fetch(`${API_BASE}/task`).catch(() => null),
-      fetch(`${API_BASE}/robot`).catch(() => null),
-      fetch(`${API_BASE}/process`).catch(() => null),
-      fetch(`${API_BASE}/log`).catch(() => null)
+      apiGet('/task'),
+      apiGet('/robot'),
+      apiGet('/process'),
+      apiGet('/log')
     ])
 
-    const tasks = taskRes ? (await taskRes.json()).data || [] : []
-    const robots = robotRes ? (await robotRes.json()).data || [] : []
-    const processes = processRes ? (await processRes.json()).data || [] : []
-    const logs = logRes ? (await logRes.json()).data || [] : []
+    const tasks = taskRes?.data || []
+    const robots = robotRes?.data || []
+    const processes = processRes?.data || []
+    const logs = logRes?.data || []
 
     stats.value = {
       tasks: tasks.length,
@@ -491,15 +493,44 @@ const loadStats = async () => {
       completed: tasks.filter(t => t.status === 'completed').length,
       failed: tasks.filter(t => t.status === 'failed').length
     }
+
+    // 计算变化率（模拟）
+    statsChange.value = {
+      tasks: Math.floor(Math.random() * 20),
+      robots: Math.floor(Math.random() * 15),
+      processes: Math.floor(Math.random() * 10),
+      logs: Math.floor(Math.random() * 25)
+    }
   } catch (error) {
-    stats.value = { tasks: 8, robots: 4, processes: 5, logs: 156 }
-    taskStatus.value = { running: 2, pending: 3, completed: 10, failed: 1 }
+    console.error('加载统计数据失败:', error)
+  }
+}
+
+// 获取最近任务
+const loadRecentTasks = async () => {
+  try {
+    const result = await apiGet('/task')
+    if (result?.code === 0 && result.data) {
+      // 取最新的5条任务
+      const recent = result.data.slice(0, 5).map(t => ({
+        id: t.id,
+        name: t.name || `任务_${t.id}`,
+        processName: t.category || '未知流程',
+        stockName: '-',
+        status: t.status || 'pending',
+        createTime: t.createTime || new Date().toLocaleString()
+      }))
+      recentTasks.value = recent
+    }
+  } catch (error) {
+    console.error('加载最近任务失败:', error)
   }
 }
 
 onMounted(() => {
   loadUserFromStorage()
   loadStats()
+  loadRecentTasks()
 })
 </script>
 

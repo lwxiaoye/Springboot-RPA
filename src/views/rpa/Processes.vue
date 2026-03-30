@@ -109,10 +109,11 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Search, Plus } from '@element-plus/icons-vue'
 
+import { apiGet, apiPost, apiPut, apiDelete } from '../../utils/api.js'
+
 const loading = ref(false)
 const submitLoading = ref(false)
 const processes = ref([])
-
 const searchKeyword = ref('')
 const statusFilter = ref('')
 const dialogVisible = ref(false)
@@ -153,15 +154,18 @@ const filteredProcesses = computed(() => {
 
 const loadProcesses = async () => {
   loading.value = true
-  setTimeout(() => {
-    processes.value = [
-      { id: 1, name: '客户信息录入流程', code: 'CUSTOMER_INPUT', version: '1.0', description: '录入客户基本信息到系统', status: 'active', creatorName: '系统管理员', createTime: '2026-03-20 10:00:00' },
-      { id: 2, name: '订单处理流程', code: 'ORDER_PROCESS', version: '2.1', description: '自动化处理订单数据', status: 'active', creatorName: '系统管理员', createTime: '2026-03-21 14:30:00' },
-      { id: 3, name: '发票审核流程', code: 'INVOICE_AUDIT', version: '1.2', description: '发票数据自动审核', status: 'draft', creatorName: '张三', createTime: '2026-03-22 09:15:00' }
-    ]
-    pagination.total = processes.value.length
+  try {
+    const result = await apiGet('/process')
+    if (result.code === 0) {
+      processes.value = result.data || []
+      pagination.total = processes.value.length
+    }
+  } catch {
+    processes.value = []
+    pagination.total = 0
+  } finally {
     loading.value = false
-  }, 300)
+  }
 }
 
 const showCreateModal = () => {
@@ -194,37 +198,63 @@ const submitProcess = async () => {
   await formRef.value.validate(async (valid) => {
     if (valid) {
       submitLoading.value = true
-      setTimeout(() => {
+      try {
         if (isEdit.value) {
-          const index = processes.value.findIndex(p => p.id === currentEditId.value)
-          if (index !== -1) {
-            processes.value[index] = { ...processes.value[index], ...processForm }
-          }
-          ElMessage.success('更新成功')
-        } else {
-          processes.value.unshift({
-            id: Date.now(),
-            ...processForm,
-            creatorName: '当前用户',
-            createTime: new Date().toLocaleString()
+          const result = await apiPut(`/process/${currentEditId.value}`, {
+            name: processForm.name,
+            code: processForm.code,
+            description: processForm.description,
+            version: processForm.version,
+            status: processForm.status
           })
-          pagination.total++
-          ElMessage.success('创建成功')
+          if (result.code === 0) {
+            ElMessage.success('更新成功')
+            dialogVisible.value = false
+            await loadProcesses()
+          } else {
+            ElMessage.error(result.message || '更新失败')
+          }
+        } else {
+          const result = await apiPost('/process', {
+            name: processForm.name,
+            code: processForm.code,
+            description: processForm.description,
+            version: processForm.version,
+            status: processForm.status
+          })
+          if (result.code === 0) {
+            ElMessage.success('创建成功')
+            dialogVisible.value = false
+            await loadProcesses()
+          } else {
+            ElMessage.error(result.message || '创建失败')
+          }
         }
-        dialogVisible.value = false
+      } catch {
+        ElMessage.error('请求失败')
+      } finally {
         submitLoading.value = false
-      }, 500)
+      }
     }
   })
 }
 
-const deleteProcess = (process) => {
-  const index = processes.value.findIndex(p => p.id === process.id)
-  if (index !== -1) {
-    processes.value.splice(index, 1)
-    pagination.total--
+const deleteProcess = async (process) => {
+  try {
+    const result = await apiDelete(`/process/${process.id}`)
+    if (result.code === 0) {
+      const index = processes.value.findIndex(p => p.id === process.id)
+      if (index !== -1) {
+        processes.value.splice(index, 1)
+        pagination.total--
+      }
+      ElMessage.success('删除成功')
+    } else {
+      ElMessage.error(result.message || '删除失败')
+    }
+  } catch {
+    ElMessage.error('请求失败')
   }
-  ElMessage.success('删除成功')
 }
 
 const handleSizeChange = (size) => { pagination.size = size; pagination.page = 1 }

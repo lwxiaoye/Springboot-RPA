@@ -167,7 +167,9 @@ import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Edit } from '@element-plus/icons-vue'
 
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080/api'
+import { apiGet, apiPost, apiPut, apiDelete, apiUpload } from '../../utils/api.js'
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'
 
 // 当前用户信息
 const currentUser = ref({
@@ -256,12 +258,7 @@ const saveAllInfo = async () => {
       email: editForm.email, 
       mobile: editForm.mobile 
     }
-    const response = await fetch(`${API_BASE}/user/update/${currentUser.value.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    })
-    const result = await response.json()
+    const result = await apiPut(`/user/${currentUser.value.id}`, payload)
     if (result.code === 0) {
       currentUser.value.realName = payload.realName
       currentUser.value.email = payload.email

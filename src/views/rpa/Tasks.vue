@@ -73,7 +73,7 @@
           <el-input v-model="taskForm.name" placeholder="请输入任务名称" />
         </el-form-item>
         <el-form-item label="所属流程" prop="processId">
-          <el-select v-model="taskForm.processId" placeholder="请选择流程" style="width: 100%">
+          <el-select v-model="taskForm.processId" placeholder="请选择流程" style="width: 100%" @change="onProcessChange">
             <el-option v-for="p in processes" :key="p.id" :label="p.name" :value="p.id" />
           </el-select>
         </el-form-item>
@@ -119,7 +119,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Search, Plus } from '@element-plus/icons-vue'
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'
+import { apiGet, apiPost, apiPut, apiDelete } from '../../utils/api.js'
 
 const loading = ref(false)
 const submitLoading = ref(false)
@@ -143,13 +143,12 @@ const taskForm = reactive({
   processId: '',
   robotId: '',
   priority: 'normal',
-  remark: ''
+  category: ''
 })
 
 const formRules = {
   name: [{ required: true, message: '请输入任务名称', trigger: 'blur' }],
-  processId: [{ required: true, message: '请选择流程', trigger: 'change' }],
-  robotId: [{ required: true, message: '请选择机器人', trigger: 'change' }]
+  processId: [{ required: true, message: '请选择流程', trigger: 'change' }]
 }
 
 const dialogTitle = computed(() => isEdit.value ? '编辑任务' : '新建任务')
@@ -187,50 +186,68 @@ const filteredTasks = computed(() => {
 
 const loadTasks = async () => {
   loading.value = true
-  setTimeout(() => {
-    tasks.value = [
-      { id: 1, name: '数据同步任务', processName: '数据采集流程', robotName: 'Robot-001', priority: 'high', status: 'running', createTime: '2026-03-25 10:00:00', remark: '同步客户数据' },
-      { id: 2, name: '报表生成任务', processName: '报表流程', robotName: 'Robot-002', priority: 'normal', status: 'pending', createTime: '2026-03-25 11:00:00', remark: '生成日报表' },
-      { id: 3, name: '邮件发送任务', processName: '通知流程', robotName: 'Robot-001', priority: 'low', status: 'completed', createTime: '2026-03-24 15:00:00', remark: '发送通知邮件' }
-    ]
-    pagination.total = tasks.value.length
+  try {
+    const result = await apiGet('/task')
+    if (result.code === 0) {
+      tasks.value = result.data || []
+      pagination.total = tasks.value.length
+    }
+  } catch {
+    tasks.value = []
+    pagination.total = 0
+  } finally {
     loading.value = false
-  }, 300)
+  }
 }
 
 const loadProcesses = async () => {
-  processes.value = [
-    { id: 1, name: '数据采集流程' },
-    { id: 2, name: '报表流程' },
-    { id: 3, name: '通知流程' }
-  ]
+  try {
+    const result = await apiGet('/process')
+    if (result.code === 0) {
+      processes.value = result.data || []
+    }
+  } catch {
+    processes.value = []
+  }
 }
 
 const loadRobots = async () => {
-  robots.value = [
-    { id: 1, name: 'Robot-001' },
-    { id: 2, name: 'Robot-002' }
-  ]
+  try {
+    const result = await apiGet('/robot/idle')
+    if (result.code === 0) {
+      robots.value = result.data || []
+    }
+  } catch {
+    robots.value = []
+  }
 }
 
 const showCreateModal = () => {
   isEdit.value = false
   currentEditId.value = null
-  Object.assign(taskForm, { name: '', processId: '', robotId: '', priority: 'normal', remark: '' })
+  Object.assign(taskForm, { name: '', processId: '', robotId: '', priority: 'normal', category: '' })
   dialogVisible.value = true
 }
 
 const editTask = (task) => {
   isEdit.value = true
   currentEditId.value = task.id
+  // 先设置processId，再更新category
+  taskForm.processId = task.processId || ''
+  taskForm.category = task.category || task.processName || ''
   Object.assign(taskForm, {
     name: task.name,
-    processId: task.processId,
-    robotId: task.robotId,
-    priority: task.priority,
-    remark: task.remark
+    robotId: task.robotId || '',
+    priority: task.priority || 'normal'
   })
   dialogVisible.value = true
+}
+
+const onProcessChange = (processId) => {
+  const process = processes.value.find(p => p.id === processId)
+  if (process) {
+    taskForm.category = process.name
+  }
 }
 
 const viewDetail = (task) => {
@@ -243,54 +260,66 @@ const submitTask = async () => {
   await formRef.value.validate(async (valid) => {
     if (valid) {
       submitLoading.value = true
-      setTimeout(() => {
+      try {
         const process = processes.value.find(p => p.id === taskForm.processId)
-        const robot = robots.value.find(r => r.id === taskForm.robotId)
         if (isEdit.value) {
-          const index = tasks.value.findIndex(t => t.id === currentEditId.value)
-          if (index !== -1) {
-            tasks.value[index] = {
-              ...tasks.value[index],
-              name: taskForm.name,
-              processId: taskForm.processId,
-              processName: process?.name,
-              robotId: taskForm.robotId,
-              robotName: robot?.name,
-              priority: taskForm.priority,
-              remark: taskForm.remark
-            }
-          }
-          ElMessage.success('更新成功')
-        } else {
-          tasks.value.unshift({
-            id: Date.now(),
+          const result = await apiPut(`/task/${currentEditId.value}`, {
             name: taskForm.name,
             processId: taskForm.processId,
-            processName: process?.name,
-            robotId: taskForm.robotId,
-            robotName: robot?.name,
+            processName: process?.name || taskForm.category,
+            category: taskForm.category,
             priority: taskForm.priority,
-            status: 'pending',
-            createTime: new Date().toLocaleString(),
-            remark: taskForm.remark
+            robotId: taskForm.robotId
           })
-          pagination.total++
-          ElMessage.success('创建成功')
+          if (result.code === 0) {
+            ElMessage.success('更新成功')
+            dialogVisible.value = false
+            await loadTasks()
+          } else {
+            ElMessage.error(result.message || '更新失败')
+          }
+        } else {
+          const result = await apiPost('/task', {
+            name: taskForm.name,
+            category: taskForm.category,
+            priority: taskForm.priority,
+            processId: taskForm.processId,
+            processName: process?.name,
+            assigneeId: taskForm.robotId
+          })
+          if (result.code === 0) {
+            ElMessage.success('创建成功')
+            dialogVisible.value = false
+            await loadTasks()
+          } else {
+            ElMessage.error(result.message || '创建失败')
+          }
         }
-        dialogVisible.value = false
+      } catch {
+        ElMessage.error('请求失败')
+      } finally {
         submitLoading.value = false
-      }, 500)
+      }
     }
   })
 }
 
-const deleteTask = (task) => {
-  const index = tasks.value.findIndex(t => t.id === task.id)
-  if (index !== -1) {
-    tasks.value.splice(index, 1)
-    pagination.total--
+const deleteTask = async (task) => {
+  try {
+    const result = await apiDelete(`/task/${task.id}`)
+    if (result.code === 0) {
+      const index = tasks.value.findIndex(t => t.id === task.id)
+      if (index !== -1) {
+        tasks.value.splice(index, 1)
+        pagination.total--
+      }
+      ElMessage.success('删除成功')
+    } else {
+      ElMessage.error(result.message || '删除失败')
+    }
+  } catch {
+    ElMessage.error('请求失败')
   }
-  ElMessage.success('删除成功')
 }
 
 const handleSizeChange = (size) => { pagination.size = size; pagination.page = 1 }

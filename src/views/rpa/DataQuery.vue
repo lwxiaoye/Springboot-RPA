@@ -18,13 +18,13 @@
     <el-table :data="filteredData" v-loading="loading" border stripe>
       <el-table-column type="index" label="序号" width="60" align="center" />
       <el-table-column prop="name" label="查询名称" min-width="160" />
-      <el-table-column prop="condition" label="查询条件" min-width="200" show-overflow-tooltip>
-        <template #default="{ row }">{{ row.condition || '-' }}</template>
-      </el-table-column>
-      <el-table-column prop="queryTime" label="查询时间" min-width="160">
-        <template #default="{ row }">{{ row.queryTime || '-' }}</template>
+      <el-table-column prop="queryCondition" label="查询条件" min-width="200" show-overflow-tooltip>
+        <template #default="{ row }">{{ row.queryCondition || '-' }}</template>
       </el-table-column>
       <el-table-column prop="resultCount" label="结果数量" width="100" align="center" />
+      <el-table-column prop="lastQueryTime" label="查询时间" min-width="160">
+        <template #default="{ row }">{{ row.lastQueryTime ? new Date(row.lastQueryTime).toLocaleString() : '-' }}</template>
+      </el-table-column>
       <el-table-column label="操作" width="150" fixed="right" align="center">
         <template #default="{ row }">
           <el-button link type="primary" @click="runQuery(row)">执行</el-button>
@@ -56,19 +56,18 @@
         <el-form-item label="查询名称" prop="name">
           <el-input v-model="queryForm.name" placeholder="请输入查询名称" />
         </el-form-item>
-        <el-form-item label="数据源" prop="dataSource">
-          <el-select v-model="queryForm.dataSource" placeholder="请选择数据源" style="width: 100%">
-            <el-option label="客户数据" value="客户数据" />
-            <el-option label="订单数据" value="订单数据" />
-            <el-option label="产品数据" value="产品数据" />
-            <el-option label="采集结果" value="采集结果" />
+        <el-form-item label="数据表">
+          <el-select v-model="queryForm.sourceTable" placeholder="请选择数据表" style="width: 100%">
+            <el-option label="采集数据" value="collected_data" />
+            <el-option label="处理数据" value="processed_data" />
+            <el-option label="用户数据" value="users" />
           </el-select>
         </el-form-item>
         <el-form-item label="查询条件">
-          <el-input v-model="queryForm.condition" type="textarea" :rows="4" placeholder="请输入查询条件（如：where status = 'active'）" />
+          <el-input v-model="queryForm.queryCondition" type="textarea" :rows="4" placeholder="请输入查询条件（SQL的WHERE子句），如：status = 'active'" />
         </el-form-item>
         <el-form-item label="返回字段">
-          <el-input v-model="queryForm.fields" placeholder="请输入返回字段，多个字段用逗号分隔" />
+          <el-input v-model="queryForm.queryColumns" placeholder="请输入返回字段，多个字段用逗号分隔，如：id,name,email" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -81,7 +80,7 @@
     <el-dialog v-model="resultVisible" title="查询结果" width="800px">
       <div class="result-header">
         <span>查询名称：{{ currentQuery.name }}</span>
-        <span>结果数量：{{ currentQuery.resultCount }} 条</span>
+        <span>结果数量：{{ queryResults.length }} 条</span>
       </div>
       <el-table :data="queryResults" border stripe max-height="400">
         <el-table-column v-for="col in resultColumns" :key="col" :prop="col" :label="col" min-width="120" />
@@ -99,6 +98,8 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Search, Plus } from '@element-plus/icons-vue'
 
+import { apiGet, apiPost, apiPut, apiDelete } from '../../utils/api.js'
+
 const loading = ref(false)
 const submitLoading = ref(false)
 const dataList = ref([])
@@ -114,14 +115,13 @@ const pagination = reactive({ page: 1, size: 10, total: 0 })
 
 const queryForm = reactive({
   name: '',
-  dataSource: '',
-  condition: '',
-  fields: ''
+  sourceTable: '',
+  queryCondition: '',
+  queryColumns: ''
 })
 
 const formRules = {
-  name: [{ required: true, message: '请输入查询名称', trigger: 'blur' }],
-  dataSource: [{ required: true, message: '请选择数据源', trigger: 'change' }]
+  name: [{ required: true, message: '请输入查询名称', trigger: 'blur' }]
 }
 
 const filteredData = computed(() => {
@@ -134,19 +134,22 @@ const filteredData = computed(() => {
 
 const loadData = async () => {
   loading.value = true
-  setTimeout(() => {
-    dataList.value = [
-      { id: 1, name: '客户信息查询', condition: '按地区筛选', queryTime: '2026-03-26 10:15:00', resultCount: 256, dataSource: '客户数据' },
-      { id: 2, name: '订单统计查询', condition: '按日期统计', queryTime: '2026-03-26 10:20:00', resultCount: 89, dataSource: '订单数据' },
-      { id: 3, name: '产品库存查询', condition: '按仓库查询', queryTime: '2026-03-26 10:25:00', resultCount: 1567, dataSource: '产品数据' }
-    ]
-    pagination.total = dataList.value.length
+  try {
+    const result = await apiGet('/dataQuery')
+    if (result.code === 0) {
+      dataList.value = result.data || []
+      pagination.total = dataList.value.length
+    }
+  } catch {
+    dataList.value = []
+    pagination.total = 0
+  } finally {
     loading.value = false
-  }, 300)
+  }
 }
 
 const showCreateModal = () => {
-  Object.assign(queryForm, { name: '', dataSource: '', condition: '', fields: '' })
+  Object.assign(queryForm, { name: '', sourceTable: '', queryCondition: '', queryColumns: '' })
   dialogVisible.value = true
 }
 
@@ -155,46 +158,69 @@ const submitQuery = async () => {
   await formRef.value.validate(async (valid) => {
     if (valid) {
       submitLoading.value = true
-      setTimeout(() => {
-        dataList.value.unshift({
-          id: Date.now(),
+      try {
+        const result = await apiPost('/dataQuery', {
           name: queryForm.name,
-          condition: queryForm.condition || '全部数据',
-          dataSource: queryForm.dataSource,
-          queryTime: new Date().toLocaleString(),
-          resultCount: 0
+          sourceTable: queryForm.sourceTable,
+          queryCondition: queryForm.queryCondition,
+          queryColumns: queryForm.queryColumns
         })
-        pagination.total++
-        ElMessage.success('创建成功')
-        dialogVisible.value = false
+        if (result.code === 0) {
+          ElMessage.success('创建成功')
+          dialogVisible.value = false
+          await loadData()
+        } else {
+          ElMessage.error(result.message || '创建失败')
+        }
+      } catch {
+        ElMessage.error('请求失败')
+      } finally {
         submitLoading.value = false
-      }, 500)
+      }
     }
   })
 }
 
-const runQuery = (item) => {
-  ElMessage.success(`正在执行查询: ${item.name}`)
-  // 模拟查询结果
-  const index = dataList.value.findIndex(d => d.id === item.id)
-  if (index !== -1) {
-    dataList.value[index].resultCount = Math.floor(Math.random() * 500) + 50
-    dataList.value[index].queryTime = new Date().toLocaleString()
+const runQuery = async (item) => {
+  try {
+    const result = await apiPost(`/dataQuery/${item.id}/execute`)
+    if (result.code === 0 || result.success) {
+      ElMessage.success(`查询执行完成`)
+      await loadData()
+    } else {
+      ElMessage.error(result.message || '执行失败')
+    }
+  } catch {
+    ElMessage.error('请求失败')
   }
-  ElMessage.success(`查询完成，共找到 ${dataList.value[index].resultCount} 条记录`)
 }
 
-const viewResult = (item) => {
+const viewResult = async (item) => {
   currentQuery.value = item
-  // 模拟结果数据
-  const sampleData = [
-    { id: 1, name: '张三', email: 'zhangsan@example.com', phone: '13800138001', status: '启用' },
-    { id: 2, name: '李四', email: 'lisi@example.com', phone: '13800138002', status: '启用' },
-    { id: 3, name: '王五', email: 'wangwu@example.com', phone: '13800138003', status: '禁用' },
-    { id: 4, name: '赵六', email: 'zhaoliu@example.com', phone: '13800138004', status: '启用' }
-  ]
-  queryResults.value = sampleData.slice(0, Math.min(item.resultCount || 10, 10))
-  resultColumns.value = Object.keys(queryResults.value[0] || {})
+  try {
+    const result = await apiGet(`/dataQuery/${item.id}`)
+    if (result.code === 0 && result.data?.resultData) {
+      try {
+        const parsed = JSON.parse(result.data.resultData)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          queryResults.value = parsed
+          resultColumns.value = Object.keys(parsed[0])
+        } else {
+          queryResults.value = []
+          resultColumns.value = []
+        }
+      } catch {
+        queryResults.value = []
+        resultColumns.value = []
+      }
+    } else {
+      queryResults.value = []
+      resultColumns.value = []
+    }
+  } catch {
+    queryResults.value = []
+    resultColumns.value = []
+  }
   resultVisible.value = true
 }
 
@@ -202,13 +228,22 @@ const exportData = () => {
   ElMessage.success('导出功能开发中')
 }
 
-const deleteQuery = (item) => {
-  const index = dataList.value.findIndex(d => d.id === item.id)
-  if (index !== -1) {
-    dataList.value.splice(index, 1)
-    pagination.total--
+const deleteQuery = async (item) => {
+  try {
+    const result = await apiDelete(`/dataQuery/${item.id}`)
+    if (result.code === 0) {
+      const index = dataList.value.findIndex(d => d.id === item.id)
+      if (index !== -1) {
+        dataList.value.splice(index, 1)
+        pagination.total--
+      }
+      ElMessage.success('删除成功')
+    } else {
+      ElMessage.error(result.message || '删除失败')
+    }
+  } catch {
+    ElMessage.error('请求失败')
   }
-  ElMessage.success('删除成功')
 }
 
 const handleSizeChange = (size) => { pagination.size = size; pagination.page = 1 }

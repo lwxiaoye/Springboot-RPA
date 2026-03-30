@@ -181,7 +181,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'
+import { apiGet, apiPost, apiPut, apiDelete } from '../../utils/api.js'
 
 // 数据状态
 const loading = ref(false)
@@ -287,16 +287,18 @@ const formatDate = (dateStr) => {
 // 加载用户列表
 const loadUsers = async () => {
   loading.value = true
-  setTimeout(() => {
-    users.value = [
-      { id: 1, username: 'admin', realName: '系统管理员', email: 'admin@rpa.com', phone: '13800138001', role: 1, status: 1, createTime: '2026-03-20T10:00:00' },
-      { id: 2, username: 'zhangsan', realName: '张三', email: 'zhangsan@example.com', phone: '13800138002', role: 0, status: 1, createTime: '2026-03-21T09:30:00' },
-      { id: 3, username: 'lisi', realName: '李四', email: 'lisi@example.com', phone: '13800138003', role: 0, status: 0, createTime: '2026-03-22T14:20:00' },
-      { id: 4, username: 'wangwu', realName: '王五', email: 'wangwu@example.com', phone: '13800138004', role: 1, status: 1, createTime: '2026-03-23T11:15:00' }
-    ]
-    pagination.total = users.value.length
+  try {
+    const result = await apiGet('/user')
+    if (result.code === 0) {
+      users.value = result.data || []
+      pagination.total = users.value.length
+    }
+  } catch {
+    users.value = []
+    pagination.total = 0
+  } finally {
     loading.value = false
-  }, 300)
+  }
 }
 
 // 搜索
@@ -369,26 +371,45 @@ const saveUser = async () => {
     if (!valid) return
     
     submitLoading.value = true
-    setTimeout(() => {
+    try {
       if (isEdit.value) {
-        const index = users.value.findIndex(u => u.id === currentUserId.value)
-        if (index !== -1) {
-          users.value[index] = { ...users.value[index], ...userForm }
+        const payload = { 
+          realName: userForm.realName, 
+          email: userForm.email, 
+          phone: userForm.phone,
+          role: userForm.role
         }
-        ElMessage.success('更新成功')
+        const result = await apiPut(`/user/${currentUserId.value}`, payload)
+        if (result.code === 0) {
+          const index = users.value.findIndex(u => u.id === currentUserId.value)
+          if (index !== -1) {
+            users.value[index] = { ...users.value[index], ...payload }
+          }
+          ElMessage.success('更新成功')
+        } else {
+          ElMessage.error(result.message || '更新失败')
+        }
       } else {
-        users.value.unshift({
-          id: Date.now(),
-          ...userForm,
-          status: 1,
-          createTime: new Date().toISOString()
+        const result = await apiPost('/user/register', {
+          username: userForm.username,
+          password: userForm.password,
+          realName: userForm.realName,
+          email: userForm.email,
+          phone: userForm.phone,
+          role: userForm.role
         })
-        pagination.total++
-        ElMessage.success('创建成功')
+        if (result.code === 0) {
+          users.value.unshift(result.data)
+          pagination.total++
+          ElMessage.success('创建成功')
+        } else {
+          ElMessage.error(result.message || '创建失败')
+        }
       }
       dialogVisible.value = false
+    } finally {
       submitLoading.value = false
-    }, 500)
+    }
   })
 }
 
@@ -408,11 +429,19 @@ const confirmResetPassword = async () => {
     if (!valid) return
     
     pwdLoading.value = true
-    setTimeout(() => {
-      ElMessage.success(`密码重置成功！新密码：${pwdForm.password}`)
-      pwdDialogVisible.value = false
+    try {
+      const result = await apiPut(`/user/reset-password/${currentResetUser.value.id}`, { newPassword: pwdForm.password })
+      if (result.code === 0) {
+        ElMessage.success('密码重置成功')
+        pwdDialogVisible.value = false
+      } else {
+        ElMessage.error(result.message || '重置失败')
+      }
+    } catch {
+      ElMessage.error('请求失败')
+    } finally {
       pwdLoading.value = false
-    }, 500)
+    }
   })
 }
 
@@ -424,9 +453,19 @@ const toggleUserStatus = async (user) => {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning'
-  }).then(() => {
-    user.status = user.status === 1 ? 0 : 1
-    ElMessage.success(`${action}成功`)
+  }).then(async () => {
+    try {
+      const newStatus = user.status === 1 ? 0 : 1
+      const result = await apiPut(`/user/${user.id}/status`, { status: newStatus })
+      if (result.code === 0) {
+        user.status = newStatus
+        ElMessage.success(`${action}成功`)
+      } else {
+        ElMessage.error(result.message || `${action}失败`)
+      }
+    } catch {
+      ElMessage.error('请求失败')
+    }
   })
 }
 
@@ -436,13 +475,22 @@ const deleteUser = (user) => {
     confirmButtonText: '确定删除',
     cancelButtonText: '取消',
     type: 'error'
-  }).then(() => {
-    const index = users.value.findIndex(u => u.id === user.id)
-    if (index !== -1) {
-      users.value.splice(index, 1)
-      pagination.total--
+  }).then(async () => {
+    try {
+      const result = await apiDelete(`/user/${user.id}`)
+      if (result.code === 0) {
+        const index = users.value.findIndex(u => u.id === user.id)
+        if (index !== -1) {
+          users.value.splice(index, 1)
+          pagination.total--
+        }
+        ElMessage.success('删除成功')
+      } else {
+        ElMessage.error(result.message || '删除失败')
+      }
+    } catch {
+      ElMessage.error('请求失败')
     }
-    ElMessage.success('删除成功')
   })
 }
 

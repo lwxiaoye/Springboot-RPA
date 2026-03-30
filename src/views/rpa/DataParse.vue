@@ -23,7 +23,7 @@
     <el-table :data="filteredData" v-loading="loading" border stripe>
       <el-table-column type="index" label="序号" width="60" align="center" />
       <el-table-column prop="name" label="解析名称" min-width="160" />
-      <el-table-column prop="rule" label="解析规则" min-width="140" />
+      <el-table-column prop="parseType" label="解析类型" width="100" align="center" />
       <el-table-column prop="status" label="状态" width="90" align="center">
         <template #default="{ row }">
           <el-tag :type="getStatusType(row.status)" size="small">
@@ -31,11 +31,11 @@
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="successRate" label="成功率" width="100" align="center">
-        <template #default="{ row }">{{ row.successRate || '0%' }}</template>
+      <el-table-column label="成功/失败" width="100" align="center">
+        <template #default="{ row }">{{ row.successCount || 0 }} / {{ row.failCount || 0 }}</template>
       </el-table-column>
-      <el-table-column prop="parseTime" label="解析时间" min-width="160">
-        <template #default="{ row }">{{ row.parseTime || '-' }}</template>
+      <el-table-column prop="lastParseTime" label="解析时间" min-width="160">
+        <template #default="{ row }">{{ row.lastParseTime ? new Date(row.lastParseTime).toLocaleString() : '-' }}</template>
       </el-table-column>
       <el-table-column label="操作" width="180" fixed="right" align="center">
         <template #default="{ row }">
@@ -68,16 +68,23 @@
         <el-form-item label="解析名称" prop="name">
           <el-input v-model="dataForm.name" placeholder="请输入解析名称" />
         </el-form-item>
-        <el-form-item label="解析规则" prop="rule">
-          <el-select v-model="dataForm.rule" placeholder="请选择解析规则" style="width: 100%">
-            <el-option label="JSON解析" value="JSON解析" />
-            <el-option label="XML解析" value="XML解析" />
-            <el-option label="正则表达式" value="正则表达式" />
-            <el-option label="CSV解析" value="CSV解析" />
+        <el-form-item label="解析类型">
+          <el-select v-model="dataForm.parseType" placeholder="请选择解析类型" style="width: 100%">
+            <el-option label="JSON解析" value="JSON" />
+            <el-option label="XML解析" value="XML" />
+            <el-option label="正则表达式" value="正则" />
+            <el-option label="CSV解析" value="CSV" />
           </el-select>
         </el-form-item>
-        <el-form-item label="解析配置">
-          <el-input v-model="dataForm.config" type="textarea" :rows="4" placeholder="请输入解析配置" />
+        <el-form-item label="输出格式">
+          <el-select v-model="dataForm.outputFormat" placeholder="请选择输出格式" style="width: 100%">
+            <el-option label="JSON" value="JSON" />
+            <el-option label="CSV" value="CSV" />
+            <el-option label="XML" value="XML" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="解析规则">
+          <el-input v-model="dataForm.parseRules" type="textarea" :rows="4" placeholder="请输入解析规则（JSON格式），如：{&quot;field&quot;: &quot;value&quot;}" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -93,6 +100,8 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Search, Plus } from '@element-plus/icons-vue'
 
+import { apiGet, apiPost, apiPut, apiDelete } from '../../utils/api.js'
+
 const loading = ref(false)
 const submitLoading = ref(false)
 const dataList = ref([])
@@ -107,13 +116,14 @@ const pagination = reactive({ page: 1, size: 10, total: 0 })
 
 const dataForm = reactive({
   name: '',
-  rule: '',
-  config: ''
+  collectId: '',
+  parseType: 'JSON',
+  parseRules: '',
+  outputFormat: 'JSON'
 })
 
 const formRules = {
-  name: [{ required: true, message: '请输入解析名称', trigger: 'blur' }],
-  rule: [{ required: true, message: '请选择解析规则', trigger: 'change' }]
+  name: [{ required: true, message: '请输入解析名称', trigger: 'blur' }]
 }
 
 const dialogTitle = computed(() => isEdit.value ? '编辑解析' : '新建解析')
@@ -141,21 +151,24 @@ const filteredData = computed(() => {
 
 const loadData = async () => {
   loading.value = true
-  setTimeout(() => {
-    dataList.value = [
-      { id: 1, name: '客户信息解析', rule: 'JSON解析', status: 'success', successRate: '98.5%', parseTime: '2026-03-26 09:30:00', config: '{"mapping":{"name":"customerName"}}' },
-      { id: 2, name: '订单详情解析', rule: '正则表达式', status: 'running', successRate: '95.2%', parseTime: '2026-03-26 10:30:00', config: 'pattern: "order_(\\d+)"' },
-      { id: 3, name: '产品规格解析', rule: 'XML解析', status: 'success', successRate: '99.1%', parseTime: '2026-03-25 16:00:00', config: 'xpath: "//product/spec"' }
-    ]
-    pagination.total = dataList.value.length
+  try {
+    const result = await apiGet('/dataParse')
+    if (result.code === 0) {
+      dataList.value = result.data || []
+      pagination.total = dataList.value.length
+    }
+  } catch {
+    dataList.value = []
+    pagination.total = 0
+  } finally {
     loading.value = false
-  }, 300)
+  }
 }
 
 const showCreateModal = () => {
   isEdit.value = false
   currentEditId.value = null
-  Object.assign(dataForm, { name: '', rule: '', config: '' })
+  Object.assign(dataForm, { name: '', collectId: '', parseType: 'JSON', parseRules: '', outputFormat: 'JSON' })
   dialogVisible.value = true
 }
 
@@ -164,8 +177,10 @@ const editTask = (item) => {
   currentEditId.value = item.id
   Object.assign(dataForm, {
     name: item.name,
-    rule: item.rule,
-    config: item.config
+    collectId: item.collectId,
+    parseType: item.parseType,
+    parseRules: item.parseRules,
+    outputFormat: item.outputFormat
   })
   dialogVisible.value = true
 }
@@ -175,46 +190,77 @@ const submitTask = async () => {
   await formRef.value.validate(async (valid) => {
     if (valid) {
       submitLoading.value = true
-      setTimeout(() => {
+      try {
         if (isEdit.value) {
-          const index = dataList.value.findIndex(d => d.id === currentEditId.value)
-          if (index !== -1) {
-            dataList.value[index] = { ...dataList.value[index], ...dataForm }
-          }
-          ElMessage.success('更新成功')
-        } else {
-          dataList.value.unshift({
-            id: Date.now(),
-            ...dataForm,
-            status: 'pending',
-            successRate: '0%',
-            parseTime: null
+          const result = await apiPut(`/dataParse/${currentEditId.value}`, {
+            name: dataForm.name,
+            collectId: dataForm.collectId,
+            parseType: dataForm.parseType,
+            parseRules: dataForm.parseRules,
+            outputFormat: dataForm.outputFormat
           })
-          pagination.total++
-          ElMessage.success('创建成功')
+          if (result.code === 0) {
+            ElMessage.success('更新成功')
+            dialogVisible.value = false
+            await loadData()
+          } else {
+            ElMessage.error(result.message || '更新失败')
+          }
+        } else {
+          const result = await apiPost('/dataParse', {
+            name: dataForm.name,
+            collectId: dataForm.collectId,
+            parseType: dataForm.parseType,
+            parseRules: dataForm.parseRules,
+            outputFormat: dataForm.outputFormat
+          })
+          if (result.code === 0) {
+            ElMessage.success('创建成功')
+            dialogVisible.value = false
+            await loadData()
+          } else {
+            ElMessage.error(result.message || '创建失败')
+          }
         }
-        dialogVisible.value = false
+      } catch {
+        ElMessage.error('请求失败')
+      } finally {
         submitLoading.value = false
-      }, 500)
+      }
     }
   })
 }
 
-const runTask = (item) => {
-  ElMessage.success(`已启动解析任务: ${item.name}`)
-  const index = dataList.value.findIndex(d => d.id === item.id)
-  if (index !== -1) {
-    dataList.value[index].status = 'running'
+const runTask = async (item) => {
+  try {
+    const result = await apiPost(`/dataParse/${item.id}/execute`)
+    if (result.code === 0 || result.success) {
+      ElMessage.success(`解析任务已启动: ${item.name}`)
+      await loadData()
+    } else {
+      ElMessage.error(result.message || '执行失败')
+    }
+  } catch {
+    ElMessage.error('请求失败')
   }
 }
 
-const deleteTask = (item) => {
-  const index = dataList.value.findIndex(d => d.id === item.id)
-  if (index !== -1) {
-    dataList.value.splice(index, 1)
-    pagination.total--
+const deleteTask = async (item) => {
+  try {
+    const result = await apiDelete(`/dataParse/${item.id}`)
+    if (result.code === 0) {
+      const index = dataList.value.findIndex(d => d.id === item.id)
+      if (index !== -1) {
+        dataList.value.splice(index, 1)
+        pagination.total--
+      }
+      ElMessage.success('删除成功')
+    } else {
+      ElMessage.error(result.message || '删除失败')
+    }
+  } catch {
+    ElMessage.error('请求失败')
   }
-  ElMessage.success('删除成功')
 }
 
 const handleSizeChange = (size) => { pagination.size = size; pagination.page = 1 }

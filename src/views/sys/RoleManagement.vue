@@ -27,19 +27,19 @@
     <!-- 角色表格 -->
     <el-table :data="filteredTableData" border stripe v-loading="loading" style="width: 100%">
       <el-table-column type="index" label="序号" width="60" align="center" />
-      <el-table-column prop="roleCode" label="角色编码" min-width="120" />
-      <el-table-column prop="roleName" label="角色名称" min-width="120" />
+      <el-table-column prop="code" label="角色编码" min-width="120" />
+      <el-table-column prop="name" label="角色名称" min-width="120" />
       <el-table-column prop="description" label="描述" min-width="180" show-overflow-tooltip />
       <el-table-column label="权限" width="100" align="center">
         <template #default="{ row }">
-          <span>{{ row.permissionDesc || '无权限' }}</span>
+          <span>{{ row.permissionCount || 0 }} 个</span>
         </template>
       </el-table-column>
       <el-table-column prop="userCount" label="用户数" width="80" align="center" />
       <el-table-column label="状态" width="80" align="center">
         <template #default="{ row }">
-          <el-tag :type="row.status === '启用' ? 'success' : 'info'" size="small">
-            {{ row.status }}
+          <el-tag :type="row.status === 1 ? 'success' : 'info'" size="small">
+            {{ row.status === 1 ? '启用' : '禁用' }}
           </el-tag>
         </template>
       </el-table-column>
@@ -89,8 +89,8 @@
         </el-form-item>
         <el-form-item label="状态" prop="status">
           <el-radio-group v-model="roleForm.status">
-            <el-radio label="启用">启用</el-radio>
-            <el-radio label="禁用">禁用</el-radio>
+            <el-radio :label="1">启用</el-radio>
+            <el-radio :label="0">禁用</el-radio>
           </el-radio-group>
         </el-form-item>
       </el-form>
@@ -129,39 +129,8 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
-import axios from 'axios'
 
-const API_BASE_URL = 'http://localhost:8080/api'
-
-const api = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: 30000,
-  headers: { 'Content-Type': 'application/json' }
-})
-
-api.interceptors.request.use(config => {
-  const token = localStorage.getItem('token')
-  if (token) config.headers.Authorization = `Bearer ${token}`
-  return config
-})
-
-api.interceptors.response.use(
-  response => response.data,
-  error => {
-    if (error.response) {
-      switch (error.response.status) {
-        case 401: ElMessage.error('未授权，请重新登录'); break
-        case 403: ElMessage.error('没有权限'); break
-        case 404: ElMessage.error('请求的资源不存在'); break
-        case 500: ElMessage.error('服务器错误'); break
-        default: ElMessage.error(error.response.data?.message || '请求失败')
-      }
-    } else if (error.request) {
-      ElMessage.error('网络连接失败，请检查网络')
-    }
-    return Promise.reject(error)
-  }
-)
+import { apiGet, apiPost, apiPut } from '../../utils/api.js'
 
 const tableData = ref([])
 const searchForm = reactive({ roleName: '', roleCode: '' })
@@ -174,18 +143,14 @@ const permLoading = ref(false)
 const dialogVisible = ref(false)
 const isEdit = ref(false)
 const roleFormRef = ref(null)
-const roleForm = reactive({ roleCode: '', roleName: '', description: '', status: '启用' })
+const roleForm = reactive({ roleCode: '', roleName: '', description: '', status: 1 })
 const currentEditId = ref(null)
 
 const permDialogVisible = ref(false)
 const currentPermRole = ref(null)
 const treeRef = ref(null)
 const defaultCheckedKeys = ref([])
-const permissionTree = ref([
-  { id: 1, name: 'RPA运营管理', children: [{ id: 11, name: '任务管理' }, { id: 12, name: '执行记录' }] },
-  { id: 2, name: '系统管理', children: [{ id: 21, name: '用户管理' }, { id: 22, name: '角色管理' }] },
-  { id: 3, name: '仪表盘' }
-])
+const permissionTree = ref([])
 
 const formRules = {
   roleCode: [{ required: true, message: '请输入角色编码', trigger: 'blur' }],
@@ -195,48 +160,41 @@ const formRules = {
 const fetchRoleList = async () => {
   loading.value = true
   try {
-    const params = {
-      pageNum: pagination.page,
-      pageSize: pagination.size,
-      roleName: searchForm.roleName,
-      roleCode: searchForm.roleCode
+    const result = await apiGet('/role')
+    if (result.code === 0) {
+      tableData.value = result.data || []
+      pagination.total = tableData.value.length
     }
-    const response = await api.get('/roles', { params })
-    if (response.code === 200 || response.success) {
-      const data = response.data || response
-      tableData.value = data.records || data.list || []
-      pagination.total = data.total || 0
-    } else {
-      useMockData()
-    }
-  } catch (error) {
-    useMockData()
+  } catch {
+    tableData.value = []
+    pagination.total = 0
   } finally {
     loading.value = false
   }
 }
 
-const useMockData = () => {
-  tableData.value = [
-    { id: 1, roleCode: 'Greatbd', roleName: 'GG', description: '有所有权限', permissionDesc: '所有权限', userCount: 0, status: '启用', createTime: '2026-03-23T17:10:30' },
-    { id: 2, roleCode: 'MANAGER', roleName: '经理', description: '项目经理', permissionDesc: '无权限', userCount: 0, status: '启用', createTime: '2026-03-23T16:54:49' },
-    { id: 3, roleCode: 'ADMIN', roleName: '系统管理员', description: '拥有所有权限', permissionDesc: '无权限', userCount: 0, status: '启用', createTime: '2026-03-16T21:09:34' },
-    { id: 4, roleCode: 'OPERATOR', roleName: '操作员', description: '可以创建和管理任务', permissionDesc: '无权限', userCount: 0, status: '启用', createTime: '2026-03-16T21:09:34' },
-    { id: 5, roleCode: 'VIEWER', roleName: '查看者', description: '只能查看数据', permissionDesc: '无权限', userCount: 0, status: '启用', createTime: '2026-03-16T21:09:34' }
-  ]
-  pagination.total = 5
+const fetchPermissionTree = async () => {
+  try {
+    const result = await apiGet('/permission/tree')
+    if (result.code === 0) {
+      permissionTree.value = result.data || []
+    }
+  } catch {
+    permissionTree.value = []
+  }
 }
 
 const createRole = async (data) => {
   try {
-    const response = await api.post('/roles', data)
-    if (response.code === 200 || response.success) {
+    const result = await apiPost('/role', data)
+    if (result.code === 0) {
       ElMessage.success('创建成功')
       await fetchRoleList()
       return true
     }
+    ElMessage.error(result.message || '创建失败')
     return false
-  } catch (error) {
+  } catch {
     ElMessage.error('创建角色失败')
     return false
   }
@@ -244,14 +202,15 @@ const createRole = async (data) => {
 
 const updateRole = async (id, data) => {
   try {
-    const response = await api.put(`/roles/${id}`, data)
-    if (response.code === 200 || response.success) {
+    const result = await apiPut(`/role/${id}`, data)
+    if (result.code === 0) {
       ElMessage.success('更新成功')
       await fetchRoleList()
       return true
     }
+    ElMessage.error(result.message || '更新失败')
     return false
-  } catch (error) {
+  } catch {
     ElMessage.error('更新角色失败')
     return false
   }
@@ -259,14 +218,15 @@ const updateRole = async (id, data) => {
 
 const deleteRoleApi = async (id) => {
   try {
-    const response = await api.delete(`/roles/${id}`)
-    if (response.code === 200 || response.success) {
+    const result = await apiDelete(`/role/${id}`)
+    if (result.code === 0) {
       ElMessage.success('删除成功')
       await fetchRoleList()
       return true
     }
+    ElMessage.error(result.message || '删除失败')
     return false
-  } catch (error) {
+  } catch {
     ElMessage.error('删除角色失败')
     return false
   }
@@ -274,26 +234,26 @@ const deleteRoleApi = async (id) => {
 
 const getRolePermissions = async (roleId) => {
   try {
-    const response = await api.get(`/roles/${roleId}/permissions`)
-    if (response.code === 200 || response.success) {
-      const permissions = response.data || response
-      return permissions.map(p => p.id || p)
+    const result = await apiGet(`/role/${roleId}`)
+    if (result.code === 0) {
+      return result.data?.permissionIds || []
     }
     return []
-  } catch (error) {
+  } catch {
     return []
   }
 }
 
 const assignRolePermissions = async (roleId, permissionIds) => {
   try {
-    const response = await api.post(`/roles/${roleId}/permissions`, { permissionIds })
-    if (response.code === 200 || response.success) {
+    const result = await apiPut(`/role/${roleId}/permissions`, { permissionIds })
+    if (result.code === 0) {
       ElMessage.success('权限分配成功')
       return true
     }
+    ElMessage.error(result.message || '分配失败')
     return false
-  } catch (error) {
+  } catch {
     ElMessage.error('分配权限失败')
     return false
   }
@@ -310,7 +270,7 @@ const openAddDialog = () => {
   roleForm.roleCode = ''
   roleForm.roleName = ''
   roleForm.description = ''
-  roleForm.status = '启用'
+  roleForm.status = 1
   currentEditId.value = null
   roleFormRef.value?.resetFields()
 }
@@ -319,8 +279,8 @@ const editRole = (row) => {
   isEdit.value = true
   dialogVisible.value = true
   currentEditId.value = row.id
-  roleForm.roleCode = row.roleCode
-  roleForm.roleName = row.roleName
+  roleForm.roleCode = row.code
+  roleForm.roleName = row.name
   roleForm.description = row.description
   roleForm.status = row.status
   roleFormRef.value?.clearValidate()
@@ -333,10 +293,10 @@ const submitRole = async () => {
       submitLoading.value = true
       try {
         const data = {
-          roleCode: roleForm.roleCode,
-          roleName: roleForm.roleName,
+          name: roleForm.roleName,
+          code: roleForm.roleCode,
           description: roleForm.description,
-          status: roleForm.status === '启用' ? 1 : 0
+          status: roleForm.status
         }
         let success = false
         if (isEdit.value) {
@@ -359,6 +319,9 @@ const assignPermissions = async (row) => {
   permDialogVisible.value = true
   permLoading.value = true
   try {
+    if (permissionTree.value.length === 0) {
+      await fetchPermissionTree()
+    }
     const checkedIds = await getRolePermissions(row.id)
     defaultCheckedKeys.value = checkedIds
     setTimeout(() => {
@@ -386,7 +349,7 @@ const savePermissions = async () => {
 const filteredTableData = computed(() => tableData.value)
 const dialogTitle = computed(() => isEdit.value ? '编辑角色' : '新增角色')
 
-onMounted(() => { fetchRoleList() })
+onMounted(() => { fetchRoleList(); fetchPermissionTree() })
 </script>
 
 <style scoped>

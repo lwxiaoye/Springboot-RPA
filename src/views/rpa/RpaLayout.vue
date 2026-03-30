@@ -96,6 +96,15 @@
             <el-icon class="menu-icon"><Tickets /></el-icon>
             <span class="menu-text" v-if="!sidebarCollapsed">执行日志</span>
           </div>
+
+          <!-- 通知管理 -->
+          <div class="menu-item"
+            :class="{ active: activeMenu === 'notifications' }"
+            @click="switchMenu('notifications')"
+          >
+            <el-icon class="menu-icon"><Bell /></el-icon>
+            <span class="menu-text" v-if="!sidebarCollapsed">通知管理</span>
+          </div>
           
           <!-- 数据管理（带子菜单） -->
           <div class="menu-group">
@@ -172,7 +181,8 @@ import {
   Download,
   Sort,
   Operation,
-  Search
+  Search,
+  Bell
 } from '@element-plus/icons-vue'
 
 const router = useRouter()
@@ -208,6 +218,7 @@ const switchMenu = (menu) => {
     robots: '/rpa/robots',
     processes: '/rpa/processes',
     logs: '/rpa/logs',
+    notifications: '/rpa/notifications',
     dataCollect: '/rpa/data-collect',
     dataParse: '/rpa/data-parse',
     dataProcess: '/rpa/data-process',
@@ -251,6 +262,7 @@ onMounted(() => {
   else if (path.includes('/rpa/robots')) activeMenu.value = 'robots'
   else if (path.includes('/rpa/processes')) activeMenu.value = 'processes'
   else if (path.includes('/rpa/logs')) activeMenu.value = 'logs'
+  else if (path.includes('/rpa/notifications')) activeMenu.value = 'notifications'
   else if (path.includes('/rpa/data-collect')) activeMenu.value = 'dataCollect'
   else if (path.includes('/rpa/data-parse')) activeMenu.value = 'dataParse'
   else if (path.includes('/rpa/data-process')) activeMenu.value = 'dataProcess'
