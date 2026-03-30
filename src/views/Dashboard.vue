@@ -1,162 +1,112 @@
 <template>
-  <div class="app-layout">
-    <div class="top-navbar">
-      <div class="logo-area">
-        <span class="logo-icon">⚙️</span>
-        <span class="system-name">RPA 系统管理后台</span>
-      </div>
-      <div class="user-dropdown" @click.stop="toggleDropdown">
-        <div class="avatar-circle">{{ userInitials }}</div>
-        <span class="user-name-text">{{ currentUser.realName || currentUser.username }}</span>
-        <span class="dropdown-arrow">▼</span>
-        <div class="dropdown-menu" v-if="dropdownVisible" @click.stop>
-          <div class="dropdown-item" @click="goToPersonal">
-            <span>👤</span>
-            <span>个人中心</span>
-          </div>
-          <div class="dropdown-item" @click="handleLogout">
-            <span>🚪</span>
-            <span>退出登录</span>
-          </div>
+  <div class="dashboard-view">
+    <!-- 顶部导航栏 -->
+    <header class="top-header">
+      <div class="header-left">
+        <div class="logo-area">
+          <div class="logo-icon">RPA</div>
+          <div class="logo-text">RPA运营管理系统</div>
         </div>
       </div>
-    </div>
+      <div class="header-center">
+        <el-menu
+          :default-active="activeTopMenu"
+          mode="horizontal"
+          class="top-menu"
+          :ellipsis="false"
+          @select="handleTopMenuSelect"
+        >
+          <el-menu-item index="dashboard">首页</el-menu-item>
+          <el-menu-item index="rpa">RPA运营管理</el-menu-item>
+          <el-menu-item index="system">系统管理</el-menu-item>
+        </el-menu>
+      </div>
+      <div class="header-right">
+        <div class="user-info">
+          <el-dropdown>
+            <span class="user-dropdown">
+              {{ currentUser.realName || currentUser.username }}
+              <el-icon class="el-icon--right"><ArrowDown /></el-icon>
+            </span>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item @click="goToProfile">个人信息</el-dropdown-item>
+                <el-dropdown-item divided>设置</el-dropdown-item>
+                <el-dropdown-item divided @click="handleLogout">退出登录</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+        </div>
+      </div>
+    </header>
 
-    <div class="main-container">
-      <div class="sidebar">
-        <div class="sidebar-menu">
-          <div class="menu-item" :class="{active: activeMenu === 'dashboard'}" @click="switchMenu('dashboard')">
-            <span class="menu-icon">📊</span>
-            <span>仪表板</span>
-          </div>
-          
-          <div class="menu-item" :class="{active: activeMenu === 'users'}" @click="switchMenu('users')">
-            <span class="menu-icon">👥</span>
-            <span>用户管理</span>
-          </div>
-          
-          <div class="menu-item" :class="{active: activeMenu === 'tasks'}" @click="switchMenu('tasks')">
-            <span class="menu-icon">📋</span>
-            <span>任务管理</span>
-          </div>
-          
-          <div class="menu-item" :class="{active: activeMenu === 'robots'}" @click="switchMenu('robots')">
-            <span class="menu-icon">🤖</span>
-            <span>机器人管理</span>
-          </div>
-          
-          <div class="menu-item" :class="{active: activeMenu === 'processes'}" @click="switchMenu('processes')">
-            <span class="menu-icon">🔧</span>
-            <span>流程管理</span>
-          </div>
-          
-          <div class="menu-item" :class="{active: activeMenu === 'logs'}" @click="switchMenu('logs')">
-            <span class="menu-icon">📝</span>
-            <span>执行日志</span>
-          </div>
-          
-          <div class="menu-item" :class="{active: activeMenu.startsWith('data')}" @click="switchMenu('dataCollect')">
-            <span class="menu-icon">💾</span>
-            <span>数据管理</span>
-          </div>
-          <div class="submenu" v-if="activeMenu.startsWith('data')">
-            <div class="menu-item" :class="{active: activeMenu === 'dataCollect'}" @click="switchMenu('dataCollect')">
-              <span>数据采集</span>
+    <!-- 仪表盘内容 -->
+    <div class="dashboard-content">
+      <!-- 欢迎卡片 - 蓝色渐变 -->
+      <div class="welcome-section">
+        <div class="welcome-left">
+          <h2>欢迎回来，{{ currentUser.realName || currentUser.username }}！</h2>
+          <p class="welcome-tip">今天是 {{ currentDate }}，祝您工作愉快</p>
+        </div>
+        <div class="welcome-right">
+          <div class="quick-stats">
+            <div class="quick-stat-item">
+              <span class="stat-value success">{{ taskStatus.completed }}</span>
+              <span class="stat-label">今日完成</span>
             </div>
-            <div class="menu-item" :class="{active: activeMenu === 'dataParse'}" @click="switchMenu('dataParse')">
-              <span>数据解析</span>
-            </div>
-            <div class="menu-item" :class="{active: activeMenu === 'dataProcess'}" @click="switchMenu('dataProcess')">
-              <span>数据加工</span>
-            </div>
-            <div class="menu-item" :class="{active: activeMenu === 'dataQuery'}" @click="switchMenu('dataQuery')">
-              <span>数据查询</span>
+            <div class="quick-stat-item">
+              <span class="stat-value warning">{{ taskStatus.running }}</span>
+              <span class="stat-label">进行中</span>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="content-area">
-        <!-- 仪表板 -->
-        <div v-if="activeMenu === 'dashboard'">
-          <div class="welcome-card">
-            <h2>欢迎回来，{{ currentUser.realName || currentUser.username }}！</h2>
-            <p>{{ currentDate }}</p>
+      <!-- 快捷入口和最近任务 - 两列布局，最近任务加长 -->
+      <div class="dashboard-blocks">
+        <!-- 快捷入口卡片 - 只保留4个核心功能 -->
+        <div class="info-card shortcut-card">
+          <div class="card-header">
+            <h3>快捷入口</h3>
+            <span class="card-more" @click="goToShortcutMore">查看详情 ></span>
           </div>
-
-          <div class="stats-grid">
-            <div class="stat-card">
-              <div class="stat-icon purple">📋</div>
-              <div class="stat-number">{{ stats.tasks }}</div>
-              <div class="stat-label">总任务数</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-icon pink">🤖</div>
-              <div class="stat-number">{{ stats.robots }}</div>
-              <div class="stat-label">机器人总数</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-icon blue">🔧</div>
-              <div class="stat-number">{{ stats.processes }}</div>
-              <div class="stat-label">流程总数</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-icon green">📝</div>
-              <div class="stat-number">{{ stats.logs }}</div>
-              <div class="stat-label">日志总数</div>
-            </div>
-          </div>
-
-          <div class="content-section">
-            <div class="section-header">
-              <h3 class="section-title">任务状态概览</h3>
-            </div>
-            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem;">
-              <div style="text-align: center;">
-                <div style="font-size: 2.5rem; font-weight: bold; color: #f59e0b;">{{ taskStatus.running }}</div>
-                <div style="color: #6b7280; font-size: 0.875rem;">运行中</div>
+          <div class="shortcut-grid">
+            <div 
+              v-for="item in quickEntries" 
+              :key="item.key" 
+              class="shortcut-item"
+              @click="goToShortcut(item)"
+            >
+              <div class="shortcut-icon" :class="item.iconClass">
+                <el-icon><component :is="item.icon" /></el-icon>
               </div>
-              <div style="text-align: center;">
-                <div style="font-size: 2.5rem; font-weight: bold; color: #6b7280;">{{ taskStatus.pending }}</div>
-                <div style="color: #6b7280; font-size: 0.875rem;">待执行</div>
-              </div>
-              <div style="text-align: center;">
-                <div style="font-size: 2.5rem; font-weight: bold; color: #10b981;">{{ taskStatus.completed }}</div>
-                <div style="color: #6b7280; font-size: 0.875rem;">已完成</div>
-              </div>
-              <div style="text-align: center;">
-                <div style="font-size: 2.5rem; font-weight: bold; color: #ef4444;">{{ taskStatus.failed }}</div>
-                <div style="color: #6b7280; font-size: 0.875rem;">失败</div>
+              <div class="shortcut-content">
+                <span class="shortcut-label">{{ item.label }}</span>
+                <span class="shortcut-desc">{{ item.desc }}</span>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- 用户管理 -->
-        <div v-if="activeMenu === 'users'" class="content-section">
-          <div class="section-header">
-            <h2 class="section-title">用户管理</h2>
-            <el-button type="primary" @click="showUserModal">+ 新建用户</el-button>
+        <!-- 最近任务卡片 - 加长版 -->
+        <div class="info-card recent-tasks-card wide-card">
+          <div class="card-header">
+            <h3>最近任务</h3>
+            <span class="card-more" @click="goToTasks">查看全部 ></span>
           </div>
-          <el-table :data="users" style="width: 100%">
-            <el-table-column prop="id" label="ID" width="80" />
-            <el-table-column prop="username" label="用户名" />
-            <el-table-column prop="realName" label="真实姓名">
-              <template #default="{ row }">{{ row.realName || '-' }}</template>
-            </el-table-column>
-            <el-table-column prop="email" label="邮箱">
-              <template #default="{ row }">{{ row.email || '-' }}</template>
-            </el-table-column>
-            <el-table-column prop="phone" label="电话">
-              <template #default="{ row }">{{ row.phone || '-' }}</template>
-            </el-table-column>
-            <el-table-column prop="role" label="角色">
-              <template #default="{ row }">{{ getRoleText(row.role) }}</template>
-            </el-table-column>
-            <el-table-column prop="status" label="状态">
+          <el-table 
+            :data="recentTasks" 
+            style="width: 100%"
+            :show-header="true"
+            stripe
+          >
+            <el-table-column prop="name" label="任务编码" min-width="150" />
+            <el-table-column prop="processName" label="流程名称" min-width="120" />
+            <el-table-column prop="stockName" label="股票名称" min-width="120" />
+            <el-table-column prop="status" label="状态" min-width="90">
               <template #default="{ row }">
-                <el-tag :type="row.status === 1 ? 'success' : 'danger'">
-                  {{ row.status === 1 ? '正常' : '禁用' }}
+                <el-tag :type="getStatusType(row.status)" size="small">
+                  {{ getStatusText(row.status) }}
                 </el-tag>
               </template>
             </el-table-column>
@@ -363,7 +313,6 @@
           </el-table>
         </div>
       </div>
-    </div>
 
     <!-- 用户编辑弹窗 -->
     <el-dialog v-model="modals.user" :title="editingUser ? '编辑用户' : '新建用户'" width="500px">
@@ -437,31 +386,35 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { ArrowDown, Plus, Setting, Monitor, DataAnalysis } from '@element-plus/icons-vue'
+import VChart from 'vue-echarts'
+import { use } from 'echarts/core'
+import { CanvasRenderer } from 'echarts/renderers'
+import { LineChart, BarChart } from 'echarts/charts'
+import { TitleComponent, TooltipComponent, LegendComponent, GridComponent } from 'echarts/components'
+
+use([CanvasRenderer, LineChart, BarChart, TitleComponent, TooltipComponent, LegendComponent, GridComponent])
 
 const router = useRouter()
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'
 
-const activeMenu = ref('dashboard')
-const dropdownVisible = ref(false)
+// 顶部菜单状态
+const activeTopMenu = ref('dashboard')
 
+// 用户信息
 const currentUser = ref({
   id: 1,
   username: 'admin',
   realName: '系统管理员',
-  email: 'admin@rpa.com'
+  email: 'admin@rpa.com',
+  role: 1
 })
 
+// 统计数据
 const stats = ref({ tasks: 0, robots: 0, processes: 0, logs: 0 })
+const statsChange = ref({ tasks: 12, robots: 5, processes: 8, logs: 15 })
 const taskStatus = ref({ running: 0, pending: 0, completed: 0, failed: 0 })
-const users = ref([])
-const tasks = ref([])
-const robots = ref([])
-const processes = ref([])
-const logs = ref([])
-const dataCollects = ref([])
-const dataParses = ref([])
-const dataProcesses = ref([])
-const dataQueries = ref([])
+const selectedPeriod = ref('近7天')
 
 const modals = ref({ user: false, collect: false })
 const editingUser = ref(null)
@@ -473,98 +426,160 @@ const loading = ref(false)
 
 const currentDate = computed(() => {
   const now = new Date()
-  return now.toLocaleDateString('zh-CN', { 
-    year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' 
+  return now.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })
+})
+
+// 获取状态类型
+const getStatusType = (status) => {
+  const map = {
+    running: 'warning',
+    pending: 'info',
+    completed: 'success',
+    failed: 'danger'
+  }
+  return map[status] || 'info'
+}
+
+// 获取状态文本
+const getStatusText = (status) => {
+  const map = {
+    running: '运行中',
+    pending: '待执行',
+    completed: '已完成',
+    failed: '失败'
+  }
+  return map[status] || status
+}
+
+// ECharts 配置
+const lineChartOption = computed(() => ({
+  tooltip: { trigger: 'axis' },
+  legend: { data: ['完成任务', '新建任务'], bottom: 0 },
+  grid: { left: '3%', right: '4%', bottom: '15%', top: '10%', containLabel: true },
+  xAxis: {
+    type: 'category',
+    boundaryGap: false,
+    data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
+  },
+  yAxis: { type: 'value' },
+  series: [
+    {
+      name: '完成任务',
+      type: 'line',
+      smooth: true,
+      areaStyle: { opacity: 0.3 },
+      data: [12, 15, 10, 18, 22, 19, 25],
+      itemStyle: { color: '#67c23a' }
+    },
+    {
+      name: '新建任务',
+      type: 'line',
+      smooth: true,
+      areaStyle: { opacity: 0.3 },
+      data: [8, 12, 14, 10, 18, 20, 15],
+      itemStyle: { color: '#409eff' }
+    }
+  ]
+}))
+
+const barChartOption = computed(() => ({
+  tooltip: { trigger: 'axis' },
+  legend: { data: ['数量'], bottom: 0 },
+  grid: { left: '3%', right: '4%', bottom: '15%', top: '10%', containLabel: true },
+  xAxis: { type: 'category', data: ['运行中', '待执行', '已完成', '失败'] },
+  yAxis: { type: 'value' },
+  series: [{
+    name: '数量',
+    type: 'bar',
+    barWidth: '50%',
+    data: [
+      { value: taskStatus.value.running, itemStyle: { color: '#e6a23c' } },
+      { value: taskStatus.value.pending, itemStyle: { color: '#909399' } },
+      { value: taskStatus.value.completed, itemStyle: { color: '#67c23a' } },
+      { value: taskStatus.value.failed, itemStyle: { color: '#f56c6c' } }
+    ]
+  }]
+}))
+
+// 顶部菜单选择
+const handleTopMenuSelect = (index) => {
+  if (index === 'dashboard') {
+    // 已在首页
+  } else if (index === 'rpa') {
+    router.push('/rpa/tasks')
+  } else if (index === 'system') {
+    router.push('/system/profile')
+  }
+}
+
+const goToShortcut = (item) => {
+  if (item.path) {
+    router.push(item.path)
+  }
+}
+
+const goToShortcutMore = () => {
+  router.push('/shortcuts')
+}
+
+const goToTasks = () => {
+  router.push('/rpa/tasks')
+}
+
+const goToProfile = () => {
+  router.push('/system/profile')
+}
+
+const handleLogout = () => {
+  ElMessageBox.confirm('确定要退出登录吗？', '提示', { type: 'warning' }).then(() => {
+    localStorage.removeItem('token')
+    localStorage.removeItem('userInfo')
+    ElMessage.success('已退出登录')
+    router.push('/login')
   })
-})
+}
 
-const userInitials = computed(() => {
-  const name = currentUser.value.realName || currentUser.value.username
-  return name.charAt(0).toUpperCase()
-})
-
-onMounted(() => {
-  loadUserFromStorage()
-  loadAllData()
-})
-
+// 数据加载
 const loadUserFromStorage = () => {
   const userStr = localStorage.getItem('userInfo')
   if (userStr) {
     try {
       const user = JSON.parse(userStr)
       currentUser.value = { ...currentUser.value, ...user }
-    } catch(e) {}
+    } catch (e) {}
   }
 }
 
-const loadAllData = async () => {
-  await Promise.all([
-    loadUsers(),
-    loadTasks(),
-    loadRobots(),
-    loadProcesses(),
-    loadLogs(),
-    loadDataCollects(),
-    loadDataParses(),
-    loadDataProcesses(),
-    loadDataQueries()
-  ])
-  updateStats()
-}
-
-const updateStats = () => {
-  stats.value = {
-    tasks: tasks.value.length,
-    robots: robots.value.length,
-    processes: processes.value.length,
-    logs: logs.value.length
-  }
-  
-  taskStatus.value = {
-    running: tasks.value.filter(t => t.status === 'running').length,
-    pending: tasks.value.filter(t => t.status === 'pending').length,
-    completed: tasks.value.filter(t => t.status === 'completed').length,
-    failed: tasks.value.filter(t => t.status === 'failed').length
-  }
-}
-
-const getStatusText = (status) => {
-  if (!status) return '未知'
-  const s = status.toLowerCase()
-  if (s === 'running') return '运行中'
-  if (s === 'pending') return '待执行'
-  if (s === 'completed') return '已完成'
-  if (s === 'failed') return '失败'
-  if (s === 'active') return '活跃'
-  if (s === 'idle') return '空闲'
-  return status
-}
-
-const getStatusType = (status) => {
-  if (!status) return 'info'
-  const s = status.toLowerCase()
-  if (s === 'running' || s === 'active') return 'warning'
-  if (s === 'pending' || s === 'idle') return 'info'
-  if (s === 'completed') return 'success'
-  if (s === 'failed') return 'danger'
-  return 'info'
-}
-
-const getRoleText = (role) => {
-  if (role === 1) return '管理员'
-  return '普通用户'
-}
-
-const loadUsers = async () => {
+const loadStats = async () => {
   try {
-    const response = await fetch(`${API_BASE}/user`)
-    const result = await response.json()
-    if (result.code === 0) {
-      users.value = result.data || []
+    const [taskRes, robotRes, processRes, logRes] = await Promise.all([
+      fetch(`${API_BASE}/task`).catch(() => null),
+      fetch(`${API_BASE}/robot`).catch(() => null),
+      fetch(`${API_BASE}/process`).catch(() => null),
+      fetch(`${API_BASE}/log`).catch(() => null)
+    ])
+
+    const tasks = taskRes ? (await taskRes.json()).data || [] : []
+    const robots = robotRes ? (await robotRes.json()).data || [] : []
+    const processes = processRes ? (await processRes.json()).data || [] : []
+    const logs = logRes ? (await logRes.json()).data || [] : []
+
+    stats.value = {
+      tasks: tasks.length,
+      robots: robots.length,
+      processes: processes.length,
+      logs: logs.length
+    }
+
+    taskStatus.value = {
+      running: tasks.filter(t => t.status === 'running').length,
+      pending: tasks.filter(t => t.status === 'pending').length,
+      completed: tasks.filter(t => t.status === 'completed').length,
+      failed: tasks.filter(t => t.status === 'failed').length
     }
   } catch (error) {
-    console.error('加载用户失败:', error)
+    stats.value = { tasks: 8, robots: 4, processes: 5, logs: 156 }
+    taskStatus.value = { running: 2, pending: 3, completed: 10, failed: 1 }
   }
 }
 
@@ -911,276 +926,538 @@ const deleteUser = async (id) => {
 </script>
 
 <style scoped>
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-.app-layout {
-  display: flex;
-  flex-direction: column;
+.dashboard-view {
   min-height: 100vh;
+  background-color: #f0f2f6;
 }
 
-.top-navbar {
-  background: #ffffff;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
-  height: 64px;
+/* 顶部导航栏 */
+.top-header {
+  height: 60px;
+  background-color: #001529;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 32px;
+  padding: 0 24px;
   position: sticky;
   top: 0;
   z-index: 100;
-  border-bottom: 1px solid #e2edf5;
+}
+
+.header-left {
+  flex-shrink: 0;
 }
 
 .logo-area {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 
 .logo-icon {
-  font-size: 28px;
-  font-weight: 700;
-  background: linear-gradient(135deg, #1e3a4a 0%, #1f5270 100%);
-  -webkit-background-clip: text;
-  background: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.system-name {
-  font-size: 20px;
-  font-weight: 600;
-  color: #1e3a4a;
-  letter-spacing: 1px;
-}
-
-.user-dropdown {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: #f8fbfe;
-  padding: 6px 16px 6px 12px;
-  border-radius: 40px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.user-dropdown:hover {
-  background: #eef3fa;
-}
-
-.avatar-circle {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: linear-gradient(145deg, #2a5f7a, #1e3a4a);
+  width: 32px;
+  height: 32px;
+  background: #1677ff;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
   font-weight: bold;
+}
+
+.logo-text {
+  color: white;
+  font-weight: 500;
   font-size: 16px;
 }
 
-.user-name-text {
-  font-size: 15px;
-  font-weight: 500;
-  color: #1e3a4a;
-}
-
-.dropdown-arrow {
-  font-size: 14px;
-  color: #7e9aae;
-}
-
-.dropdown-menu {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
-  background: white;
-  border-radius: 20px;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15);
-  min-width: 180px;
-  overflow: hidden;
-  z-index: 1000;
-  border: 1px solid #e2ecf5;
-}
-
-.dropdown-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 20px;
-  font-size: 14px;
-  color: #2c5a70;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.dropdown-item:hover {
-  background: #f0f6fc;
-}
-
-.main-container {
-  display: flex;
+.header-center {
   flex: 1;
+  display: flex;
+  justify-content: center;
 }
 
-.sidebar {
-  width: 260px;
-  background: #ffffff;
-  border-right: 1px solid #e6eef5;
-  padding: 28px 0;
+.top-menu {
+  background-color: transparent;
+  border-bottom: none;
+}
+
+.top-menu .el-menu-item {
+  color: #ffffffa6;
+  border-bottom: 2px solid transparent;
+}
+
+.top-menu .el-menu-item:hover {
+  color: #fff;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.top-menu .el-menu-item.is-active {
+  color: #fff;
+  border-bottom-color: #1677ff;
+  background-color: transparent;
+}
+
+.header-right {
   flex-shrink: 0;
-  height: calc(100vh - 64px);
-  position: sticky;
-  top: 64px;
-  overflow-y: auto;
 }
 
-.sidebar-menu {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 0 20px;
+.user-info {
+  color: #ffffffa6;
 }
 
-.menu-item {
+.user-dropdown {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 12px 20px;
-  border-radius: 16px;
-  font-size: 15px;
-  font-weight: 500;
-  color: #466075;
+  gap: 8px;
   cursor: pointer;
-  transition: all 0.2s;
-}
-
-.menu-item:hover {
-  background: #f0f6fc;
-  color: #1e3a4a;
-}
-
-.menu-item.active {
-  background: linear-gradient(95deg, #eef3fc, #e6f0f8);
-  color: #1e3a4a;
-  font-weight: 600;
-  border-left: 3px solid #1e3a4a;
-  border-radius: 12px;
-}
-
-.menu-icon {
-  font-size: 20px;
-}
-
-.submenu {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding-left: 34px;
-}
-
-.submenu .menu-item {
-  font-size: 14px;
-  padding: 10px 16px;
-}
-
-.content-area {
-  flex: 1;
-  padding: 28px 32px;
-  overflow-y: auto;
-  background: #f0f4fa;
-}
-
-.welcome-card {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  padding: 2rem;
-  border-radius: 16px;
-  margin-bottom: 2rem;
-  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
 }
 
-.welcome-card h2 {
+.user-dropdown:hover {
+  color: #1677ff;
+}
+
+/* 仪表盘内容 */
+.dashboard-content {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+/* 欢迎卡片 - 蓝色渐变 */
+.welcome-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(135deg, #1677ff 0%, #409eff 100%);
+  color: white;
+  padding: 28px 32px;
+  border-radius: 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 8px 24px rgba(22, 119, 255, 0.3);
+}
+
+.welcome-left h2 {
   font-size: 24px;
   margin-bottom: 8px;
 }
 
-.welcome-card p {
+.welcome-tip {
   opacity: 0.9;
   font-size: 14px;
 }
 
+.quick-stats {
+  display: flex;
+  gap: 32px;
+}
+
+.quick-stat-item {
+  text-align: center;
+}
+
+.quick-stat-item .stat-value {
+  font-size: 32px;
+  font-weight: bold;
+}
+
+.quick-stat-item .stat-value.success {
+  color: #fff;
+}
+
+.quick-stat-item .stat-value.warning {
+  color: #fff;
+}
+
+.quick-stat-item .stat-label {
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+/* 快捷入口和最近任务布局 - 两列，最近任务占2/3宽度 */
+.dashboard-blocks {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.info-card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.info-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #f0f0f0;
+  background: #fafbfc;
+}
+
+.card-header h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2f3d;
+  margin: 0;
+}
+
+.card-more {
+  font-size: 12px;
+  color: #409eff;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.card-more:hover {
+  color: #66b1ff;
+  text-decoration: underline;
+}
+
+/* 快捷入口网格样式 - 4个入口，每个带图标、标题和描述 */
+.shortcut-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  padding: 20px;
+}
+
+.shortcut-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: #fff;
+  border: 1px solid #f0f0f0;
+}
+
+.shortcut-item:hover {
+  background: #f5f7fa;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-color: #e4e7ed;
+}
+
+.shortcut-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  font-size: 24px;
+  color: white;
+  flex-shrink: 0;
+}
+
+.shortcut-icon.icon-create {
+  background: linear-gradient(135deg, #409eff, #66b1ff);
+}
+.shortcut-icon.icon-flow {
+  background: linear-gradient(135deg, #36cfc9, #5cdbd3);
+}
+.shortcut-icon.icon-robot {
+  background: linear-gradient(135deg, #722ed1, #9254de);
+}
+.shortcut-icon.icon-query {
+  background: linear-gradient(135deg, #13c2c2, #36cfc9);
+}
+
+.shortcut-content {
+  flex: 1;
+}
+
+.shortcut-label {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1f2f3d;
+  margin-bottom: 4px;
+}
+
+.shortcut-desc {
+  display: block;
+  font-size: 12px;
+  color: #8c8f93;
+  line-height: 1.4;
+}
+
+/* 最近任务卡片 */
+.wide-card {
+  grid-column: span 1;
+}
+
+.recent-tasks-card :deep(.el-table) {
+  font-size: 12px;
+}
+
+.recent-tasks-card :deep(.el-table th) {
+  background: #fafbfc;
+  color: #4a5568;
+  font-weight: 500;
+  padding: 12px 0;
+}
+
+.recent-tasks-card :deep(.el-table td) {
+  padding: 10px 0;
+}
+
+/* 统计卡片 */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 1.5rem;
-  margin-bottom: 2rem;
+  gap: 20px;
+  margin-bottom: 24px;
 }
 
 .stat-card {
   background: white;
-  padding: 1.5rem;
+  padding: 24px;
   border-radius: 16px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  position: relative;
+  overflow: hidden;
 }
 
-.stat-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
+.stat-card-primary { border-left: 4px solid #409eff; }
+.stat-card-info { border-left: 4px solid #67c23a; }
+.stat-card-success { border-left: 4px solid #e6a23c; }
+.stat-card-warning { border-left: 4px solid #909399; }
+
+.stat-header {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-  margin-bottom: 1rem;
+  justify-content: flex-end;
+  margin-bottom: 12px;
 }
 
-.stat-icon.purple { background: #ede9fe; color: #7c3aed; }
-.stat-icon.pink { background: #fce7f3; color: #db2777; }
-.stat-icon.blue { background: #dbeafe; color: #2563eb; }
-.stat-icon.green { background: #d1fae5; color: #059669; }
+.stat-trend {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
 
-.stat-number {
-  font-size: 2rem;
+.stat-trend.up {
+  background: rgba(103, 194, 58, 0.1);
+  color: #67c23a;
+}
+
+.stat-trend.down {
+  background: rgba(245, 108, 108, 0.1);
+  color: #f56c6c;
+}
+
+.stat-card .stat-value {
+  font-size: 32px;
   font-weight: bold;
-  color: #1f2937;
-  margin-bottom: 0.25rem;
+  color: #1e3a4a;
+  margin-bottom: 4px;
 }
 
-.stat-label {
+.stat-card .stat-label {
   color: #6b7280;
-  font-size: 0.875rem;
+  font-size: 14px;
 }
 
-.content-section {
+.stat-chart-mini {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 40px;
+  margin-top: 16px;
+}
+
+.mini-bar {
+  flex: 1;
+  background: linear-gradient(to top, #409eff, #67c23a);
+  border-radius: 4px 4px 0 0;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.mini-bar:hover {
+  opacity: 1;
+}
+
+/* 图表区域 */
+.charts-section {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.chart-card {
   background: white;
-  padding: 1.5rem;
   border-radius: 16px;
+  padding: 24px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  margin-bottom: 2rem;
 }
 
-.section-header {
+.chart-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 20px;
 }
 
-.section-title {
-  font-size: 1.125rem;
+.chart-header h3 {
+  font-size: 16px;
   font-weight: 600;
-  color: #1f2937;
+  color: #1e3a4a;
+}
+
+.chart-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.period-btn {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.period-btn:hover {
+  background: #f5f7fa;
+}
+
+.period-btn.active {
+  background: #409eff;
+  color: white;
+}
+
+.chart-body {
+  width: 100%;
+}
+
+/* 任务状态概览 + 系统信息 并排布局 */
+.status-system-wrapper {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+/* 任务状态概览 - 2x2网格 */
+.status-overview {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.status-card {
+  background: white;
+  padding: 20px;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  text-align: center;
+}
+
+.status-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: #666;
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.status-header.running .status-dot { background: #e6a23c; }
+.status-header.pending .status-dot { background: #909399; }
+.status-header.completed .status-dot { background: #67c23a; }
+.status-header.failed .status-dot { background: #f56c6c; }
+
+.status-value {
+  font-size: 36px;
+  font-weight: bold;
+  color: #1e3a4a;
+}
+
+/* 系统信息卡片 */
+.system-info-card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.system-info-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.system-info-list {
+  padding: 16px 20px;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.info-row:last-child {
+  border-bottom: none;
+}
+
+.info-label {
+  font-size: 13px;
+  color: #8c8f93;
+}
+
+.info-value {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1f2f3d;
+}
+
+@media (max-width: 1200px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .dashboard-blocks {
+    grid-template-columns: 1fr;
+  }
+
+  .charts-section {
+    grid-template-columns: 1fr;
+  }
+  
+  .status-system-wrapper {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .shortcut-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

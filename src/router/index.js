@@ -13,6 +13,7 @@ const routes = [
         name: 'Login',
         component: Login
     },
+    // 仪表板 - 独立页面，有自己的顶部导航，无侧边栏
     {
         path: '/layout',
         name: 'Layout',
@@ -25,7 +26,7 @@ const routes = [
     },
     {
         path: '/:pathMatch(.*)*',
-        redirect: '/login'
+        redirect: '/dashboard'
     }
 ]
 
@@ -34,8 +35,8 @@ const router = createRouter({
     routes
 })
 
-router.beforeEach((to, from) => {
-    return true
+router.beforeEach((to, from, next) => {
+    next()
 })
 
 export default router
