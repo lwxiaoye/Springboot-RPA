@@ -3,7 +3,7 @@
     <!-- 顶部导航栏 -->
     <header class="top-header">
       <div class="header-left">
-        <div class="logo-area">
+        <div class="logo-area" @click="goToDashboard">
           <div class="logo-icon">RPA</div>
           <div class="logo-text">RPA运营管理系统</div>
         </div>
@@ -31,6 +31,10 @@
         </el-menu>
       </div>
       <div class="header-right">
+        <!-- 通知图标 -->
+        <el-badge :value="unreadCount" :hidden="unreadCount === 0" class="notification-badge">
+          <el-icon class="notification-icon" @click="goToNotifications"><Bell /></el-icon>
+        </el-badge>
         <div class="user-info">
           <el-dropdown>
             <span class="user-dropdown">
@@ -61,15 +65,24 @@
         </div>
 
         <nav class="sidebar-menu">
-          <!-- 任务管理 -->
+          <!-- 工作台 -->
+          <div class="menu-item main-item"
+            :class="{ active: activeMenu === 'dashboard' }"
+            @click="switchMenu('dashboard')"
+          >
+            <el-icon class="menu-icon"><DataLine /></el-icon>
+            <span class="menu-text" v-if="!sidebarCollapsed">工作台</span>
+          </div>
+
+          <!-- 任务调度中心 -->
           <div class="menu-item"
             :class="{ active: activeMenu === 'tasks' }"
             @click="switchMenu('tasks')"
           >
             <el-icon class="menu-icon"><List /></el-icon>
-            <span class="menu-text" v-if="!sidebarCollapsed">任务管理</span>
+            <span class="menu-text" v-if="!sidebarCollapsed">任务调度中心</span>
           </div>
-          
+
           <!-- 机器人管理 -->
           <div class="menu-item"
             :class="{ active: activeMenu === 'robots' }"
@@ -78,16 +91,25 @@
             <el-icon class="menu-icon"><Monitor /></el-icon>
             <span class="menu-text" v-if="!sidebarCollapsed">机器人管理</span>
           </div>
-          
-          <!-- 流程管理 -->
+
+          <!-- 流程仓库 -->
           <div class="menu-item"
             :class="{ active: activeMenu === 'processes' }"
             @click="switchMenu('processes')"
           >
             <el-icon class="menu-icon"><Document /></el-icon>
-            <span class="menu-text" v-if="!sidebarCollapsed">流程管理</span>
+            <span class="menu-text" v-if="!sidebarCollapsed">流程仓库</span>
           </div>
-          
+
+          <!-- 队列与触发器 -->
+          <div class="menu-item"
+            :class="{ active: activeMenu === 'queue' }"
+            @click="switchMenu('queue')"
+          >
+            <el-icon class="menu-icon"><Connection /></el-icon>
+            <span class="menu-text" v-if="!sidebarCollapsed">队列与触发器</span>
+          </div>
+
           <!-- 执行日志 -->
           <div class="menu-item"
             :class="{ active: activeMenu === 'logs' }"
@@ -97,15 +119,33 @@
             <span class="menu-text" v-if="!sidebarCollapsed">执行日志</span>
           </div>
 
-          <!-- 通知管理 -->
+          <!-- 审计日志 -->
           <div class="menu-item"
-            :class="{ active: activeMenu === 'notifications' }"
-            @click="switchMenu('notifications')"
+            :class="{ active: activeMenu === 'audit' }"
+            @click="switchMenu('audit')"
           >
-            <el-icon class="menu-icon"><Bell /></el-icon>
-            <span class="menu-text" v-if="!sidebarCollapsed">通知管理</span>
+            <el-icon class="menu-icon"><Clock /></el-icon>
+            <span class="menu-text" v-if="!sidebarCollapsed">审计日志</span>
           </div>
-          
+
+          <!-- 凭据中心 -->
+          <div class="menu-item"
+            :class="{ active: activeMenu === 'credentials' }"
+            @click="switchMenu('credentials')"
+          >
+            <el-icon class="menu-icon"><Key /></el-icon>
+            <span class="menu-text" v-if="!sidebarCollapsed">凭据中心</span>
+          </div>
+
+          <!-- 报表分析 -->
+          <div class="menu-item"
+            :class="{ active: activeMenu === 'reports' }"
+            @click="switchMenu('reports')"
+          >
+            <el-icon class="menu-icon"><DataBoard /></el-icon>
+            <span class="menu-text" v-if="!sidebarCollapsed">报表分析</span>
+          </div>
+
           <!-- 数据管理（带子菜单） -->
           <div class="menu-group">
             <div class="menu-item has-submenu"
@@ -153,6 +193,25 @@
               </div>
             </Transition>
           </div>
+
+          <!-- 系统设置 -->
+          <div class="menu-divider" v-if="!sidebarCollapsed"></div>
+          <div class="menu-item"
+            :class="{ active: activeMenu === 'settings' }"
+            @click="switchMenu('settings')"
+          >
+            <el-icon class="menu-icon"><Tools /></el-icon>
+            <span class="menu-text" v-if="!sidebarCollapsed">系统设置</span>
+          </div>
+
+          <!-- 通知管理 -->
+          <div class="menu-item"
+            :class="{ active: activeMenu === 'notifications' }"
+            @click="switchMenu('notifications')"
+          >
+            <el-icon class="menu-icon"><Bell /></el-icon>
+            <span class="menu-text" v-if="!sidebarCollapsed">通知管理</span>
+          </div>
         </nav>
       </aside>
 
@@ -177,12 +236,17 @@ import {
   List,
   Document,
   Tickets,
+  Clock,
+  Key,
+  DataBoard,
   DataAnalysis,
   Download,
   Sort,
   Operation,
   Search,
-  Bell
+  Bell,
+  Connection,
+  Tools
 } from '@element-plus/icons-vue'
 
 const router = useRouter()
@@ -192,6 +256,7 @@ const sidebarCollapsed = ref(false)
 const showDataSubmenu = ref(true)
 const activeTopMenu = ref('rpa')
 const activeMenu = ref('tasks')
+const unreadCount = ref(0)
 
 const currentUser = ref({
   id: 1,
@@ -214,10 +279,16 @@ const handleTopMenuSelect = (index) => {
 const switchMenu = (menu) => {
   activeMenu.value = menu
   const routeMap = {
+    dashboard: '/dashboard',
     tasks: '/rpa/tasks',
     robots: '/rpa/robots',
     processes: '/rpa/processes',
+    queue: '/rpa/queue',
     logs: '/rpa/logs',
+    audit: '/rpa/audit',
+    credentials: '/rpa/credentials',
+    reports: '/rpa/reports',
+    settings: '/rpa/settings',
     notifications: '/rpa/notifications',
     dataCollect: '/rpa/data-collect',
     dataParse: '/rpa/data-parse',
@@ -225,6 +296,16 @@ const switchMenu = (menu) => {
     dataQuery: '/rpa/data-query'
   }
   router.push(routeMap[menu])
+}
+
+// 跳转到工作台
+const goToDashboard = () => {
+  router.push('/dashboard')
+}
+
+// 跳转到通知
+const goToNotifications = () => {
+  router.push('/rpa/notifications')
 }
 
 // 展开/收起数据管理子菜单
@@ -247,6 +328,20 @@ const handleLogout = () => {
   })
 }
 
+// 加载未读通知数
+const loadUnreadCount = async () => {
+  try {
+    const { apiGet } = await import('../../utils/api.js')
+    const result = await apiGet('/notification/stats')
+    if (result?.code === 0 && result.data?.unreads) {
+      const unreads = result.data.unreads
+      unreadCount.value = (unreads.collect || 0) + (unreads.temp || 0) + (unreads.user || 0)
+    }
+  } catch (e) {
+    // ignore
+  }
+}
+
 onMounted(() => {
   const userInfo = localStorage.getItem('userInfo')
   if (userInfo) {
@@ -255,18 +350,27 @@ onMounted(() => {
       currentUser.value = { ...currentUser.value, ...user }
     } catch (e) {}
   }
-  
+
   // 根据当前路由设置激活菜单
   const path = route.path
-  if (path.includes('/rpa/tasks')) activeMenu.value = 'tasks'
+  if (path === '/dashboard' || path === '/') activeMenu.value = 'dashboard'
+  else if (path.includes('/rpa/tasks')) activeMenu.value = 'tasks'
   else if (path.includes('/rpa/robots')) activeMenu.value = 'robots'
   else if (path.includes('/rpa/processes')) activeMenu.value = 'processes'
+  else if (path.includes('/rpa/queue')) activeMenu.value = 'queue'
   else if (path.includes('/rpa/logs')) activeMenu.value = 'logs'
+  else if (path.includes('/rpa/audit')) activeMenu.value = 'audit'
+  else if (path.includes('/rpa/credentials')) activeMenu.value = 'credentials'
+  else if (path.includes('/rpa/reports')) activeMenu.value = 'reports'
+  else if (path.includes('/rpa/settings')) activeMenu.value = 'settings'
   else if (path.includes('/rpa/notifications')) activeMenu.value = 'notifications'
   else if (path.includes('/rpa/data-collect')) activeMenu.value = 'dataCollect'
   else if (path.includes('/rpa/data-parse')) activeMenu.value = 'dataParse'
   else if (path.includes('/rpa/data-process')) activeMenu.value = 'dataProcess'
   else if (path.includes('/rpa/data-query')) activeMenu.value = 'dataQuery'
+
+  // 加载未读通知数
+  loadUnreadCount()
 })
 </script>
 
@@ -300,6 +404,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 8px;
+  cursor: pointer;
 }
 
 .logo-icon {
@@ -349,6 +454,23 @@ onMounted(() => {
 
 .header-right {
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.notification-badge {
+  cursor: pointer;
+}
+
+.notification-icon {
+  font-size: 20px;
+  color: #ffffffa6;
+  cursor: pointer;
+}
+
+.notification-icon:hover {
+  color: #fff;
 }
 
 .user-info {
@@ -414,6 +536,8 @@ onMounted(() => {
 
 .sidebar-menu {
   padding: 12px 8px;
+  height: 100%;
+  overflow-y: auto;
 }
 
 .menu-item {
@@ -439,6 +563,22 @@ onMounted(() => {
   background: #e6f4ff;
   color: #1890ff;
   font-weight: 500;
+}
+
+.menu-item.main-item {
+  background: linear-gradient(135deg, #1677ff 0%, #409eff 100%);
+  color: white;
+  margin-bottom: 8px;
+}
+
+.menu-item.main-item:hover {
+  background: linear-gradient(135deg, #409eff 0%, #1677ff 100%);
+  color: white;
+}
+
+.menu-item.main-item.active {
+  background: linear-gradient(135deg, #409eff 0%, #1677ff 100%);
+  color: white;
 }
 
 .menu-icon {
@@ -470,6 +610,16 @@ onMounted(() => {
 
 .submenu-item .menu-icon {
   font-size: 16px;
+}
+
+.menu-divider {
+  height: 1px;
+  background: #e8e8e8;
+  margin: 12px 14px;
+}
+
+.menu-group {
+  margin-top: 4px;
 }
 
 /* 内容区 */
