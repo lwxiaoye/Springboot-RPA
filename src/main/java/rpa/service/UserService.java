@@ -209,23 +209,34 @@ public class UserService {
     /**
      * 修改密码（统一方法）
      *
-     * @param userId 用户ID
+     * @param userId 用户 ID
      * @param oldPassword 旧密码
      * @param newPassword 新密码
      * @return 更新后的用户
      */
     public User changePassword(Long userId, String oldPassword, String newPassword) {
         return userRepository.findById(userId).map(user -> {
-            // 验证旧密码
-            if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+            // 验证旧密码（兼容明文和加密密码）
+            String storedPassword = user.getPassword();
+            boolean passwordMatches = false;
+                
+            // 兼容处理：如果密码是 BCrypt 加密则验证加密，否则直接比较明文
+            if (storedPassword.startsWith("$2")) {
+                passwordMatches = passwordEncoder.matches(oldPassword, storedPassword);
+            } else {
+                // 明文密码比较（兼容旧数据）
+                passwordMatches = storedPassword.equals(oldPassword);
+            }
+                
+            if (!passwordMatches) {
                 throw new RuntimeException("原密码错误");
             }
-            
+                
             // 验证新密码复杂度
             if (!validatePasswordComplexity(newPassword)) {
                 throw new RuntimeException("密码不符合复杂度要求：必须包含字母、数字和特殊字符，长度 8-24 位");
             }
-            
+                
             user.setPassword(passwordEncoder.encode(newPassword));
             user.setPasswordChangeTime(LocalDateTime.now());
             return userRepository.save(user);

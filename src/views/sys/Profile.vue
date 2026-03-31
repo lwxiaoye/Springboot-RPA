@@ -156,7 +156,7 @@
               <el-input 
                 v-model="pwdModel.newPassword" 
                 type="password" 
-                placeholder="6-20 位字母/数字"
+                placeholder="8-24 位，包含字母、数字和特殊字符"
                 show-password
                 @paste.prevent="preventPaste"
               />
@@ -227,11 +227,21 @@ const userInitialsLarge = computed(() =>
 
 // 密码校验
 watch(() => pwdModel.newPassword, (val) => {
-  if (val && (val.length < 6 || val.length > 20)) {
-    pwdNewError.value = '密码长度需6-20位'
+  if (val) {
+    // 长度验证
+    if (val.length < 8 || val.length > 24) {
+      pwdNewError.value = '密码长度需 8-24 位'
+    } 
+    // 复杂度验证：必须包含字母、数字和特殊字符
+    else if (!/[a-zA-Z]/.test(val) || !/[0-9]/.test(val) || !/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(val)) {
+      pwdNewError.value = '密码必须包含字母、数字和特殊字符'
+    } else {
+      pwdNewError.value = ''
+    }
   } else {
     pwdNewError.value = ''
   }
+  
   if (pwdModel.confirmPassword && pwdModel.confirmPassword !== val) {
     pwdConfirmError.value = '两次输入密码不一致'
   } else {
@@ -353,33 +363,28 @@ const changePassword = async () => {
   
   pwdLoading.value = true
   try {
-    const loginCheck = await fetch(`${API_BASE}/user/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        username: currentUser.value.username, 
-        password: pwdModel.oldPassword 
-      })
+    // 使用 apiPut 工具，自动携带 JWT Token
+    const token = localStorage.getItem('token')
+    console.log('当前 Token:', token ? token.substring(0, 20) + '...' : '无')
+    console.log('请求参数:', {
+      oldPassword: pwdModel.oldPassword,
+      newPassword: pwdModel.newPassword
     })
-    const loginRes = await loginCheck.json()
-    if (loginRes.code !== 0) {
-      ElMessage.error('原密码错误')
-      pwdLoading.value = false
-      return
-    }
     
-    const resetRes = await fetch(`${API_BASE}/user/reset-password/${currentUser.value.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ newPassword: pwdModel.newPassword })
+    const result = await apiPut(`/user/password/${currentUser.value.id}`, {
+      oldPassword: pwdModel.oldPassword,
+      newPassword: pwdModel.newPassword
     })
-    const result = await resetRes.json()
+    
+    console.log('后端响应:', result)
+    
     if (result.code === 0) {
       ElMessage.success('密码修改成功，请重新登录')
       resetPasswordForm()
       setTimeout(() => {
         ElMessageBox.confirm('密码已修改，建议重新登录', '提示', { confirmButtonText: '去登录' }).then(() => {
           localStorage.removeItem('userInfo')
+          localStorage.removeItem('token')
           window.location.href = '/login'
         })
       }, 800)
@@ -387,6 +392,7 @@ const changePassword = async () => {
       ElMessage.error(result.message || '修改失败')
     }
   } catch (err) {
+    console.error('密码修改失败:', err)
     ElMessage.error('网络错误，请确保后端服务可用')
   } finally {
     pwdLoading.value = false
