@@ -41,7 +41,7 @@
       </el-button>
     </div>
 
-    <el-table :data="filteredCredentials" v-loading="loading" border stripe>
+    <el-table :data="paginatedCredentials" v-loading="loading" border stripe>
       <el-table-column type="index" label="序号" width="60" align="center" />
       <el-table-column prop="name" label="凭据名称" min-width="150" />
       <el-table-column prop="type" label="类型" width="120" align="center">
@@ -229,7 +229,16 @@ const filteredCredentials = computed(() => {
   if (typeFilter.value) {
     list = list.filter(c => c.type === typeFilter.value)
   }
+  // 更新总数
+  pagination.total = list.length
   return list
+})
+
+// 分页后的数据
+const paginatedCredentials = computed(() => {
+  const start = (pagination.page - 1) * pagination.size
+  const end = start + pagination.size
+  return filteredCredentials.value.slice(start, end)
 })
 
 const getTypeTag = (type) => {
@@ -256,11 +265,11 @@ const loadCredentials = async () => {
     credentials.value = [
       { id: 1, name: '东方财富网账号', type: 'password', username: 'rpa_user01', description: '用于股票数据采集', expireTime: '2026-06-30', status: 'active', lastUsed: '2026-03-30 10:30:00', createTime: '2026-01-01' },
       { id: 2, name: 'OpenAI API', type: 'apiKey', keyName: 'GPT-4 Key', apiKey: 'sk-xxxx', description: '用于智能对话功能', expireTime: '2026-04-15', status: 'active', lastUsed: '2026-03-30 09:15:00', createTime: '2026-02-15' },
-      { id: 3, name: '数据库连接', type: 'password', username: 'db_admin', description: 'MySQL数据库连接凭据', expireTime: '', status: 'active', lastUsed: '2026-03-30 14:00:00', createTime: '2026-01-10' },
-      { id: 4, name: 'SSH服务器密钥', type: 'sshKey', privateKey: '-----BEGIN RSA PRIVATE KEY-----', description: '连接远程服务器', expireTime: '2026-12-31', status: 'active', lastUsed: '2026-03-29 22:00:00', createTime: '2026-01-15' },
+      { id: 3, name: '数据库连接', type: 'password', username: 'db_admin', description: 'MySQL 数据库连接凭据', expireTime: '', status: 'active', lastUsed: '2026-03-30 14:00:00', createTime: '2026-01-10' },
+      { id: 4, name: 'SSH 服务器密钥', type: 'sshKey', privateKey: '-----BEGIN RSA PRIVATE KEY-----', description: '连接远程服务器', expireTime: '2026-12-31', status: 'active', lastUsed: '2026-03-29 22:00:00', createTime: '2026-01-15' },
       { id: 5, name: '企业微信机器人', type: 'apiKey', keyName: 'Webhook URL', apiKey: 'https://qyapi.weixin.qq.com', description: '发送通知消息', expireTime: '', status: 'active', lastUsed: '2026-03-30 14:25:00', createTime: '2026-01-20' }
     ]
-    pagination.total = credentials.value.length
+    // 不需要在这里设置 pagination.total，filteredCredentials 会计算
     stats.total = credentials.value.length
     stats.expiring = credentials.value.filter(c => isExpiring(c.expireTime)).length
     stats.active = credentials.value.filter(c => c.status === 'active').length

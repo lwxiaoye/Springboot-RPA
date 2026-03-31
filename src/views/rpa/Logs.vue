@@ -25,7 +25,7 @@
       />
     </div>
 
-    <el-table :data="filteredLogs" v-loading="loading" border stripe>
+    <el-table :data="paginatedLogs" v-loading="loading" border stripe>
       <el-table-column type="index" label="序号" width="60" align="center" />
       <el-table-column prop="taskName" label="任务名称" min-width="160" show-overflow-tooltip />
       <el-table-column prop="robotName" label="执行机器人" min-width="120" />
@@ -121,7 +121,16 @@ const filteredLogs = computed(() => {
       return time >= start && time <= end
     })
   }
+  // 更新总数
+  pagination.total = list.length
   return list
+})
+
+// 分页后的数据
+const paginatedLogs = computed(() => {
+  const start = (pagination.page - 1) * pagination.size
+  const end = start + pagination.size
+  return filteredLogs.value.slice(start, end)
 })
 
 const loadLogs = async () => {
@@ -130,11 +139,10 @@ const loadLogs = async () => {
     const result = await apiGet('/log')
     if (result.code === 0) {
       logs.value = result.data || []
-      pagination.total = logs.value.length
+      // 不需要在这里设置 pagination.total，filteredLogs 会计算
     }
   } catch {
     logs.value = []
-    pagination.total = 0
   } finally {
     loading.value = false
   }

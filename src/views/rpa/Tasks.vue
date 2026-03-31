@@ -21,7 +21,7 @@
       </el-button>
     </div>
 
-    <el-table :data="filteredTasks" v-loading="loading" border stripe>
+    <el-table :data="paginatedTasks" v-loading="loading" border stripe>
       <el-table-column type="index" label="序号" width="60" align="center" />
       <el-table-column prop="name" label="任务名称" min-width="180" show-overflow-tooltip />
       <el-table-column prop="processName" label="所属流程" min-width="140" />
@@ -181,7 +181,16 @@ const filteredTasks = computed(() => {
   if (statusFilter.value) {
     list = list.filter(t => t.status === statusFilter.value)
   }
+  // 更新总数
+  pagination.total = list.length
   return list
+})
+
+// 分页后的数据
+const paginatedTasks = computed(() => {
+  const start = (pagination.page - 1) * pagination.size
+  const end = start + pagination.size
+  return filteredTasks.value.slice(start, end)
 })
 
 const loadTasks = async () => {
@@ -190,11 +199,10 @@ const loadTasks = async () => {
     const result = await apiGet('/task')
     if (result.code === 0) {
       tasks.value = result.data || []
-      pagination.total = tasks.value.length
+      // 不需要在这里设置 pagination.total，filteredTasks 会计算
     }
   } catch {
     tasks.value = []
-    pagination.total = 0
   } finally {
     loading.value = false
   }

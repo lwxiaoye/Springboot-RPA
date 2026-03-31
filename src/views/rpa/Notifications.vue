@@ -40,7 +40,7 @@
       <el-button @click="markAllRead" :disabled="!hasUnread">全部已读</el-button>
     </div>
 
-    <el-table :data="filteredNotifications" v-loading="loading" border stripe>
+    <el-table :data="paginatedNotifications" v-loading="loading" border stripe>
       <el-table-column type="index" label="序号" width="60" align="center" />
       <el-table-column prop="type" label="类型" width="100" align="center">
         <template #default="{ row }">
@@ -179,7 +179,16 @@ const filteredNotifications = computed(() => {
   if (statusFilter.value) {
     list = list.filter(n => n.status === statusFilter.value)
   }
+  // 更新总数
+  pagination.total = list.length
   return list
+})
+
+// 分页后的数据
+const paginatedNotifications = computed(() => {
+  const start = (pagination.page - 1) * pagination.size
+  const end = start + pagination.size
+  return filteredNotifications.value.slice(start, end)
 })
 
 const hasUnread = computed(() => notifications.value.some(n => n.status === 'unread'))
@@ -189,17 +198,17 @@ const loadNotifications = async () => {
   try {
     const params = new URLSearchParams()
     if (currentType.value) params.append('type', currentType.value)
-    params.append('page', pagination.page)
-    params.append('size', pagination.size)
+    // 不使用后端的分页参数，前端自己处理分页
+    // params.append('page', pagination.page)
+    // params.append('size', pagination.size)
     
     const result = await apiGet(`/notification?${params.toString()}`)
     if (result.code === 0) {
       notifications.value = result.data || []
-      pagination.total = result.total || 0
+      // 不需要在这里设置 pagination.total，filteredNotifications 会计算
     }
   } catch {
     notifications.value = []
-    pagination.total = 0
   } finally {
     loading.value = false
   }

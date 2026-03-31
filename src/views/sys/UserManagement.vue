@@ -46,7 +46,7 @@
     </div>
 
     <!-- 用户表格 -->
-    <el-table :data="users" style="width: 100%" v-loading="loading">
+    <el-table :data="paginatedUsers" style="width: 100%" v-loading="loading">
       <el-table-column type="index" label="序号" width="80">
         <template #default="{ $index }">
           {{ (pagination.current - 1) * pagination.size + $index + 1 }}
@@ -271,6 +271,30 @@ const pwdRules = {
 // 计算属性
 const dialogTitle = computed(() => isEdit.value ? '编辑用户' : '新增用户')
 
+// 过滤后的用户列表
+const filteredUsers = computed(() => {
+  let list = users.value
+  if (searchForm.username) {
+    list = list.filter(u => u.username.includes(searchForm.username))
+  }
+  if (searchForm.realName) {
+    list = list.filter(u => u.realName?.includes(searchForm.realName))
+  }
+  if (searchForm.role !== null && searchForm.role !== undefined) {
+    list = list.filter(u => u.role === searchForm.role)
+  }
+  // 更新总数
+  pagination.total = list.length
+  return list
+})
+
+// 分页后的数据
+const paginatedUsers = computed(() => {
+  const start = (pagination.current - 1) * pagination.size
+  const end = start + pagination.size
+  return filteredUsers.value.slice(start, end)
+})
+
 // 获取角色文本
 const getRoleText = (role) => {
   return role === 1 ? '管理员' : '普通用户'
@@ -291,11 +315,10 @@ const loadUsers = async () => {
     const result = await apiGet('/user')
     if (result.code === 0) {
       users.value = result.data || []
-      pagination.total = users.value.length
+      // 不需要在这里设置 pagination.total，filteredUsers 会计算
     }
   } catch {
     users.value = []
-    pagination.total = 0
   } finally {
     loading.value = false
   }

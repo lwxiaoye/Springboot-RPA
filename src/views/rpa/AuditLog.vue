@@ -46,7 +46,7 @@
       <el-button @click="exportLogs"><el-icon><Download /></el-icon> 导出报表</el-button>
     </div>
 
-    <el-table :data="filteredLogs" v-loading="loading" border stripe>
+    <el-table :data="paginatedLogs" v-loading="loading" border stripe>
       <el-table-column type="index" label="序号" width="60" align="center" />
       <el-table-column prop="time" label="操作时间" min-width="160" />
       <el-table-column prop="user" label="操作用户" width="120" />
@@ -180,7 +180,16 @@ const filteredLogs = computed(() => {
   if (riskFilter.value) {
     list = list.filter(l => l.risk === riskFilter.value)
   }
+  // 更新总数
+  pagination.total = list.length
   return list
+})
+
+// 分页后的数据
+const paginatedLogs = computed(() => {
+  const start = (pagination.page - 1) * pagination.size
+  const end = start + pagination.size
+  return filteredLogs.value.slice(start, end)
 })
 
 const getTypeTag = (type) => {
@@ -218,18 +227,23 @@ const getRiskText = (risk) => {
 const loadLogs = async () => {
   loading.value = true
   try {
-    // 模拟数据
-    logs.value = [
-      { id: 1, time: '2026-03-30 14:30:25', user: 'admin', role: '超级管理员', ip: '192.168.1.100', type: 'login', module: 'user', content: '用户登录系统', risk: 'low', result: 'success' },
-      { id: 2, time: '2026-03-30 14:32:10', user: 'admin', role: '超级管理员', ip: '192.168.1.100', type: 'create', module: 'task', content: '创建新任务: 数据采集任务-001', risk: 'low', result: 'success' },
-      { id: 3, time: '2026-03-30 14:35:45', user: 'admin', role: '超级管理员', ip: '192.168.1.100', type: 'update', module: 'robot', content: '修改机器人 ROBOT-01 状态为空闲', risk: 'medium', result: 'success', oldValue: '{"status":"busy"}', newValue: '{"status":"idle"}' },
-      { id: 4, time: '2026-03-30 14:40:20', user: 'admin', role: '超级管理员', ip: '192.168.1.100', type: 'delete', module: 'process', content: '删除流程: 测试流程v1', risk: 'high', result: 'success' },
-      { id: 5, time: '2026-03-30 14:45:00', user: 'zhangsan', role: '普通用户', ip: '192.168.1.105', type: 'login', module: 'user', content: '用户登录系统', risk: 'low', result: 'success' },
-      { id: 6, time: '2026-03-30 14:50:30', user: 'zhangsan', role: '普通用户', ip: '192.168.1.105', type: 'export', module: 'log', content: '导出审计日志报表', risk: 'medium', result: 'success' },
-      { id: 7, time: '2026-03-30 15:00:00', user: 'lisi', role: '运维人员', ip: '192.168.1.110', type: 'update', module: 'system', content: '修改系统配置: 邮件SMTP设置', risk: 'high', result: 'success', oldValue: '{"smtp":"old.com"}', newValue: '{"smtp":"new.com"}' },
-      { id: 8, time: '2026-03-30 15:10:15', user: 'admin', role: '超级管理员', ip: '192.168.1.100', type: 'create', module: 'robot', content: '注册新机器人 ROBOT-05', risk: 'low', result: 'success' }
-    ]
-    pagination.total = logs.value.length
+    // 模拟数据 - 生成更多测试数据
+    logs.value = []
+    for (let i = 1; i <= 25; i++) {
+      logs.value.push({
+        id: i,
+        time: `2026-03-30 ${(14 + Math.floor(i / 4)).toString().padStart(2, '0')}:${(i * 5 % 60).toString().padStart(2, '0')}:00`,
+        user: ['admin', 'zhangsan', 'lisi'][i % 3],
+        role: ['超级管理员', '普通用户', '运维人员'][i % 3],
+        ip: `192.168.1.${100 + i}`,
+        type: ['login', 'create', 'update', 'delete', 'export'][i % 5],
+        module: ['user', 'robot', 'process', 'task', 'log', 'system'][i % 6],
+        content: `操作内容 ${i}`,
+        risk: ['low', 'medium', 'high'][i % 3],
+        result: 'success'
+      })
+    }
+    // 不需要在这里设置 pagination.total，filteredLogs 会计算
     stats.total = 1256
     stats.today = logs.value.length
     stats.highRisk = logs.value.filter(l => l.risk === 'high').length
@@ -250,7 +264,10 @@ const exportLogs = () => {
   ElMessage.success('审计日志报表导出成功')
 }
 
-const handleSizeChange = (size) => { pagination.size = size }
+const handleSizeChange = (size) => { 
+  pagination.size = size
+  pagination.page = 1 // 重置到第一页
+}
 const handleCurrentChange = (page) => { pagination.page = page }
 
 onMounted(() => {

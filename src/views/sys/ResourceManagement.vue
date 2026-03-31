@@ -39,7 +39,7 @@
     </div>
 
     <!-- 资源表格 -->
-    <el-table :data="filteredResources" style="width: 100%" v-loading="loading" border stripe>
+    <el-table :data="paginatedResources" style="width: 100%" v-loading="loading" border stripe>
       <el-table-column type="index" label="序号" width="80">
         <template #default="{ $index }">
           {{ (pagination.current - 1) * pagination.size + $index + 1 }}
@@ -206,7 +206,16 @@ const filteredResources = computed(() => {
   if (searchForm.resourceType) {
     list = list.filter(r => r.type === searchForm.resourceType)
   }
+  // 更新总数
+  pagination.total = list.length
   return list
+})
+
+// 分页后的数据
+const paginatedResources = computed(() => {
+  const start = (pagination.current - 1) * pagination.size
+  const end = start + pagination.size
+  return filteredResources.value.slice(start, end)
 })
 
 // 获取资源类型标签样式
@@ -236,11 +245,10 @@ const loadResources = async () => {
     const result = await apiGet('/resource')
     if (result.code === 0) {
       resources.value = result.data || []
-      pagination.total = resources.value.length
+      // 不需要在这里设置 pagination.total，filteredResources 会计算
     }
   } catch {
     resources.value = []
-    pagination.total = 0
   } finally {
     loading.value = false
   }

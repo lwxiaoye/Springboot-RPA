@@ -25,7 +25,7 @@
     </div>
 
     <!-- 角色表格 -->
-    <el-table :data="filteredTableData" border stripe v-loading="loading" style="width: 100%">
+    <el-table :data="paginatedTableData" border stripe v-loading="loading" style="width: 100%">
       <el-table-column type="index" label="序号" width="60" align="center" />
       <el-table-column prop="code" label="角色编码" min-width="120" />
       <el-table-column prop="name" label="角色名称" min-width="120" />
@@ -163,11 +163,10 @@ const fetchRoleList = async () => {
     const result = await apiGet('/role')
     if (result.code === 0) {
       tableData.value = result.data || []
-      pagination.total = tableData.value.length
+      // 不需要在这里设置 pagination.total，filteredTableData 会计算
     }
   } catch {
     tableData.value = []
-    pagination.total = 0
   } finally {
     loading.value = false
   }
@@ -346,7 +345,25 @@ const savePermissions = async () => {
   }
 }
 
-const filteredTableData = computed(() => tableData.value)
+const filteredTableData = computed(() => {
+  let list = tableData.value
+  if (searchForm.roleName) {
+    list = list.filter(r => r.name.includes(searchForm.roleName))
+  }
+  if (searchForm.roleCode) {
+    list = list.filter(r => r.code.includes(searchForm.roleCode))
+  }
+  // 更新总数
+  pagination.total = list.length
+  return list
+})
+
+// 分页后的数据
+const paginatedTableData = computed(() => {
+  const start = (pagination.page - 1) * pagination.size
+  const end = start + pagination.size
+  return filteredTableData.value.slice(start, end)
+})
 const dialogTitle = computed(() => isEdit.value ? '编辑角色' : '新增角色')
 
 onMounted(() => { fetchRoleList(); fetchPermissionTree() })

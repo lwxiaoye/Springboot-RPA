@@ -20,7 +20,7 @@
       </el-button>
     </div>
 
-    <el-table :data="filteredRobots" v-loading="loading" border stripe>
+    <el-table :data="paginatedRobots" v-loading="loading" border stripe>
       <el-table-column type="index" label="序号" width="60" align="center" />
       <el-table-column prop="name" label="机器人名称" min-width="140" />
       <el-table-column prop="ip" label="IP地址" min-width="140" />
@@ -186,7 +186,16 @@ const filteredRobots = computed(() => {
   if (statusFilter.value) {
     list = list.filter(r => r.status === statusFilter.value)
   }
+  // 更新总数
+  pagination.total = list.length
   return list
+})
+
+// 分页后的数据
+const paginatedRobots = computed(() => {
+  const start = (pagination.page - 1) * pagination.size
+  const end = start + pagination.size
+  return filteredRobots.value.slice(start, end)
 })
 
 const loadRobots = async () => {
@@ -195,11 +204,10 @@ const loadRobots = async () => {
     const result = await apiGet('/robot')
     if (result.code === 0) {
       robots.value = result.data || []
-      pagination.total = robots.value.length
+      // 不需要在这里设置 pagination.total，filteredRobots 会计算
     }
   } catch {
     robots.value = []
-    pagination.total = 0
   } finally {
     loading.value = false
   }
