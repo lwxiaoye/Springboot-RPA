@@ -1,32 +1,26 @@
 <template>
   <div class="profile-wrapper">
-    <div class="content-header">
-      <div class="header-left">
-        <h2>个人信息</h2>
-        <el-breadcrumb separator="/">
-          <el-breadcrumb-item>系统管理</el-breadcrumb-item>
-          <el-breadcrumb-item>个人信息</el-breadcrumb-item>
-        </el-breadcrumb>
-      </div>
-    </div>
-
-    <!-- 左右各占一半的布局 -->
-    <div class="profile-split">
-      <!-- 左侧卡片：头像 + 基本信息 -->
-      <div class="profile-sidebar-half">
-        <el-card class="info-card" shadow="never">
-          <div class="avatar-section">
-            <div class="avatar-large" v-if="!avatarPreview && !currentUser.avatar">
+    <div class="profile-layout">
+      <!-- 左侧区域 -->
+      <div class="profile-left">
+        <!-- 头像卡片 -->
+        <el-card class="avatar-card" shadow="never">
+          <div class="card-header">
+            <span class="header-title">我的头像</span>
+          </div>
+          <div class="avatar-content">
+            <div class="avatar-circle" v-if="!avatarPreview && !currentUser.avatar">
               {{ userInitialsLarge }}
             </div>
-            <div class="avatar-large" v-else>
+            <div class="avatar-circle" v-else>
               <img 
                 :src="getAvatarUrl(avatarPreview || currentUser.avatar)" 
                 alt="头像" 
                 @error="handleImageError"
               />
             </div>
-            <el-button class="change-avatar-btn" text @click="triggerAvatarUpload">
+            <el-button class="change-btn" @click="triggerAvatarUpload">
+              <el-icon><Download /></el-icon>
               更换头像
             </el-button>
             <input 
@@ -37,129 +31,155 @@
               @change="handleAvatarChange" 
             />
           </div>
-          <div class="user-basic">
-            <h3>{{ currentUser.realName || currentUser.username }}</h3>
-            <el-tag size="small" class="role-badge">{{ currentUser.role || '系统管理员' }}</el-tag>
-            <p class="user-email">{{ currentUser.email }}</p>
+        </el-card>
+  
+        <!-- 基本信息卡片 -->
+        <el-card class="info-card" shadow="never">
+          <div class="card-header">
+            <span class="header-title">
+              <el-icon class="header-icon"><User /></el-icon>
+              基本信息
+            </span>
+            <div class="header-actions">
+              <el-button 
+                v-if="!isEditing" 
+                class="edit-btn" 
+                type="primary" 
+                size="small" 
+                @click="startEditAll"
+              >
+                <el-icon><Edit /></el-icon>
+                编辑
+              </el-button>
+              <div v-else class="action-buttons">
+                <el-button size="small" @click="cancelEdit">
+                  取消
+                </el-button>
+                <el-button size="small" type="primary" @click="saveAllInfo" :loading="saveLoading">
+                  保存
+                </el-button>
+              </div>
+            </div>
           </div>
-          <el-divider />
-          <div class="info-detail-item">
-            <div class="info-label">创建时间</div>
-            <div class="info-value">{{ formatDate(currentUser.createTime) }}</div>
-          </div>
-          <div class="info-detail-item">
-            <div class="info-label">最后登录时间</div>
-            <div class="info-value">{{ currentUser.lastLoginTime || '2026-03-23 14:32:00' }}</div>
-          </div>
-          <div class="info-detail-item">
-            <div class="info-label">用户名</div>
-            <div class="info-value readonly">{{ currentUser.username }}</div>
-          </div>
+          <el-form :model="editForm" label-width="90px" class="info-form">
+            <el-form-item label="用户名">
+              <div class="info-value">{{ currentUser.username }}</div>
+            </el-form-item>
+            <el-form-item label="真实姓名">
+              <div v-if="!editingField.name" class="info-value">{{ editForm.realName || '未设置' }}</div>
+              <el-input v-else v-model="editForm.realName" size="default" />
+            </el-form-item>
+            <el-form-item label="邮箱">
+              <div v-if="!editingField.email" class="info-value">{{ editForm.email || '未设置' }}</div>
+              <el-input v-else v-model="editForm.email" size="default" />
+            </el-form-item>
+            <el-form-item label="手机号">
+              <div v-if="!editingField.mobile" class="info-value">{{ editForm.mobile || '未绑定' }}</div>
+              <el-input v-else v-model="editForm.mobile" size="default" />
+            </el-form-item>
+            <el-form-item label="角色">
+              <div class="info-value">{{ currentUser.role || '系统管理员' }}</div>
+            </el-form-item>
+            <el-form-item label="创建时间">
+              <div class="info-value">{{ formatDate(currentUser.createTime) }}</div>
+            </el-form-item>
+          </el-form>
         </el-card>
       </div>
-
-      <!-- 右侧卡片：基本信息 / 修改密码标签页 -->
-      <div class="profile-content-half">
-        <el-card class="content-card" shadow="never">
-          <el-tabs v-model="activeTab" class="custom-tabs">
-            <el-tab-pane label="基本信息" name="info">
-              <el-form :model="editForm" label-width="80px" class="info-form">
-                <el-form-item label="姓名">
-                  <div v-if="!editingField.name" class="editable-value" @click="startEdit('name')">
-                    {{ editForm.realName || '未设置' }}
-                    <el-icon class="edit-icon"><Edit /></el-icon>
-                  </div>
-                  <el-input 
-                    v-else 
-                    v-model="editForm.realName" 
-                    size="default"
-                    @blur="saveField('name')" 
-                    @keyup.enter="saveField('name')"
-                    autofocus
-                  />
-                </el-form-item>
-                <el-form-item label="用户名">
-                  <div class="readonly-value">{{ currentUser.username }}</div>
-                  <div class="field-tip">用户名不可修改</div>
-                </el-form-item>
-                <el-form-item label="邮箱">
-                  <div v-if="!editingField.email" class="editable-value" @click="startEdit('email')">
-                    {{ editForm.email || '未设置' }}
-                    <el-icon class="edit-icon"><Edit /></el-icon>
-                  </div>
-                  <el-input 
-                    v-else 
-                    v-model="editForm.email" 
-                    @blur="saveField('email')" 
-                    @keyup.enter="saveField('email')"
-                  />
-                </el-form-item>
-                <el-form-item label="手机号">
-                  <div v-if="!editingField.mobile" class="editable-value" @click="startEdit('mobile')">
-                    {{ editForm.mobile || '未绑定' }}
-                    <el-icon class="edit-icon"><Edit /></el-icon>
-                  </div>
-                  <el-input 
-                    v-else 
-                    v-model="editForm.mobile" 
-                    @blur="saveField('mobile')" 
-                    @keyup.enter="saveField('mobile')"
-                  />
-                </el-form-item>
-                <el-form-item label="角色">
-                  <div class="readonly-value">{{ currentUser.role || '系统管理员' }}</div>
-                </el-form-item>
-                <el-form-item label="最后登录">
-                  <div class="readonly-value">{{ currentUser.lastLoginTime || '2026-03-23 14:32:00' }}</div>
-                </el-form-item>
-                <el-form-item>
-                  <el-button @click="resetInfo">重置</el-button>
-                  <el-button type="primary" @click="saveAllInfo" :loading="saveLoading">保存修改</el-button>
-                </el-form-item>
-              </el-form>
-            </el-tab-pane>
-
-            <el-tab-pane label="修改密码" name="password">
-              <el-form :model="pwdModel" label-width="80px" class="pwd-form">
-                <el-form-item label="原密码">
-                  <el-input 
-                    v-model="pwdModel.oldPassword" 
-                    type="password" 
-                    placeholder="请输入原密码"
-                    show-password
-                    @paste.prevent="preventPaste"
-                  />
-                </el-form-item>
-                <el-form-item label="新密码">
-                  <el-input 
-                    v-model="pwdModel.newPassword" 
-                    type="password" 
-                    placeholder="6-20位字母/数字"
-                    show-password
-                    @paste.prevent="preventPaste"
-                  />
-                  <div v-if="pwdNewError" class="error-tip">{{ pwdNewError }}</div>
-                </el-form-item>
-                <el-form-item label="确认新密码">
-                  <el-input 
-                    v-model="pwdModel.confirmPassword" 
-                    type="password" 
-                    placeholder="请再次输入新密码"
-                    show-password
-                    @paste.prevent="preventPaste"
-                  />
-                  <div v-if="pwdConfirmError" class="error-tip">{{ pwdConfirmError }}</div>
-                </el-form-item>
-                <el-form-item>
-                  <el-button @click="resetPasswordForm">清空</el-button>
-                  <el-button type="primary" @click="changePassword" :loading="pwdLoading">
-                    更新密码
-                  </el-button>
-                </el-form-item>
-                <div class="pwd-tip">密码修改后需重新登录</div>
-              </el-form>
-            </el-tab-pane>
-          </el-tabs>
+  
+      <!-- 右侧区域 -->
+      <div class="profile-right">
+        <!-- 账户安全卡片 -->
+        <el-card class="security-card" shadow="never">
+          <div class="card-header">
+            <span class="header-title">
+              <el-icon class="header-icon"><Lock /></el-icon>
+              账户安全
+            </span>
+          </div>
+          <div class="security-content">
+            <div class="security-item">
+              <div class="security-icon">
+                <el-icon><Lock /></el-icon>
+              </div>
+              <div class="security-info">
+                <div class="security-title">登录密码</div>
+                <div class="security-desc">定期更换密码可以保护账户安全</div>
+              </div>
+              <el-button class="security-action" text type="primary" @click="activeTab = 'password'">
+                修改
+                <el-icon><ArrowRight /></el-icon>
+              </el-button>
+            </div>
+          </div>
+        </el-card>
+  
+        <!-- 账户统计卡片 -->
+        <el-card class="stats-card" shadow="never">
+          <div class="card-header">
+            <span class="header-title">
+              <el-icon class="header-icon"><DataAnalysis /></el-icon>
+              账户统计
+            </span>
+          </div>
+          <div class="stats-content">
+            <div class="stat-item">
+              <div class="stat-value">10</div>
+              <div class="stat-label">账户天数</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-value">今天</div>
+              <div class="stat-label">最后登录</div>
+            </div>
+          </div>
+        </el-card>
+  
+        <!-- 修改密码卡片 -->
+        <el-card class="password-card" shadow="never" v-if="activeTab === 'password'">
+          <div class="card-header">
+            <span class="header-title">
+              <el-icon class="header-icon"><Lock /></el-icon>
+              修改密码
+            </span>
+          </div>
+          <el-form :model="pwdModel" label-width="90px" class="pwd-form">
+            <el-form-item label="原密码">
+              <el-input 
+                v-model="pwdModel.oldPassword" 
+                type="password" 
+                placeholder="请输入原密码"
+                show-password
+                @paste.prevent="preventPaste"
+              />
+            </el-form-item>
+            <el-form-item label="新密码">
+              <el-input 
+                v-model="pwdModel.newPassword" 
+                type="password" 
+                placeholder="6-20 位字母/数字"
+                show-password
+                @paste.prevent="preventPaste"
+              />
+              <div v-if="pwdNewError" class="error-tip">{{ pwdNewError }}</div>
+            </el-form-item>
+            <el-form-item label="确认新密码">
+              <el-input 
+                v-model="pwdModel.confirmPassword" 
+                type="password" 
+                placeholder="请再次输入新密码"
+                show-password
+                @paste.prevent="preventPaste"
+              />
+              <div v-if="pwdConfirmError" class="error-tip">{{ pwdConfirmError }}</div>
+            </el-form-item>
+            <el-form-item>
+              <el-button @click="resetPasswordForm">清空</el-button>
+              <el-button type="primary" @click="changePassword" :loading="pwdLoading">
+                更新密码
+              </el-button>
+            </el-form-item>
+            <div class="pwd-tip">密码修改后需重新登录</div>
+          </el-form>
         </el-card>
       </div>
     </div>
@@ -169,7 +189,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Edit } from '@element-plus/icons-vue'
+import { Download, User, Lock, DataAnalysis, ArrowRight, Edit } from '@element-plus/icons-vue'
 
 import { apiGet, apiPost, apiPut, apiDelete, apiUpload } from '../../utils/api.js'
 
@@ -191,6 +211,7 @@ const currentUser = ref({
 const activeTab = ref('info')
 const editForm = reactive({ realName: '', email: '', mobile: '' })
 const editingField = reactive({ name: false, email: false, mobile: false })
+const isEditing = ref(false)
 const avatarPreview = ref(null)
 const avatarInput = ref(null)
 const saveLoading = ref(false)
@@ -237,6 +258,22 @@ const initEditForm = () => {
   editForm.mobile = currentUser.value.mobile || ''
 }
 
+const startEditAll = () => {
+  editingField.name = true
+  editingField.email = true
+  editingField.mobile = true
+  isEditing.value = true
+}
+
+const cancelEdit = () => {
+  editingField.name = false
+  editingField.email = false
+  editingField.mobile = false
+  isEditing.value = false
+  initEditForm()
+  ElMessage.info('已取消编辑')
+}
+
 const startEdit = (field) => {
   if (field === 'name') editingField.name = true
   if (field === 'email') editingField.email = true
@@ -276,6 +313,7 @@ const saveAllInfo = async () => {
       editingField.name = false
       editingField.email = false
       editingField.mobile = false
+      isEditing.value = false
     } else {
       ElMessage.error(result.message || '保存失败')
     }
@@ -292,6 +330,7 @@ const saveAllInfo = async () => {
     editingField.name = false
     editingField.email = false
     editingField.mobile = false
+    isEditing.value = false
     ElMessage.success('本地更新成功')
   } finally {
     saveLoading.value = false
@@ -488,179 +527,366 @@ onMounted(() => {
 .profile-wrapper {
   max-width: 1400px;
   margin: 0 auto;
+  padding: 20px;
+  background: #f5f7fa;
 }
 
-.content-header {
-  margin-bottom: 20px;
-  background: white;
-  padding: 16px 24px;
-  border-radius: 12px;
+.profile-layout {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 20px;
 }
 
-.content-header h2 {
-  margin: 0 0 8px 0;
-  font-size: 20px;
-  font-weight: 500;
-}
-
-.profile-split {
+.profile-left {
   display: flex;
-  gap: 24px;
-  align-items: stretch;
+  flex-direction: column;
+  gap: 20px;
 }
 
-.profile-sidebar-half,
-.profile-content-half {
-  flex: 1;
-  min-width: 0;
+.profile-right {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
+/* 卡片通用样式 */
+.avatar-card,
 .info-card,
-.content-card {
-  height: 100%;
-  border-radius: 12px;
+.security-card,
+.stats-card,
+.password-card {
+  border-radius: 8px;
   border: 1px solid #e4e7ed;
 }
 
-.avatar-section {
+:deep(.el-card__body) {
+  padding: 20px;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.header-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header-icon {
+  font-size: 18px;
+  color: #3b82f6;
+}
+
+/* 头像卡片 */
+.avatar-content {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding-bottom: 20px;
-  margin-bottom: 20px;
+  padding: 32px 0;
 }
 
-.avatar-large {
+.avatar-circle {
   width: 120px;
   height: 120px;
   border-radius: 50%;
-  background: linear-gradient(145deg, #2a5f7a, #1e3a4a);
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 48px;
   font-weight: 600;
   color: white;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  margin-bottom: 16px;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  margin-bottom: 20px;
   overflow: hidden;
+  border: 4px solid white;
 }
 
-.avatar-large img {
+.avatar-circle img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.change-avatar-btn {
-  font-size: 14px;
-  color: #1677ff;
-}
-
-.user-basic {
-  text-align: center;
-  margin-bottom: 20px;
-}
-
-.user-basic h3 {
-  font-size: 20px;
-  font-weight: 600;
-  color: #1e3a4a;
-  margin-bottom: 8px;
-}
-
-.role-badge {
-  background: #e6f2ff;
-  color: #1677ff;
-  border: none;
-}
-
-.user-email {
+.change-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 16px;
+  border: 1px dashed #d1d5db;
+  background: white;
+  color: #6b7280;
+  border-radius: 6px;
   font-size: 13px;
-  color: #8aa5b8;
+}
+
+.change-btn:hover {
+  border-color: #3b82f6;
+  color: #3b82f6;
+  background: #eff6ff;
+}
+
+/* 基本信息表单 */
+.info-form {
   margin-top: 8px;
 }
 
-.info-detail-item {
-  margin-bottom: 16px;
+:deep(.el-form-item) {
+  margin-bottom: 20px;
 }
 
-.info-label {
+:deep(.el-form-item__label) {
   font-size: 13px;
-  color: #8c9aa8;
-  margin-bottom: 6px;
+  color: #6b7280;
+  font-weight: 500;
+  width: 90px;
 }
 
 .info-value {
   font-size: 14px;
-  color: #1e3a4a;
-  background: #f5f7fa;
-  padding: 8px 12px;
-  border-radius: 8px;
-  word-break: break-all;
+  color: #1f2937;
+  padding: 8px 0;
+  line-height: 1.5;
+  font-weight: 500;
+  border: none;
+  background: transparent;
+  width: 100%;
 }
 
-.info-value.readonly {
-  background: #fafbfc;
+:deep(.el-input) {
+  width: 100%;
 }
 
-.editable-value {
-  background: #f5f7fa;
-  padding: 8px 12px;
-  border-radius: 8px;
-  cursor: pointer;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+:deep(.el-input__wrapper) {
+  border: none;
+  box-shadow: none;
+  background: transparent;
+  padding: 0;
 }
 
-.editable-value:hover {
-  background: #eef2f6;
-}
-
-.edit-icon {
+:deep(.el-input__inner) {
   font-size: 14px;
-  color: #8aa5b8;
+  color: #1f2937;
+  font-weight: 500;
+  padding: 8px 0;
 }
 
-.readonly-value {
-  background: #fafbfc;
+:deep(.el-input.is-disabled .el-input__inner) {
+  color: #9ca3af;
+  -webkit-text-fill-color: #9ca3af;
+}
+
+.edit-btn {
+  padding: 6px 16px;
+  font-size: 13px;
+  border-radius: 6px;
+  background: #3b82f6;
+}
+
+.edit-btn:hover {
+  background: #2563eb;
+}
+
+/* 编辑模式下的输入框 */
+:deep(.el-form-item .el-input__wrapper) {
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
   padding: 8px 12px;
-  border-radius: 8px;
-  color: #4a6f86;
+  background: white;
+  transition: all 0.2s;
 }
 
-.field-tip {
+:deep(.el-form-item .el-input__wrapper:hover) {
+  border-color: #3b82f6;
+}
+
+:deep(.el-form-item .el-input__wrapper.is-focus) {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+/* 账户安全 */
+.security-content {
+  padding: 8px 0;
+}
+
+.security-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.security-icon {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 24px;
+}
+
+.security-info {
+  flex: 1;
+}
+
+.security-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 4px;
+}
+
+.security-desc {
   font-size: 12px;
-  color: #8aa5b8;
-  margin-top: 4px;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+.security-action {
+  font-size: 13px;
+  color: #3b82f6;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.security-action:hover {
+  color: #2563eb;
+}
+
+/* 账户统计 */
+.stats-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 16px;
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.stat-value {
+  font-size: 28px;
+  font-weight: 600;
+  color: #3b82f6;
+  margin-bottom: 8px;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+/* 密码表单 */
+.pwd-form {
+  margin-top: 8px;
+}
+
+:deep(.pwd-form .el-form-item) {
+  margin-bottom: 20px;
+}
+
+:deep(.pwd-form .el-input__wrapper) {
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 8px 12px;
+  background: white;
+  transition: all 0.2s;
+}
+
+:deep(.pwd-form .el-input__wrapper:hover) {
+  border-color: #3b82f6;
+}
+
+:deep(.pwd-form .el-input__wrapper.is-focus) {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
 }
 
 .error-tip {
-  color: #f56c6c;
+  color: #ef4444;
   font-size: 12px;
-  margin-top: 4px;
+  margin-top: 6px;
 }
 
 .pwd-tip {
   font-size: 12px;
-  color: #8aa5b8;
+  color: #6b7280;
   text-align: center;
   margin-top: 16px;
+  padding: 12px;
+  background: #f9fafb;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
 }
 
-.custom-tabs {
-  height: 100%;
+:deep(.el-input__wrapper) {
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 8px 12px;
+  background: white;
+  transition: all 0.2s;
 }
 
-.info-form,
-.pwd-form {
-  padding: 8px 0;
+:deep(.el-input__wrapper:hover) {
+  border-color: #3b82f6;
 }
 
-@media (max-width: 900px) {
-  .profile-split {
-    flex-direction: column;
+:deep(.el-input__wrapper.is-focus) {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+:deep(.el-button--primary) {
+  background: #3b82f6;
+  border: none;
+}
+
+:deep(.el-button--primary:hover) {
+  background: #2563eb;
+}
+
+/* 响应式 */
+@media (max-width: 1024px) {
+  .profile-layout {
+    grid-template-columns: 1fr;
+  }
+  
+  .profile-right {
+    order: -1;
   }
 }
 </style>
