@@ -216,9 +216,15 @@ const handlePasswordLogin = async () => {
           realName: result.data?.realName,
           role: result.data?.role,
           status: result.data?.status,  // 保存用户状态
-          avatar: result.data?.avatar,  // 保存头像信息
+          avatar: result.data?.avatar,  // 保存头像信息（相对路径）
           loginTime: new Date().toISOString()
         }
+        
+        // 如果后端返回的头像路径包含 /api/前缀，去掉它
+        if (userInfo.avatar && userInfo.avatar.startsWith('/api/')) {
+          userInfo.avatar = userInfo.avatar.replace('/api/', '/')
+        }
+        
         localStorage.setItem('userInfo', JSON.stringify(userInfo))
       
         // 保存 token

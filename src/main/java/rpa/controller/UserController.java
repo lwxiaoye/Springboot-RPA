@@ -24,10 +24,8 @@ import rpa.config.JwtUtils;
 import rpa.entity.User;
 import rpa.service.UserService;
 import rpa.repository.UserRepository;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Random;
+
+import java.util.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -102,13 +100,18 @@ public class UserController {
             data.put("username", user.getUsername());
             data.put("realName", user.getRealName());
             data.put("role", user.getRole());
-            data.put("avatar", user.getAvatar());
-
-            // 生成JWT token
+                    
+            // 处理头像路径：如果数据库中的路径包含 /api/前缀，去掉它
+            String avatar = user.getAvatar();
+            if (avatar != null && avatar.startsWith("/api/")) {
+                avatar = avatar.replace("/api/", "/");
+            }
+            data.put("avatar", avatar); // 返回处理后的头像路径
+        
+            // 生成 JWT token
             String token = jwtUtils.generateToken(user.getUsername(), user.getRole());
             data.put("token", token);
-
-            data.put("avatar", user.getAvatar()); // 返回头像信息
+        
             data.put("status", user.getStatus()); // 返回用户状态
             response.put("data", data);
         } else {
@@ -135,8 +138,17 @@ public class UserController {
         Map<String, Object> response = new HashMap<>();
         Optional<User> userOpt = userService.findById(id);
         if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            
+            // 处理头像路径
+            String avatar = user.getAvatar();
+            if (avatar != null && avatar.startsWith("/api/")) {
+                avatar = avatar.replace("/api/", "/");
+            }
+            user.setAvatar(avatar);
+            
             response.put("code", 0);
-            response.put("data", userOpt.get());
+            response.put("data", user);
         } else {
             response.put("code", -1);
             response.put("message", "用户不存在");
@@ -223,8 +235,18 @@ public class UserController {
     @GetMapping
     public Map<String, Object> listUsers() {
         Map<String, Object> response = new HashMap<>();
+        List<User> users = userService.findAll();
+        
+        // 处理所有用户的头像路径
+        for (User user : users) {
+            String avatar = user.getAvatar();
+            if (avatar != null && avatar.startsWith("/api/")) {
+                user.setAvatar(avatar.replace("/api/", "/"));
+            }
+        }
+        
         response.put("code", 0);
-        response.put("data", userService.findAll());
+        response.put("data", users);
         return response;
     }
 
@@ -495,14 +517,14 @@ public class UserController {
             System.out.println("✅ 头像文件已保存：" + fileName);
             
             // 更新用户信息
-            String avatarPath = "/api/user/avatar/image/" + fileName;
+            String avatarPath = "/user/avatar/image/" + fileName;
             userService.updateAvatar(id, avatarPath);
             System.out.println("✅ 用户头像已更新：userId=" + id + ", path=" + avatarPath);
             
             response.put("code", 0);
             response.put("message", "头像上传成功");
             Map<String, String> data = new HashMap<>();
-            data.put("imageUrl", avatarPath);  // 返回完整的 API 路径
+            data.put("imageUrl", "/user/avatar/image/" + fileName);  // 返回相对路径
             response.put("data", data);
             
         } catch (IOException e) {

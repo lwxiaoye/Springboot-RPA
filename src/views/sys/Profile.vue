@@ -20,7 +20,11 @@
               {{ userInitialsLarge }}
             </div>
             <div class="avatar-large" v-else>
-              <img :src="avatarPreview || currentUser.avatar" alt="头像" />
+              <img 
+                :src="getAvatarUrl(avatarPreview || currentUser.avatar)" 
+                alt="头像" 
+                @error="handleImageError"
+              />
             </div>
             <el-button class="change-avatar-btn" text @click="triggerAvatarUpload">
               更换头像
@@ -378,7 +382,9 @@ const handleAvatarChange = async (e) => {
       })
       const result = await response.json()
       if (result.code === 0) {
-        currentUser.value.avatar = avatarPreview.value
+        // 使用后端返回的相对路径
+        currentUser.value.avatar = result.data?.imageUrl || avatarPreview.value
+        console.log('头像上传成功，新路径:', currentUser.value.avatar)
         ElMessage.success('头像更新成功')
       } else {
         ElMessage.error('上传失败')
@@ -392,9 +398,34 @@ const handleAvatarChange = async (e) => {
   e.target.value = ''
 }
 
+// 处理图片加载失败
+const handleImageError = (e) => {
+  const imgSrc = e.target.src
+  console.error('❌ 头像加载失败:', imgSrc)
+  console.error('当前用户头像路径:', currentUser.value.avatar)
+  ElMessage.error('头像加载失败，请检查后端服务是否启动')
+}
+
 const formatDate = (isoString) => {
   if (!isoString) return '2026-03-16'
   return new Date(isoString).toLocaleString('zh-CN', { hour12: false })
+}
+
+// 获取头像完整 URL
+const getAvatarUrl = (path) => {
+  if (!path) {
+    console.log('头像路径为空')
+    return null
+  }
+  // 如果已经是完整 URL，直接返回
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    console.log('使用完整 URL:', path)
+    return path
+  }
+  // 否则拼接 API 基础 URL
+  const fullUrl = `${API_BASE}${path}`
+  console.log('头像路径处理 - 原始路径:', path, '| 完整 URL:', fullUrl)
+  return fullUrl
 }
 
 const loadUserFromStorage = () => {
@@ -403,15 +434,53 @@ const loadUserFromStorage = () => {
     try {
       const user = JSON.parse(userStr)
       currentUser.value = { ...currentUser.value, ...user }
+      
+      console.log('从 localStorage 加载的用户信息:', currentUser.value)
+      console.log('头像路径:', currentUser.value.avatar)
+      
+      // 修复旧的头像路径格式（去掉开头的 /api）
+      if (currentUser.value.avatar && currentUser.value.avatar.startsWith('/api/')) {
+        currentUser.value.avatar = currentUser.value.avatar.replace('/api/', '/')
+        // 更新 localStorage
+        user.avatar = currentUser.value.avatar
+        localStorage.setItem('userInfo', JSON.stringify(user))
+        console.log('已修复头像路径:', currentUser.value.avatar)
+      }
+      
       if (!currentUser.value.mobile) currentUser.value.mobile = '13800138002'
       if (!currentUser.value.role) currentUser.value.role = '系统管理员'
-    } catch (e) {}
+    } catch (e) {
+      console.error('解析用户信息失败:', e)
+    }
+  } else {
+    console.warn('localStorage 中没有用户信息，请重新登录')
   }
   initEditForm()
 }
 
+// 从后端获取最新用户信息
+const loadUserProfile = async () => {
+  try {
+    const result = await apiGet(`/user/${currentUser.value.id}`)
+    if (result.code === 0 && result.data) {
+      console.log('从后端获取的用户信息:', result.data)
+      currentUser.value = { ...currentUser.value, ...result.data }
+      console.log('更新后的头像路径:', currentUser.value.avatar)
+      
+      // 同时更新 localStorage
+      const storedUser = JSON.parse(localStorage.getItem('userInfo') || '{}')
+      storedUser.avatar = currentUser.value.avatar
+      localStorage.setItem('userInfo', JSON.stringify(storedUser))
+    }
+  } catch (err) {
+    console.error('获取用户信息失败:', err)
+  }
+}
+
 onMounted(() => {
   loadUserFromStorage()
+  // 从后端获取最新的用户信息，确保头像路径正确
+  loadUserProfile()
 })
 </script>
 
