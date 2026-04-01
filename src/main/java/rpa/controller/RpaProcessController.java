@@ -120,4 +120,46 @@ public class RpaProcessController {
         }
         return response;
     }
+
+    /**
+     * 保存流程设计
+     */
+    @PostMapping("/{id}/design")
+    public Map<String, Object> saveDesign(@PathVariable Long id,
+                                          @RequestBody Map<String, Object> request) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            String steps = (String) request.get("steps");
+            RpaProcess process = service.saveDesign(id, steps);
+            response.put("code", 0);
+            response.put("message", "保存成功");
+            response.put("data", process);
+        } catch (Exception e) {
+            response.put("code", -1);
+            response.put("message", e.getMessage());
+        }
+        return response;
+    }
+
+    /**
+     * 获取流程设计
+     */
+    @GetMapping("/{id}/design")
+    public Map<String, Object> getDesign(@PathVariable Long id) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            RpaProcess process = service.findById(id).orElse(null);
+            if (process != null) {
+                response.put("code", 0);
+                response.put("data", process.getSteps());
+            } else {
+                response.put("code", -1);
+                response.put("message", "流程不存在");
+            }
+        } catch (Exception e) {
+            response.put("code", -1);
+            response.put("message", e.getMessage());
+        }
+        return response;
+    }
 }
