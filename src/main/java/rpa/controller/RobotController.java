@@ -1,25 +1,11 @@
 package rpa.controller;
 
-/**
- * 机器人管理控制器
- * <p>
- * 提供机器人相关的RESTful API接口，包括：
- * <ul>
- *   <li>机器人管理：CRUD操作</li>
- *   <li>状态管理：更新机器人状态（idle/busy/offline）</li>
- *   <li>空闲机器人查询：获取所有空闲状态的机器人</li>
- * </ul>
- * </p>
- *
- * @author RPA System
- * @version 1.0.0
- * @since 2024-01-01
- */
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import rpa.entity.Robot;
 import rpa.service.RobotService;
+import rpa.service.RobotCategoryService;
+import rpa.entity.RobotCategory;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +17,7 @@ import java.util.Map;
 public class RobotController {
 
     private final RobotService service;
+    private final RobotCategoryService categoryService;
 
     @GetMapping
     public Map<String, Object> list() {
@@ -45,6 +32,33 @@ public class RobotController {
     public Map<String, Object> listIdleRobots() {
         Map<String, Object> response = new HashMap<>();
         List<Robot> list = service.findIdleRobots();
+        response.put("code", 0);
+        response.put("data", list);
+        return response;
+    }
+
+    @GetMapping("/category/{category}")
+    public Map<String, Object> listByCategory(@PathVariable String category) {
+        Map<String, Object> response = new HashMap<>();
+        List<Robot> list = service.findByCategory(category);
+        response.put("code", 0);
+        response.put("data", list);
+        return response;
+    }
+
+    @GetMapping("/category/{category}/idle")
+    public Map<String, Object> listIdleByCategory(@PathVariable String category) {
+        Map<String, Object> response = new HashMap<>();
+        List<Robot> list = service.findIdleRobotsByCategory(category);
+        response.put("code", 0);
+        response.put("data", list);
+        return response;
+    }
+
+    @GetMapping("/process/{processId}")
+    public Map<String, Object> listByProcess(@PathVariable Long processId) {
+        Map<String, Object> response = new HashMap<>();
+        List<Robot> list = service.findByBoundProcessId(processId);
         response.put("code", 0);
         response.put("data", list);
         return response;
@@ -71,14 +85,18 @@ public class RobotController {
         Map<String, Object> response = new HashMap<>();
         try {
             String name = (String) request.get("name");
-            String type = (String) request.get("type");
+            String robotCategory = (String) request.get("robotCategory");
             String capabilities = (String) request.get("capabilities");
             String ip = (String) request.get("ip");
             String hostname = (String) request.get("hostname");
             Integer port = request.get("port") != null ? Integer.valueOf(request.get("port").toString()) : 8080;
             String description = (String) request.get("description");
+            Long boundProcessId = request.get("boundProcessId") != null ? Long.valueOf(request.get("boundProcessId").toString()) : null;
+            String boundProcessName = (String) request.get("boundProcessName");
+            String robotCode = (String) request.get("robotCode");
+            String status = (String) request.get("status");
 
-            Robot robot = service.create(name, type, capabilities, ip, hostname, port, description);
+            Robot robot = service.create(name, robotCategory, capabilities, ip, hostname, port, description, boundProcessId, boundProcessName, robotCode, status);
             response.put("code", 0);
             response.put("message", "创建成功");
             response.put("data", robot);
@@ -112,14 +130,18 @@ public class RobotController {
         Map<String, Object> response = new HashMap<>();
         try {
             String name = (String) request.get("name");
-            String type = (String) request.get("type");
+            String robotCategory = (String) request.get("robotCategory");
             String capabilities = (String) request.get("capabilities");
             String ip = (String) request.get("ip");
             String hostname = (String) request.get("hostname");
             Integer port = request.get("port") != null ? Integer.valueOf(request.get("port").toString()) : 8080;
             String description = (String) request.get("description");
+            Long boundProcessId = request.get("boundProcessId") != null ? Long.valueOf(request.get("boundProcessId").toString()) : null;
+            String boundProcessName = (String) request.get("boundProcessName");
+            String robotCode = (String) request.get("robotCode");
+            String status = (String) request.get("status");
 
-            Robot robot = service.update(id, name, type, capabilities, ip, hostname, port, description);
+            Robot robot = service.update(id, name, robotCategory, capabilities, ip, hostname, port, description, boundProcessId, boundProcessName, robotCode, status);
             response.put("code", 0);
             response.put("message", "更新成功");
             response.put("data", robot);
@@ -135,6 +157,65 @@ public class RobotController {
         Map<String, Object> response = new HashMap<>();
         try {
             service.delete(id);
+            response.put("code", 0);
+            response.put("message", "删除成功");
+        } catch (Exception e) {
+            response.put("code", -1);
+            response.put("message", e.getMessage());
+        }
+        return response;
+    }
+
+    // ========== 分类管理接口 ==========
+
+    @GetMapping("/category/list")
+    public Map<String, Object> listCategories() {
+        Map<String, Object> response = new HashMap<>();
+        List<RobotCategory> list = categoryService.findAll();
+        response.put("code", 0);
+        response.put("data", list);
+        return response;
+    }
+
+    @PostMapping("/category")
+    public Map<String, Object> createCategory(@RequestBody Map<String, String> request) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            String name = request.get("name");
+            String code = request.get("code");
+            RobotCategory category = categoryService.create(name, code);
+            response.put("code", 0);
+            response.put("message", "添加成功");
+            response.put("data", category);
+        } catch (Exception e) {
+            response.put("code", -1);
+            response.put("message", e.getMessage());
+        }
+        return response;
+    }
+
+    @PutMapping("/category/{code}")
+    public Map<String, Object> updateCategory(@PathVariable String code,
+                                               @RequestBody Map<String, String> request) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            String name = request.get("name");
+            RobotCategory category = categoryService.update(code, name);
+            response.put("code", 0);
+            response.put("message", "更新成功");
+            response.put("data", category);
+        } catch (Exception e) {
+            response.put("code", -1);
+            response.put("message", e.getMessage());
+        }
+        return response;
+    }
+
+    @DeleteMapping("/category/{code}")
+    public Map<String, Object> deleteCategory(@PathVariable String code) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            categoryService.delete(code);
             response.put("code", 0);
             response.put("message", "删除成功");
         } catch (Exception e) {

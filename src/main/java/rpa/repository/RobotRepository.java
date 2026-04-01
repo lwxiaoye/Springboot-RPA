@@ -33,4 +33,29 @@ public interface RobotRepository extends JpaRepository<Robot, Long> {
      * @return List<Robot> 机器人列表
      */
     List<Robot> findByStatus(String status);
+    
+    /**
+     * 根据分类查询机器人列表
+     *
+     * @param robotCategory 机器人分类
+     * @return List<Robot> 机器人列表
+     */
+    List<Robot> findByRobotCategory(String robotCategory);
+    
+    /**
+     * 根据分类和状态查询机器人列表
+     *
+     * @param robotCategory 机器人分类
+     * @param status 状态
+     * @return List<Robot> 机器人列表
+     */
+    List<Robot> findByRobotCategoryAndStatus(String robotCategory, String status);
+    
+    /**
+     * 根据绑定的流程ID查询机器人列表
+     *
+     * @param boundProcessId 绑定的流程ID
+     * @return List<Robot> 机器人列表
+     */
+    List<Robot> findByBoundProcessId(Long boundProcessId);
 }

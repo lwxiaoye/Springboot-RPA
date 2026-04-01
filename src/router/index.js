@@ -11,6 +11,7 @@ import ResourceManagement from '../views/sys/ResourceManagement.vue'
 // RPA运营管理模块页面
 import Tasks from '../views/rpa/Tasks.vue'
 import Robots from '../views/rpa/Robots.vue'
+import RobotDetail from '../views/rpa/RobotDetail.vue'
 import Processes from '../views/rpa/Processes.vue'
 import Logs from '../views/rpa/Logs.vue'
 import Notifications from '../views/rpa/Notifications.vue'
@@ -46,6 +47,7 @@ const routes = [
         children: [
             { path: 'tasks', name: 'Tasks', component: Tasks },
             { path: 'robots', name: 'Robots', component: Robots },
+            { path: 'robot/:id', name: 'RobotDetail', component: RobotDetail, props: true },
             { path: 'processes', name: 'Processes', component: Processes },
             { path: 'queue', name: 'QueueTrigger', component: QueueTrigger },
             { path: 'logs', name: 'Logs', component: Logs },

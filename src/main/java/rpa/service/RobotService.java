@@ -39,6 +39,27 @@ public class RobotService {
     }
 
     /**
+     * 根据分类查询机器人
+     */
+    public List<Robot> findByCategory(String category) {
+        return repository.findByRobotCategory(category);
+    }
+
+    /**
+     * 查询指定分类的空闲机器人
+     */
+    public List<Robot> findIdleRobotsByCategory(String category) {
+        return repository.findByRobotCategoryAndStatus(category, "idle");
+    }
+
+    /**
+     * 根据绑定的流程ID查询机器人
+     */
+    public List<Robot> findByBoundProcessId(Long processId) {
+        return repository.findByBoundProcessId(processId);
+    }
+
+    /**
      * 根据ID查询机器人
      */
     public Optional<Robot> findById(Long id) {
@@ -49,29 +70,37 @@ public class RobotService {
      * 创建机器人
      *
      * @param name 名称
-     * @param type 类型
+     * @param robotCategory 分类
      * @param capabilities 能力
      * @param ip IP地址
      * @param hostname 主机名
      * @param port 端口
      * @param description 描述
+     * @param boundProcessId 绑定的流程ID
+     * @param boundProcessName 绑定的流程名称
+     * @param robotCode 机器人执行代码
+     * @param status 状态
      * @return 创建的机器人
      */
-    public Robot create(String name, String type, String capabilities, String ip, String hostname, Integer port, String description) {
+    public Robot create(String name, String robotCategory, String capabilities, String ip, String hostname, Integer port, String description, Long boundProcessId, String boundProcessName, String robotCode, String status) {
         // 检查名称是否已存在
         if (repository.findByName(name).isPresent()) {
             throw new RuntimeException("机器人名称已存在，请使用其他名称");
         }
-        
+
         Robot robot = new Robot();
         robot.setName(name);
-        robot.setType(type);
+        robot.setRobotCategory(robotCategory);
         robot.setCapabilities(capabilities);
         robot.setIp(ip);
         robot.setHostname(hostname);
         robot.setPort(port);
         robot.setDescription(description);
-        robot.setStatus("idle");
+        robot.setBoundProcessId(boundProcessId);
+        robot.setBoundProcessName(boundProcessName);
+        robot.setRobotCode(robotCode);
+        // 如果传入了状态则使用，否则默认为idle
+        robot.setStatus(status != null ? status : "idle");
         robot.setCpuUsage(0);
         robot.setMemoryUsage(0);
         robot.setLastHeartbeat(LocalDateTime.now());
@@ -99,21 +128,25 @@ public class RobotService {
      *
      * @param id 机器人ID
      * @param name 名称
-     * @param type 类型
+     * @param robotCategory 分类
      * @param capabilities 能力
      * @param ip IP地址
      * @param hostname 主机名
      * @param port 端口
      * @param description 描述
+     * @param boundProcessId 绑定的流程ID
+     * @param boundProcessName 绑定的流程名称
+     * @param robotCode 机器人执行代码
+     * @param status 状态
      * @return 更新后的机器人
      */
-    public Robot update(Long id, String name, String type, String capabilities, String ip, String hostname, Integer port, String description) {
+    public Robot update(Long id, String name, String robotCategory, String capabilities, String ip, String hostname, Integer port, String description, Long boundProcessId, String boundProcessName, String robotCode, String status) {
         return repository.findById(id).map(robot -> {
             if (name != null) {
                 robot.setName(name);
             }
-            if (type != null) {
-                robot.setType(type);
+            if (robotCategory != null) {
+                robot.setRobotCategory(robotCategory);
             }
             if (capabilities != null) {
                 robot.setCapabilities(capabilities);
@@ -129,6 +162,19 @@ public class RobotService {
             }
             if (description != null) {
                 robot.setDescription(description);
+            }
+            if (boundProcessId != null) {
+                robot.setBoundProcessId(boundProcessId);
+            }
+            if (boundProcessName != null) {
+                robot.setBoundProcessName(boundProcessName);
+            }
+            if (robotCode != null) {
+                robot.setRobotCode(robotCode);
+            }
+            if (status != null) {
+                robot.setStatus(status);
+                robot.setLastHeartbeat(LocalDateTime.now());
             }
             return repository.save(robot);
         }).orElseThrow(() -> new RuntimeException("机器人不存在"));
