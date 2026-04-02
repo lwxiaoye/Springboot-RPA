@@ -107,4 +107,18 @@ public class RpaProcessService {
     public void delete(Long id) {
         repository.deleteById(id);
     }
+
+    /**
+     * 保存流程设计
+     *
+     * @param id 流程 ID
+     * @param steps 流程步骤（JSON 格式）
+     * @return 更新后的流程
+     */
+    public RpaProcess saveDesign(Long id, String steps) {
+        return repository.findById(id).map(process -> {
+            process.setSteps(steps);
+            return repository.save(process);
+        }).orElseThrow(() -> new RuntimeException("流程不存在"));
+    }
 }
