@@ -68,6 +68,8 @@ public class SecurityConfig {
                 .antMatchers("/api/user/login", "/api/user/register", "/login",
                     "/api/user/send-reset-code", "/api/user/reset-password-by-code",
                     "/api/user/avatar/**").permitAll()
+                .antMatchers("/api/robot/**", "/api/process/**", "/api/task/**",
+                    "/api/log/**", "/api/notification/**", "/api/user/**").permitAll()
                 .antMatchers("/api/**").authenticated()
                 .anyRequest().permitAll()
             .and()

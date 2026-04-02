@@ -12,6 +12,7 @@ D:\JavaSpringboot\rpa\src\main\java\rpa\service\RoleService.java
 D:\JavaSpringboot\rpa\src\main\java\rpa\controller\DataProcessController.java
 D:\JavaSpringboot\rpa\src\main\java\rpa\controller\RpaProcessController.java
 D:\JavaSpringboot\rpa\src\main\java\rpa\entity\Role.java
+D:\JavaSpringboot\rpa\src\main\java\rpa\service\RobotCategoryService.java
 D:\JavaSpringboot\rpa\src\main\java\rpa\service\ExecutionLogService.java
 D:\JavaSpringboot\rpa\src\main\java\rpa\service\PlaywrightService.java
 D:\JavaSpringboot\rpa\src\main\java\rpa\entity\DataProcess.java
@@ -26,6 +27,7 @@ D:\JavaSpringboot\rpa\src\main\java\rpa\repository\PermissionRepository.java
 D:\JavaSpringboot\rpa\src\main\java\rpa\service\WebScraperService.java
 D:\JavaSpringboot\rpa\src\main\java\rpa\config\WebConfig.java
 D:\JavaSpringboot\rpa\src\main\java\rpa\controller\DataCollectController.java
+D:\JavaSpringboot\rpa\src\main\java\rpa\entity\RobotCategory.java
 D:\JavaSpringboot\rpa\src\main\java\rpa\service\RpaProcessService.java
 D:\JavaSpringboot\rpa\src\main\java\rpa\service\PermissionService.java
 D:\JavaSpringboot\rpa\src\main\java\rpa\repository\DataParseRepository.java
@@ -43,6 +45,7 @@ D:\JavaSpringboot\rpa\src\main\java\rpa\entity\DataQuery.java
 D:\JavaSpringboot\rpa\src\main\java\rpa\entity\DataParse.java
 D:\JavaSpringboot\rpa\src\main\java\rpa\entity\ProcessedData.java
 D:\JavaSpringboot\rpa\src\main\java\rpa\entity\RpaProcess.java
+D:\JavaSpringboot\rpa\src\main\java\rpa\repository\RobotCategoryRepository.java
 D:\JavaSpringboot\rpa\src\main\java\rpa\repository\RobotRepository.java
 D:\JavaSpringboot\rpa\src\main\java\rpa\service\TaskService.java
 D:\JavaSpringboot\rpa\src\main\java\rpa\repository\RpaProcessRepository.java
