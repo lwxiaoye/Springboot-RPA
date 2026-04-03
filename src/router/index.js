@@ -72,11 +72,11 @@ const routes = [
     },
     {
         path: '/',
-        redirect: '/dashboard'
+        redirect: '/login'
     },
     {
         path: '/:pathMatch(.*)*',
-        redirect: '/dashboard'
+        redirect: '/login'
     }
 ]
 
