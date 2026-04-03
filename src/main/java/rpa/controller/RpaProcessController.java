@@ -162,4 +162,39 @@ public class RpaProcessController {
         }
         return response;
     }
+
+    /**
+     * 执行流程
+     */
+    @PostMapping("/{id}/execute")
+    public Map<String, Object> execute(@PathVariable Long id) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            Map<String, Object> result = service.execute(id);
+            response.put("code", 0);
+            response.put("message", "执行成功");
+            response.put("data", result);
+        } catch (Exception e) {
+            response.put("code", -1);
+            response.put("message", e.getMessage());
+        }
+        return response;
+    }
+    
+    /**
+     * 获取执行状态
+     */
+    @GetMapping("/{id}/status")
+    public Map<String, Object> getExecutionStatus(@PathVariable Long id) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            Map<String, Object> result = service.getExecutionStatus(id);
+            response.put("code", 0);
+            response.put("data", result);
+        } catch (Exception e) {
+            response.put("code", -1);
+            response.put("message", e.getMessage());
+        }
+        return response;
+    }
 }

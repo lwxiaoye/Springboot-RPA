@@ -1,40 +1,76 @@
 <template>
   <div class="data-query-page">
     <div class="page-header">
-      <h2>数据查询</h2>
-      <p class="page-desc">配置和管理数据查询任务</p>
+      <h2>发票数据查询</h2>
+      <p class="page-desc">查询和管理发票数据</p>
     </div>
 
     <div class="toolbar">
       <div class="search-box">
         <el-icon><Search /></el-icon>
-        <input v-model="searchKeyword" placeholder="搜索查询名称..." />
+        <input v-model="searchKeyword" placeholder="搜索企业名称、发票号..." />
       </div>
-      <el-button type="primary" @click="showCreateModal">
-        <el-icon><Plus /></el-icon> 新建查询
+      <el-select v-model="filterStatus" placeholder="发票状态" style="width: 140px" clearable>
+        <el-option label="全部" value="" />
+        <el-option label="正常" value="正常" />
+        <el-option label="作废" value="作废" />
+        <el-option label="红冲" value="红冲" />
+      </el-select>
+      <el-date-picker v-model="dateRange" type="daterange" range-separator="至" start-placeholder="开始日期" end-placeholder="结束日期" style="width: 260px" clearable />
+      <el-button type="primary" @click="loadInvoiceData">
+        <el-icon><Search /></el-icon> 查询
       </el-button>
+      <el-button @click="resetFilters">
+        <el-icon><Refresh /></el-icon> 重置
+      </el-button>
+    </div>
+
+    <div class="stats-cards">
+      <div class="stat-card">
+        <div class="stat-value">{{ statistics.total }}</div>
+        <div class="stat-label">总发票数</div>
+      </div>
+      <div class="stat-card success">
+        <div class="stat-value">{{ statistics.normal }}</div>
+        <div class="stat-label">正常发票</div>
+      </div>
+      <div class="stat-card warning">
+        <div class="stat-value">{{ statistics.cancelled }}</div>
+        <div class="stat-label">作废发票</div>
+      </div>
+      <div class="stat-card info">
+        <div class="stat-value">¥{{ statistics.totalAmount.toLocaleString() }}</div>
+        <div class="stat-label">价税合计</div>
+      </div>
     </div>
 
     <el-table :data="paginatedData" v-loading="loading" border stripe>
       <el-table-column type="index" label="序号" width="60" align="center" />
-      <el-table-column prop="name" label="查询名称" min-width="160" />
-      <el-table-column prop="queryCondition" label="查询条件" min-width="200" show-overflow-tooltip>
-        <template #default="{ row }">{{ row.queryCondition || '-' }}</template>
-      </el-table-column>
-      <el-table-column prop="resultCount" label="结果数量" width="100" align="center" />
-      <el-table-column prop="lastQueryTime" label="查询时间" min-width="160">
-        <template #default="{ row }">{{ row.lastQueryTime ? new Date(row.lastQueryTime).toLocaleString() : '-' }}</template>
-      </el-table-column>
-      <el-table-column label="操作" width="150" fixed="right" align="center">
+      <el-table-column prop="invoiceNo" label="发票号码" width="130" />
+      <el-table-column prop="invoiceType" label="发票类型" width="100" align="center">
         <template #default="{ row }">
-          <el-button link type="primary" @click="runQuery(row)">执行</el-button>
-          <el-button link type="primary" @click="viewResult(row)">查看结果</el-button>
-          <el-popconfirm title="确认删除该查询吗？" @confirm="deleteQuery(row)">
-            <template #reference>
-              <el-button link type="danger">删除</el-button>
-            </template>
-          </el-popconfirm>
+          <el-tag type="info">{{ row.invoiceType || '-' }}</el-tag>
         </template>
+      </el-table-column>
+      <el-table-column prop="invoiceStatus" label="状态" width="80" align="center">
+        <template #default="{ row }">
+          <el-tag :type="row.invoiceStatus === '正常' ? 'success' : 'danger'">{{ row.invoiceStatus || '-' }}</el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column prop="companyName" label="企业名称" min-width="180" show-overflow-tooltip />
+      <el-table-column prop="creditCode" label="统一社会信用代码" width="180" show-overflow-tooltip />
+      <el-table-column prop="invoiceDate" label="开票日期" width="120" align="center" />
+      <el-table-column prop="taxExclusiveAmount" label="不含税金额" width="120" align="right">
+        <template #default="{ row }">¥{{ Number(row.taxExclusiveAmount || 0).toLocaleString() }}</template>
+      </el-table-column>
+      <el-table-column prop="taxAmount" label="税额" width="100" align="right">
+        <template #default="{ row }">¥{{ Number(row.taxAmount || 0).toLocaleString() }}</template>
+      </el-table-column>
+      <el-table-column prop="totalAmount" label="价税合计" width="120" align="right">
+        <template #default="{ row }"><b>¥{{ Number(row.totalAmount || 0).toLocaleString() }}</b></template>
+      </el-table-column>
+      <el-table-column prop="collectTime" label="采集时间" width="160">
+        <template #default="{ row }">{{ row.collectTime ? new Date(row.collectTime).toLocaleString() : '-' }}</template>
       </el-table-column>
     </el-table>
 
@@ -42,232 +78,113 @@
       <el-pagination
         v-model:current-page="pagination.page"
         v-model:page-size="pagination.size"
-        :page-sizes="[10, 20, 50]"
+        :page-sizes="[10, 20, 50, 100]"
         :total="pagination.total"
         layout="total, sizes, prev, pager, next, jumper"
         @size-change="handleSizeChange"
         @current-change="handleCurrentChange"
       />
     </div>
-
-    <!-- 新建查询弹窗 -->
-    <el-dialog v-model="dialogVisible" title="新建查询" width="550px">
-      <el-form :model="queryForm" :rules="formRules" ref="formRef" label-width="100px">
-        <el-form-item label="查询名称" prop="name">
-          <el-input v-model="queryForm.name" placeholder="请输入查询名称" />
-        </el-form-item>
-        <el-form-item label="数据表">
-          <el-select v-model="queryForm.sourceTable" placeholder="请选择数据表" style="width: 100%">
-            <el-option label="采集数据" value="collected_data" />
-            <el-option label="处理数据" value="processed_data" />
-            <el-option label="用户数据" value="users" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="查询条件">
-          <el-input v-model="queryForm.queryCondition" type="textarea" :rows="4" placeholder="请输入查询条件（SQL的WHERE子句），如：status = 'active'" />
-        </el-form-item>
-        <el-form-item label="返回字段">
-          <el-input v-model="queryForm.queryColumns" placeholder="请输入返回字段，多个字段用逗号分隔，如：id,name,email" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitQuery" :loading="submitLoading">确定</el-button>
-      </template>
-    </el-dialog>
-
-    <!-- 查询结果弹窗 -->
-    <el-dialog v-model="resultVisible" title="查询结果" width="800px">
-      <div class="result-header">
-        <span>查询名称：{{ currentQuery.name }}</span>
-        <span>结果数量：{{ queryResults.length }} 条</span>
-      </div>
-      <el-table :data="queryResults" border stripe max-height="400">
-        <el-table-column v-for="col in resultColumns" :key="col" :prop="col" :label="col" min-width="120" />
-      </el-table>
-      <template #footer>
-        <el-button @click="resultVisible = false">关闭</el-button>
-        <el-button type="primary" @click="exportData">导出数据</el-button>
-      </template>
-    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
-import { Search, Plus } from '@element-plus/icons-vue'
-
-import { apiGet, apiPost, apiPut, apiDelete } from '../../utils/api.js'
+import { Search, Refresh } from '@element-plus/icons-vue'
+import { apiGet } from '../../utils/api.js'
 
 const loading = ref(false)
-const submitLoading = ref(false)
-const dataList = ref([])
+const invoiceList = ref([])
 const searchKeyword = ref('')
-const dialogVisible = ref(false)
-const resultVisible = ref(false)
-const formRef = ref(null)
-const currentQuery = ref({})
-const queryResults = ref([])
-const resultColumns = ref([])
+const filterStatus = ref('')
+const dateRange = ref(null)
 
-const pagination = reactive({ page: 1, size: 10, total: 0 })
+const pagination = reactive({ page: 1, size: 20, total: 0 })
 
-const queryForm = reactive({
-  name: '',
-  sourceTable: '',
-  queryCondition: '',
-  queryColumns: ''
+const statistics = computed(() => {
+  const list = filteredData.value
+  return {
+    total: list.length,
+    normal: list.filter(d => d.invoiceStatus === '正常').length,
+    cancelled: list.filter(d => d.invoiceStatus === '作废' || d.invoiceStatus === '红冲').length,
+    totalAmount: list.reduce((sum, d) => sum + Number(d.totalAmount || 0), 0)
+  }
 })
 
-const formRules = {
-  name: [{ required: true, message: '请输入查询名称', trigger: 'blur' }]
-}
-
 const filteredData = computed(() => {
-  let list = dataList.value
+  let list = invoiceList.value
   if (searchKeyword.value) {
-    list = list.filter(d => d.name.includes(searchKeyword.value))
+    const kw = searchKeyword.value.toLowerCase()
+    list = list.filter(d =>
+      (d.companyName || '').toLowerCase().includes(kw) ||
+      (d.invoiceNo || '').toLowerCase().includes(kw) ||
+      (d.creditCode || '').toLowerCase().includes(kw)
+    )
   }
-  // 更新总数
-  pagination.total = list.length
+  if (filterStatus.value) {
+    list = list.filter(d => d.invoiceStatus === filterStatus.value)
+  }
+  if (dateRange.value && dateRange.value.length === 2) {
+    const [start, end] = dateRange.value
+    list = list.filter(d => {
+      if (!d.invoiceDate) return true
+      const date = new Date(d.invoiceDate)
+      return date >= start && date <= end
+    })
+  }
   return list
 })
 
-// 分页后的数据
 const paginatedData = computed(() => {
   const start = (pagination.page - 1) * pagination.size
   const end = start + pagination.size
+  pagination.total = filteredData.value.length
   return filteredData.value.slice(start, end)
 })
 
-const loadData = async () => {
+const loadInvoiceData = async () => {
   loading.value = true
   try {
-    const result = await apiGet('/dataQuery')
+    const result = await apiGet('/invoice')
     if (result.code === 0) {
-      dataList.value = result.data || []
-      // 不需要在这里设置 pagination.total，filteredData 会计算
+      invoiceList.value = result.data || []
+    } else {
+      invoiceList.value = []
     }
   } catch {
-    dataList.value = []
+    invoiceList.value = []
   } finally {
     loading.value = false
   }
 }
 
-const showCreateModal = () => {
-  Object.assign(queryForm, { name: '', sourceTable: '', queryCondition: '', queryColumns: '' })
-  dialogVisible.value = true
-}
-
-const submitQuery = async () => {
-  if (!formRef.value) return
-  await formRef.value.validate(async (valid) => {
-    if (valid) {
-      submitLoading.value = true
-      try {
-        const result = await apiPost('/dataQuery', {
-          name: queryForm.name,
-          sourceTable: queryForm.sourceTable,
-          queryCondition: queryForm.queryCondition,
-          queryColumns: queryForm.queryColumns
-        })
-        if (result.code === 0) {
-          ElMessage.success('创建成功')
-          dialogVisible.value = false
-          await loadData()
-        } else {
-          ElMessage.error(result.message || '创建失败')
-        }
-      } catch {
-        ElMessage.error('请求失败')
-      } finally {
-        submitLoading.value = false
-      }
-    }
-  })
-}
-
-const runQuery = async (item) => {
-  try {
-    const result = await apiPost(`/dataQuery/${item.id}/execute`)
-    if (result.code === 0 || result.success) {
-      ElMessage.success(`查询执行完成`)
-      await loadData()
-    } else {
-      ElMessage.error(result.message || '执行失败')
-    }
-  } catch {
-    ElMessage.error('请求失败')
-  }
-}
-
-const viewResult = async (item) => {
-  currentQuery.value = item
-  try {
-    const result = await apiGet(`/dataQuery/${item.id}`)
-    if (result.code === 0 && result.data?.resultData) {
-      try {
-        const parsed = JSON.parse(result.data.resultData)
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          queryResults.value = parsed
-          resultColumns.value = Object.keys(parsed[0])
-        } else {
-          queryResults.value = []
-          resultColumns.value = []
-        }
-      } catch {
-        queryResults.value = []
-        resultColumns.value = []
-      }
-    } else {
-      queryResults.value = []
-      resultColumns.value = []
-    }
-  } catch {
-    queryResults.value = []
-    resultColumns.value = []
-  }
-  resultVisible.value = true
-}
-
-const exportData = () => {
-  ElMessage.success('导出功能开发中')
-}
-
-const deleteQuery = async (item) => {
-  try {
-    const result = await apiDelete(`/dataQuery/${item.id}`)
-    if (result.code === 0) {
-      const index = dataList.value.findIndex(d => d.id === item.id)
-      if (index !== -1) {
-        dataList.value.splice(index, 1)
-        pagination.total--
-      }
-      ElMessage.success('删除成功')
-    } else {
-      ElMessage.error(result.message || '删除失败')
-    }
-  } catch {
-    ElMessage.error('请求失败')
-  }
+const resetFilters = () => {
+  searchKeyword.value = ''
+  filterStatus.value = ''
+  dateRange.value = null
+  pagination.page = 1
 }
 
 const handleSizeChange = (size) => { pagination.size = size; pagination.page = 1 }
 const handleCurrentChange = (page) => { pagination.page = page }
 
-onMounted(() => { loadData() })
+onMounted(() => { loadInvoiceData() })
 </script>
 
 <style scoped>
-.data-query-page { max-width: 1400px; margin: 0 auto; }
+.data-query-page { max-width: 1600px; margin: 0 auto; }
 .page-header { margin-bottom: 24px; }
 .page-header h2 { font-size: 20px; font-weight: 600; color: #1a1a1a; }
 .page-desc { font-size: 13px; color: #8c8c8c; margin-top: 4px; }
 .toolbar { display: flex; gap: 12px; margin-bottom: 20px; align-items: center; flex-wrap: wrap; }
 .search-box { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #fff; border: 1px solid #d9d9d9; border-radius: 8px; flex: 1; max-width: 320px; }
 .search-box input { border: none; outline: none; flex: 1; background: transparent; }
+.stats-cards { display: flex; gap: 16px; margin-bottom: 20px; }
+.stat-card { background: #fff; padding: 20px 24px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); min-width: 140px; }
+.stat-card.success { border-left: 4px solid #52c41a; }
+.stat-card.warning { border-left: 4px solid #faad14; }
+.stat-card.info { border-left: 4px solid #1890ff; }
+.stat-value { font-size: 28px; font-weight: 600; color: #1a1a1a; }
+.stat-label { font-size: 13px; color: #8c8c8c; margin-top: 4px; }
 .pagination-wrapper { margin-top: 20px; display: flex; justify-content: flex-end; background: #fff; padding: 12px 20px; border-radius: 12px; }
-.result-header { display: flex; justify-content: space-between; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #e4e7ed; color: #666; }
 </style>

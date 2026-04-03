@@ -260,4 +260,40 @@ public class CacheService {
             return 0;
         }
     }
+
+    // ==================== 通用字符串操作 ====================
+
+    /**
+     * 设置原始字符串缓存
+     *
+     * @param key 缓存键（不含前缀）
+     * @param value 字符串值
+     * @param expireMinutes 过期时间（分钟）
+     */
+    public void setRaw(String key, String value, long expireMinutes) {
+        try {
+            String fullKey = keyPrefix + key;
+            redisTemplate.opsForValue().set(fullKey, value, expireMinutes, TimeUnit.MINUTES);
+            log.debug("字符串缓存已设置: {}", fullKey);
+        } catch (Exception e) {
+            log.error("设置字符串缓存失败: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * 获取原始字符串缓存
+     *
+     * @param key 缓存键（不含前缀）
+     * @return 字符串值，不存在则返回null
+     */
+    public String getRaw(String key) {
+        try {
+            String fullKey = keyPrefix + key;
+            Object value = redisTemplate.opsForValue().get(fullKey);
+            return value != null ? value.toString() : null;
+        } catch (Exception e) {
+            log.error("获取字符串缓存失败: {}", e.getMessage());
+            return null;
+        }
+    }
 }

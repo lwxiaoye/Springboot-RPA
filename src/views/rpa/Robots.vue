@@ -144,8 +144,18 @@
         <el-form-item label="端口">
           <el-input-number v-model="createForm.port" :min="1" :max="65535" style="width: 100%" />
         </el-form-item>
+        <el-form-item label="代码模板">
+          <el-select v-model="createForm.selectedTemplate" placeholder="选择代码模板" style="width: 100%" @change="onTemplateChange">
+            <el-option label="不使用模板" value="" />
+            <el-option label="【采集】网页采集模板" value="collect" />
+            <el-option label="【解析】HTML表格解析模板" value="parse" />
+            <el-option label="【加工】数据清洗转换模板" value="process" />
+            <el-option label="【落库】数据库存储模板" value="store" />
+          </el-select>
+        </el-form-item>
         <el-form-item label="机器人代码">
-          <el-input v-model="createForm.robotCode" type="textarea" :rows="6" placeholder="请输入机器人执行代码..." class="code-textarea" />
+          <el-input v-model="createForm.robotCode" type="textarea" :rows="10" placeholder="请输入机器人执行代码..." class="code-textarea" />
+          <div class="code-hint">支持命令: @collect URL | @parse | @process clean,transform | @store table_name | @log message</div>
         </el-form-item>
         <el-form-item label="描述">
           <el-input v-model="createForm.description" type="textarea" :rows="3" placeholder="请输入描述" />
@@ -238,16 +248,47 @@ const currentEditId = ref(null)
 
 const pagination = reactive({ page: 1, size: 10, total: 0 })
 
+// 代码模板映射
+const codeTemplates = {
+  collect: `// 数据采集机器人
+// 功能：采集指定网页的HTML内容
+@collect http://localhost:8081/spider_target
+@log 采集任务完成`,
+  
+  parse: `// 数据解析机器人
+// 功能：从HTML中解析发票表格数据
+@parse
+@log 解析完成`,
+  
+  process: `// 数据加工机器人
+// 功能：数据清洗、转换、校验
+@process clean,transform,validate
+@log 加工完成`,
+  
+  store: `// 数据落库机器人
+// 功能：将数据保存到数据库
+@store invoice_data
+@log 落库完成`
+}
+
 const createForm = reactive({
   name: '',
-  robotCategory: 'GENERAL',
+  robotCategory: 'DATA_COLLECT',
   capabilities: '',
   ip: '',
   hostname: '',
   port: 8080,
   robotCode: '',
+  selectedTemplate: '',
   description: ''
 })
+
+// 选择模板时填充代码
+const onTemplateChange = (template) => {
+  if (template && codeTemplates[template]) {
+    createForm.robotCode = codeTemplates[template]
+  }
+}
 
 const editForm = reactive({
   name: '',
@@ -438,12 +479,13 @@ const deleteCategory = async (cat) => {
 const showCreateModal = () => {
   Object.assign(createForm, {
     name: '',
-    robotCategory: categoryList.value[0]?.code || 'GENERAL',
+    robotCategory: 'DATA_COLLECT',
     capabilities: '',
     ip: '',
     hostname: '',
     port: 8080,
     robotCode: '',
+    selectedTemplate: '',
     description: ''
   })
   createDialogVisible.value = true
@@ -605,6 +647,11 @@ onMounted(() => {
   font-size: 13px;
   background: #1e1e1e;
   color: #d4d4d4;
+}
+.code-hint {
+  font-size: 12px;
+  color: #909399;
+  margin-top: 4px;
 }
 .category-list { margin-bottom: 20px; }
 .category-form { margin-top: 16px; }

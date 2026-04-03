@@ -13,11 +13,9 @@ import Tasks from '../views/rpa/Tasks.vue'
 import Robots from '../views/rpa/Robots.vue'
 import RobotDetail from '../views/rpa/RobotDetail.vue'
 import Processes from '../views/rpa/Processes.vue'
+import ProcessDetail from '../views/rpa/ProcessDetail.vue'
 import Logs from '../views/rpa/Logs.vue'
 import Notifications from '../views/rpa/Notifications.vue'
-import DataCollect from '../views/rpa/DataCollect.vue'
-import DataParse from '../views/rpa/DataParse.vue'
-import DataProcess from '../views/rpa/DataProcess.vue'
 import DataQuery from '../views/rpa/DataQuery.vue'
 
 // 新增页面
@@ -49,6 +47,7 @@ const routes = [
             { path: 'robots', name: 'Robots', component: Robots },
             { path: 'robot/:id', name: 'RobotDetail', component: RobotDetail, props: true },
             { path: 'processes', name: 'Processes', component: Processes },
+            { path: 'process/:id', name: 'ProcessDetail', component: ProcessDetail, props: true },
             { path: 'queue', name: 'QueueTrigger', component: QueueTrigger },
             { path: 'logs', name: 'Logs', component: Logs },
             { path: 'audit', name: 'AuditLog', component: AuditLog },
@@ -56,9 +55,6 @@ const routes = [
             { path: 'reports', name: 'ReportAnalytics', component: ReportAnalytics },
             { path: 'notifications', name: 'Notifications', component: Notifications },
             { path: 'settings', name: 'SystemSettings', component: SystemSettings },
-            { path: 'data-collect', name: 'DataCollect', component: DataCollect },
-            { path: 'data-parse', name: 'DataParse', component: DataParse },
-            { path: 'data-process', name: 'DataProcess', component: DataProcess },
             { path: 'data-query', name: 'DataQuery', component: DataQuery }
         ]
     },

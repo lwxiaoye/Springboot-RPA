@@ -149,7 +149,7 @@
           <!-- 数据管理（带子菜单） -->
           <div class="menu-group">
             <div class="menu-item has-submenu"
-              :class="{ active: activeMenu.startsWith('data') }"
+              :class="{ active: activeMenu.startsWith('data') || activeMenu === 'invoice' }"
               @click="toggleDataMenu"
             >
               <el-icon class="menu-icon"><DataAnalysis /></el-icon>
@@ -162,27 +162,6 @@
             </div>
             <Transition name="submenu">
               <div v-if="!sidebarCollapsed && showDataSubmenu" class="submenu">
-                <div class="menu-item submenu-item"
-                  :class="{ active: activeMenu === 'dataCollect' }"
-                  @click="switchMenu('dataCollect')"
-                >
-                  <el-icon class="menu-icon"><Download /></el-icon>
-                  <span class="menu-text">数据采集</span>
-                </div>
-                <div class="menu-item submenu-item"
-                  :class="{ active: activeMenu === 'dataParse' }"
-                  @click="switchMenu('dataParse')"
-                >
-                  <el-icon class="menu-icon"><Sort /></el-icon>
-                  <span class="menu-text">数据解析</span>
-                </div>
-                <div class="menu-item submenu-item"
-                  :class="{ active: activeMenu === 'dataProcess' }"
-                  @click="switchMenu('dataProcess')"
-                >
-                  <el-icon class="menu-icon"><Operation /></el-icon>
-                  <span class="menu-text">数据加工</span>
-                </div>
                 <div class="menu-item submenu-item"
                   :class="{ active: activeMenu === 'dataQuery' }"
                   @click="switchMenu('dataQuery')"
@@ -278,23 +257,24 @@ const handleTopMenuSelect = (index) => {
 // 侧边栏菜单切换
 const switchMenu = (menu) => {
   activeMenu.value = menu
-  const routeMap = {
-    dashboard: '/dashboard',
-    tasks: '/rpa/tasks',
-    robots: '/rpa/robots',
-    processes: '/rpa/processes',
-    queue: '/rpa/queue',
-    logs: '/rpa/logs',
-    audit: '/rpa/audit',
-    credentials: '/rpa/credentials',
-    reports: '/rpa/reports',
-    settings: '/rpa/settings',
-    notifications: '/rpa/notifications',
-    dataCollect: '/rpa/data-collect',
-    dataParse: '/rpa/data-parse',
-    dataProcess: '/rpa/data-process',
-    dataQuery: '/rpa/data-query'
-  }
+const routeMap = {
+  dashboard: '/dashboard',
+  tasks: '/rpa/tasks',
+  robots: '/rpa/robots',
+  processes: '/rpa/processes',
+  queue: '/rpa/queue',
+  logs: '/rpa/logs',
+  audit: '/rpa/audit',
+  credentials: '/rpa/credentials',
+  reports: '/rpa/reports',
+  settings: '/rpa/settings',
+  notifications: '/rpa/notifications',
+  dataCollect: '/rpa/data-collect',
+  dataParse: '/rpa/data-parse',
+  dataProcess: '/rpa/data-process',
+  dataQuery: '/rpa/data-query',
+  invoice: '/rpa/invoice'
+}
   router.push(routeMap[menu])
 }
 
@@ -368,6 +348,7 @@ onMounted(() => {
   else if (path.includes('/rpa/data-parse')) activeMenu.value = 'dataParse'
   else if (path.includes('/rpa/data-process')) activeMenu.value = 'dataProcess'
   else if (path.includes('/rpa/data-query')) activeMenu.value = 'dataQuery'
+  else if (path.includes('/rpa/invoice')) activeMenu.value = 'invoice'
 
   // 加载未读通知数
   loadUnreadCount()

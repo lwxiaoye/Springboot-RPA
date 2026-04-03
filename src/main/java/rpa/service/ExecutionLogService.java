@@ -61,6 +61,13 @@ public class ExecutionLogService {
     }
 
     /**
+     * 删除执行日志
+     */
+    public void delete(Long id) {
+        repository.deleteById(id);
+    }
+
+    /**
      * 创建执行日志（简化版）
      *
      * @param taskId 任务ID

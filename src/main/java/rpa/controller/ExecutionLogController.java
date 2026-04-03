@@ -65,4 +65,18 @@ public class ExecutionLogController {
         );
         return response;
     }
+
+    @DeleteMapping("/{id}")
+    public Map<String, Object> delete(@PathVariable Long id) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            service.delete(id);
+            response.put("code", 0);
+            response.put("message", "删除成功");
+        } catch (Exception e) {
+            response.put("code", -1);
+            response.put("message", e.getMessage());
+        }
+        return response;
+    }
 }

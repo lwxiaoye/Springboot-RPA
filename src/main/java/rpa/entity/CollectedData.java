@@ -24,31 +24,38 @@ public class CollectedData {
     private Long id;
 
     /** 关联的采集任务ID */
+    @Column(name = "collect_id")
     private Long collectId;
     
     /** 关联的采集任务名称 */
+    @Column(name = "collect_name", length = 100)
     private String collectName;
 
     /** 原始数据（JSON格式） */
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "raw_data", columnDefinition = "TEXT")
     private String rawData;
 
     /** 解析后的结构化数据（JSON格式） */
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "parsed_data", columnDefinition = "TEXT")
     private String parsedData;
 
     /** 数据类型（web/api/dynamic） */
+    @Column(name = "data_type", length = 20)
     private String dataType;
 
     /** 来源URL */
+    @Column(name = "source_url", length = 500)
     private String sourceUrl;
 
     /** 解析状态（0-未解析，1-已解析，2-解析失败） */
+    @Column(name = "parse_status")
     private Integer parseStatus = 0;
 
     /** 采集时间 */
+    @Column(name = "collect_time")
     private LocalDateTime collectTime = LocalDateTime.now();
     
     /** 解析时间 */
+    @Column(name = "parse_time")
     private LocalDateTime parseTime;
 }

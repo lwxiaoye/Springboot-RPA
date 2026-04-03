@@ -71,7 +71,7 @@ public class RoleController {
     private int countUsersByRoleCode(List<User> users, String roleCode) {
         if (users == null) return 0;
         // 根据角色编码映射到role值
-        Integer roleValue = null;
+        Integer roleValue;
         if ("ROLE_ADMIN".equals(roleCode)) {
             roleValue = 1;
         } else if ("ROLE_OPERATOR".equals(roleCode)) {
@@ -80,6 +80,7 @@ public class RoleController {
             roleValue = 0;
         } else {
             // 对于未知角色，尝试解析数字
+            roleValue = null;
             try {
                 if (roleCode != null && roleCode.startsWith("ROLE_")) {
                     String numStr = roleCode.replaceAll("[^0-9]", "");

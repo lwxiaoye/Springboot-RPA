@@ -60,6 +60,10 @@ public class ExecutionLog {
     /** 执行步骤详情（JSON格式） */
     @Column(columnDefinition = "TEXT")
     private String steps;
+    
+    /** 执行结果数据（JSON格式） */
+    @Column(name = "result_data", columnDefinition = "TEXT")
+    private String resultData;
 
     /** 创建时间 */
     private LocalDateTime createTime = LocalDateTime.now();

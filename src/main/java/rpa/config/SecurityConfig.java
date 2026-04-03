@@ -69,7 +69,9 @@ public class SecurityConfig {
                     "/api/user/send-reset-code", "/api/user/reset-password-by-code",
                     "/api/user/avatar/**").permitAll()
                 .antMatchers("/api/robot/**", "/api/process/**", "/api/task/**",
-                    "/api/log/**", "/api/notification/**", "/api/user/**").permitAll()
+                    "/api/log/**", "/api/notification/**", "/api/user/**",
+                    "/api/dataCollect/**", "/api/dataParse/**", "/api/dataProcess/**", "/api/dataQuery/**",
+                    "/api/invoice/**").permitAll()
                 .antMatchers("/api/**").authenticated()
                 .anyRequest().permitAll()
             .and()
