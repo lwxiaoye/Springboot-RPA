@@ -10,6 +10,18 @@ async function apiGet(path) {
     const res = await fetch(`${API_BASE}${path}`, {
       headers: { 'Content-Type': 'application/json', ...getAuthHeaders() }
     })
+    
+    // 如果返回 403，说明 token 无效或过期
+    if (res.status === 403) {
+      console.warn(`API GET ${path} 403 Forbidden - Token 可能无效或已过期`)
+      // 清除无效的 token 和用户信息
+      localStorage.removeItem('token')
+      localStorage.removeItem('userInfo')
+      // 跳转到登录页
+      window.location.href = '/login'
+      return { code: 403, message: '未授权，请重新登录', data: null }
+    }
+    
     const result = await res.json()
     return result
   } catch (e) {
@@ -25,6 +37,18 @@ async function apiPost(path, body) {
       headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
       body: JSON.stringify(body)
     })
+    
+    // 如果返回 403，说明 token 无效或过期
+    if (res.status === 403) {
+      console.warn(`API POST ${path} 403 Forbidden - Token 可能无效或已过期`)
+      // 清除无效的 token 和用户信息
+      localStorage.removeItem('token')
+      localStorage.removeItem('userInfo')
+      // 跳转到登录页
+      window.location.href = '/login'
+      return { code: 403, message: '未授权，请重新登录', data: null }
+    }
+    
     const result = await res.json()
     return result
   } catch (e) {
@@ -40,6 +64,18 @@ async function apiPut(path, body) {
       headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
       body: JSON.stringify(body)
     })
+    
+    // 如果返回 403，说明 token 无效或过期
+    if (res.status === 403) {
+      console.warn(`API PUT ${path} 403 Forbidden - Token 可能无效或已过期`)
+      // 清除无效的 token 和用户信息
+      localStorage.removeItem('token')
+      localStorage.removeItem('userInfo')
+      // 跳转到登录页
+      window.location.href = '/login'
+      return { code: 403, message: '未授权，请重新登录', data: null }
+    }
+    
     const result = await res.json()
     return result
   } catch (e) {
@@ -54,6 +90,18 @@ async function apiDelete(path) {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json', ...getAuthHeaders() }
     })
+    
+    // 如果返回 403，说明 token 无效或过期
+    if (res.status === 403) {
+      console.warn(`API DELETE ${path} 403 Forbidden - Token 可能无效或已过期`)
+      // 清除无效的 token 和用户信息
+      localStorage.removeItem('token')
+      localStorage.removeItem('userInfo')
+      // 跳转到登录页
+      window.location.href = '/login'
+      return { code: 403, message: '未授权，请重新登录', data: null }
+    }
+    
     const result = await res.json()
     return result
   } catch (e) {

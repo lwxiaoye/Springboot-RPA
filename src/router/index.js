@@ -86,6 +86,25 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
+    // 公开的路由，不需要登录
+    const publicRoutes = ['/login']
+    
+    // 获取 token
+    const token = localStorage.getItem('token')
+    
+    // 如果访问的是公开路由，直接放行
+    if (publicRoutes.includes(to.path)) {
+        next()
+        return
+    }
+    
+    // 如果访问的不是公开路由，且没有 token，跳转到登录页
+    if (!token) {
+        next('/login')
+        return
+    }
+    
+    // 有 token，放行
     next()
 })
 
