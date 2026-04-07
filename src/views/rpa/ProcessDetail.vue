@@ -355,144 +355,24 @@
       </div>
     </div>
 
-    <!-- 流程设计器弹窗 -->
-    <el-dialog v-model="designerVisible" :title="`流程设计 - ${process.name || ''}`" width="1000px" class="process-designer-dialog" :close-on-click-modal="false">
-      <div class="designer-container">
-        <div class="designer-header">
-          <div class="header-left">
-            <el-icon class="header-icon"><Setting /></el-icon>
-            <div class="header-text">
-              <div class="header-title">设计流程步骤</div>
-              <div class="header-subtitle">为每个步骤分配合适的机器人执行</div>
-            </div>
-          </div>
-          <div class="header-actions">
-            <el-button @click="addStep" type="success" size="default">
-              <el-icon><Plus /></el-icon> 添加步骤
-            </el-button>
-            <el-button @click="saveDesign" type="primary" :loading="savingDesign" size="default">
-              <el-icon><Check /></el-icon> 保存设计
-            </el-button>
-          </div>
-        </div>
-
-        <el-divider style="margin: 0 0 20px 0;" />
-
-        <div class="steps-container">
-          <div class="steps-wrapper">
-            <draggable v-model="steps" item-key="id" class="steps-list-design" @end="onDragEnd">
-              <template #item="{ element, index }">
-                <div class="step-card">
-                  <div class="step-card-header">
-                    <div class="step-drag-handle">
-                      <el-icon><Rank /></el-icon>
-                    </div>
-                    <div class="step-number">
-                      <span class="number-badge">{{ index + 1 }}</span>
-                    </div>
-                    <div class="step-content">
-                      <div class="step-fields">
-                        <div class="field-row">
-                          <label class="field-label">步骤名称：</label>
-                          <el-input
-                            v-model="element.name"
-                            placeholder="请输入步骤名称"
-                            size="default"
-                            class="field-input"
-                          >
-                            <template #prefix>
-                              <el-icon><Edit /></el-icon>
-                            </template>
-                          </el-input>
-                        </div>
-                        <div class="field-row">
-                          <label class="field-label">步骤类型：</label>
-                          <el-select
-                            v-model="element.type"
-                            placeholder="选择步骤类型"
-                            size="default"
-                            class="field-select"
-                            clearable
-                          >
-                            <template #prefix>
-                              <el-icon><Operation /></el-icon>
-                            </template>
-                            <el-option value="collect" label="数据采集" />
-                            <el-option value="parse" label="数据解析" />
-                            <el-option value="process" label="数据加工" />
-                            <el-option value="query" label="数据查询" />
-                            <el-option value="transform" label="数据转换" />
-                            <el-option value="output" label="数据输出" />
-                            <el-option value="validate" label="数据校验" />
-                          </el-select>
-                        </div>
-                        <div class="field-row">
-                          <label class="field-label">执行机器人：</label>
-                          <div class="robot-display">
-                            <el-select
-                              v-model="element.robotId"
-                              placeholder="请选择执行机器人"
-                              size="default"
-                              class="field-select"
-                              filterable
-                              clearable
-                            >
-                              <template #prefix>
-                                <el-icon><Monitor /></el-icon>
-                              </template>
-                              <el-option
-                                v-for="robot in robots"
-                                :key="robot.id"
-                                :value="robot.id"
-                              >
-                                <div class="robot-option">
-                                  <span class="robot-name">{{ robot.name }}</span>
-                                  <el-tag
-                                    size="small"
-                                    :type="robot.status === 'idle' ? 'success' : robot.status === 'busy' ? 'warning' : 'info'"
-                                    effect="plain"
-                                  >
-                                    {{ robot.status === 'idle' ? '空闲' : robot.status === 'busy' ? '忙碌' : '离线' }}
-                                  </el-tag>
-                                </div>
-                              </el-option>
-                            </el-select>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="step-actions">
-                      <el-popconfirm title="确定删除该步骤？" @confirm="removeStep(index)">
-                        <template #reference>
-                          <el-button link type="danger" size="small" class="delete-btn">
-                            <el-icon><Delete /></el-icon>
-                          </el-button>
-                        </template>
-                      </el-popconfirm>
-                    </div>
-                  </div>
-                </div>
-              </template>
-            </draggable>
-          </div>
-
-          <div v-if="steps.length === 0" class="empty-steps-design">
-            <el-empty description="暂无步骤，请添加步骤">
-              <el-button type="primary" @click="addStep">添加第一个步骤</el-button>
-            </el-empty>
-          </div>
-        </div>
-
-        <div class="designer-footer">
-          <div class="step-count">
-            <el-tag type="info" effect="plain">共 {{ steps.length }} 个步骤</el-tag>
-          </div>
-          <div class="footer-buttons">
-            <el-button @click="designerVisible = false">关闭</el-button>
-            <el-button type="primary" @click="saveDesign" :loading="savingDesign">保存设计</el-button>
-          </div>
-        </div>
+    <!-- 流程设计器弹窗 - 画布模式 -->
+    <el-dialog v-model="designerVisible" :title="`流程设计 - ${process.name || ''}`" width="90%" top="5vh" class="process-designer-dialog-canvas" :close-on-click-modal="false">
+      <div class="canvas-designer-wrapper">
+        <CanvasDesigner 
+          ref="canvasDesignerRef"
+          v-model="canvasData"
+          :robots="robots"
+          :robot-categories="robotCategories"
+        />
       </div>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="designerVisible = false">关闭</el-button>
+          <el-button type="primary" @click="saveDesign" :loading="savingDesign">
+            <el-icon><Check /></el-icon> 保存设计
+          </el-button>
+        </div>
+      </template>
     </el-dialog>
   </div>
 </template>
@@ -507,6 +387,7 @@ import {
   Operation, Close
 } from '@element-plus/icons-vue'
 import draggable from 'vuedraggable'
+import CanvasDesigner from './CanvasDesigner.vue'
 import { apiGet, apiPost } from '../../utils/api.js'
 
 const router = useRouter()
@@ -514,7 +395,10 @@ const route = useRoute()
 
 const process = ref({})
 const steps = ref([])
+const canvasData = ref({ nodes: [], edges: [] })
+const canvasDesignerRef = ref(null)
 const robots = ref([])
+const robotCategories = ref([])
 const executeLogs = ref([])
 const executionProgress = ref([])
 const latestExecutionResult = ref(null)
@@ -550,7 +434,15 @@ const loadSteps = async () => {
     const result = await apiGet(`/process/${process.value.id}/design`)
     if (result.code === 0 && result.data) {
       try {
-        steps.value = JSON.parse(result.data)
+        const parsed = JSON.parse(result.data)
+        // 判断是新的画布格式还是旧的步骤格式
+        if (parsed.nodes && parsed.edges) {
+          // 新格式
+          steps.value = convertCanvasToOldSteps(parsed)
+        } else {
+          // 旧格式
+          steps.value = parsed
+        }
       } catch {
         steps.value = []
       }
@@ -562,6 +454,51 @@ const loadSteps = async () => {
   }
 }
 
+// 将画布格式转换为旧步骤格式（用于执行）
+const convertCanvasToOldSteps = (canvasData) => {
+  const { nodes, edges } = canvasData
+  
+  // 只保留流程节点，按连接顺序排序
+  const processNodes = nodes.filter(n => n.type === 'process')
+  
+  // 简单的拓扑排序，按照边的连接顺序
+  const sorted = []
+  const visited = new Set()
+  
+  // 找到起始节点（没有被其他节点指向的节点）
+  const targetIds = new Set(edges.map(e => e.target))
+  const startNodes = processNodes.filter(n => !targetIds.has(n.id))
+  
+  // BFS遍历
+  const queue = startNodes.length > 0 ? startNodes : [processNodes[0]]
+  
+  while (queue.length > 0) {
+    const node = queue.shift()
+    if (visited.has(node.id)) continue
+    
+    visited.add(node.id)
+    sorted.push(node)
+    
+    // 找到下一个节点
+    const outgoingEdges = edges.filter(e => e.source === node.id)
+    outgoingEdges.forEach(edge => {
+      const nextNode = processNodes.find(n => n.id === edge.target)
+      if (nextNode && !visited.has(nextNode.id)) {
+        queue.push(nextNode)
+      }
+    })
+  }
+  
+  // 添加未访问的节点
+  processNodes.forEach(node => {
+    if (!visited.has(node.id)) {
+      sorted.push(node)
+    }
+  })
+  
+  return sorted
+}
+
 // 加载机器人列表
 const loadRobots = async () => {
   try {
@@ -571,6 +508,18 @@ const loadRobots = async () => {
     }
   } catch {
     robots.value = []
+  }
+}
+
+// 加载机器人分类列表
+const loadRobotCategories = async () => {
+  try {
+    const result = await apiGet('/robot/category/list')
+    if (result.code === 0) {
+      robotCategories.value = result.data || []
+    }
+  } catch {
+    robotCategories.value = []
   }
 }
 
@@ -881,39 +830,76 @@ const formatTime = (time) => {
 // 打开设计器
 const openDesigner = async () => {
   await loadRobots()
+  await loadRobotCategories()
+  
+  // 加载当前流程的设计数据
+  try {
+    const result = await apiGet(`/process/${process.value.id}/design`)
+    if (result.code === 0 && result.data) {
+      try {
+        const parsed = JSON.parse(result.data)
+        // 判断是新的画布格式还是旧的步骤格式
+        if (parsed.nodes && parsed.edges) {
+          // 新格式
+          canvasData.value = parsed
+        } else {
+          // 旧格式，转换为新格式
+          canvasData.value = convertOldStepsToCanvas(parsed)
+        }
+      } catch {
+        canvasData.value = { nodes: [], edges: [] }
+      }
+    } else {
+      canvasData.value = { nodes: [], edges: [] }
+    }
+  } catch {
+    canvasData.value = { nodes: [], edges: [] }
+  }
+  
   designerVisible.value = true
 }
 
-// 添加步骤
-const addStep = () => {
-  steps.value.push({
-    id: Date.now(),
-    name: '新步骤',
-    type: '',
-    description: '',
-    robotId: null,
-    robotName: '',
-    config: {}
-  })
+// 将旧格式的步骤转换为画布格式
+const convertOldStepsToCanvas = (oldSteps) => {
+  const nodes = oldSteps.map((step, index) => ({
+    id: step.id || `node_${index}`,
+    type: 'process',
+    name: step.name || '未命名步骤',
+    stepType: step.type || '',
+    category: step.category || '',
+    robotId: step.robotId || null,
+    robotName: step.robotName || '',
+    x: 200,
+    y: 100 + index * 150
+  }))
+  
+  // 创建连接线
+  const edges = []
+  for (let i = 0; i < nodes.length - 1; i++) {
+    edges.push({
+      id: `edge_${i}`,
+      source: nodes[i].id,
+      sourcePort: 'bottom',
+      target: nodes[i + 1].id,
+      targetPort: 'top'
+    })
+  }
+  
+  return { nodes, edges }
 }
-
-// 删除步骤
-const removeStep = (index) => {
-  steps.value.splice(index, 1)
-}
-
-// 拖拽结束
-const onDragEnd = () => {}
 
 // 保存设计
 const saveDesign = async () => {
   savingDesign.value = true
   try {
-    const stepsData = JSON.stringify(steps.value)
+    // 从画布组件获取数据
+    const data = canvasDesignerRef.value?.saveData() || canvasData.value
+    const stepsData = JSON.stringify(data)
     const result = await apiPost(`/process/${process.value.id}/design`, { steps: stepsData })
     if (result.code === 0) {
       ElMessage.success('保存成功')
       await loadSteps()
+      designerVisible.value = false
     } else {
       ElMessage.error(result.message || '保存失败')
     }
@@ -1959,6 +1945,26 @@ onUnmounted(() => {
 .robot-name {
   flex: 1;
   font-weight: 500;
+}
+
+/* 画布设计器弹窗样式 */
+.process-designer-dialog-canvas :deep(.el-dialog__body) {
+  padding: 0;
+  height: 80vh;
+  overflow: hidden;
+}
+
+.canvas-designer-wrapper {
+  height: 100%;
+  overflow: hidden;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 12px 24px;
+  border-top: 1px solid #e8ecef;
 }
 
 @media (max-width: 1200px) {
