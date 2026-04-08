@@ -216,6 +216,35 @@
             <el-form-item label="条件说明">
               <el-input v-model="selectedNode.description" type="textarea" :rows="2" placeholder="条件描述" />
             </el-form-item>
+            <el-divider />
+            <el-form-item label="机器人分类">
+              <el-select v-model="selectedNode.category" placeholder="选择分类" clearable @change="onCategoryChange">
+                <el-option v-for="cat in robotCategories" :key="cat.code" :value="cat.code" :label="cat.name" />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="判断机器人">
+              <el-select 
+                v-model="selectedNode.robotId" 
+                placeholder="选择执行判断的机器人" 
+                filterable 
+                clearable
+                :disabled="!selectedNode.category"
+              >
+                <el-option
+                  v-for="robot in getFilteredRobots(selectedNode.category)"
+                  :key="robot.id"
+                  :value="robot.id"
+                  :label="robot.name"
+                >
+                  <div class="robot-option">
+                    <span>{{ robot.name }}</span>
+                    <el-tag size="small" :type="robot.status === 'idle' ? 'success' : robot.status === 'busy' ? 'warning' : 'info'">
+                      {{ robot.status === 'idle' ? '空闲' : robot.status === 'busy' ? '忙碌' : '离线' }}
+                    </el-tag>
+                  </div>
+                </el-option>
+              </el-select>
+            </el-form-item>
           </template>
 
           <el-form-item>
@@ -372,6 +401,9 @@ const addConditionNode = () => {
     name: '新条件节点',
     condition: '',
     description: '',
+    category: '',
+    robotId: null,
+    robotName: '',
     x: 200 + Math.random() * 100,
     y: 200 + Math.random() * 100
   }
