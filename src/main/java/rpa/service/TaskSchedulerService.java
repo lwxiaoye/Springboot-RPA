@@ -44,7 +44,7 @@ public class TaskSchedulerService {
 
     private final Map<Long, Long> queueTaskCount = new ConcurrentHashMap<>();
 
-    @Scheduled(fixedRate = 10000)
+    @Scheduled(fixedRate = 60000)
     public void schedulePendingTasks() {
         List<Task> pendingTasks = taskRepository.findByStatus("pending");
         if (pendingTasks.isEmpty()) {
@@ -208,7 +208,7 @@ public class TaskSchedulerService {
     /**
      * 检查队列状态并重新调度
      */
-    @Scheduled(fixedRate = 30000)
+    @Scheduled(fixedRate = 60000)
     public void checkQueueHealth() {
         List<TaskQueue> activeQueues = queueService.findActiveQueues();
 

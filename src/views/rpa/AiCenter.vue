@@ -144,9 +144,7 @@
                 <template #header>上传身份证正面</template>
                 <el-upload
                   class="upload-demo"
-                  :action="apiBase + '/ai/idcard'"
-                  :headers="{ Authorization: 'Bearer ' + token }"
-                  :on-success="(res) => handleIdCardSuccess(res, 'front')"
+                  :http-request="uploadIdCard('front')"
                   :show-file-list="false"
                   accept="image/*"
                 >
@@ -160,9 +158,7 @@
                 <template #header>上传身份证背面</template>
                 <el-upload
                   class="upload-demo"
-                  :action="apiBase + '/ai/idcard'"
-                  :headers="{ Authorization: 'Bearer ' + token }"
-                  :on-success="(res) => handleIdCardSuccess(res, 'back')"
+                  :http-request="uploadIdCard('back')"
                   :show-file-list="false"
                   accept="image/*"
                 >
@@ -206,6 +202,14 @@
                   <div v-if="idCardResult.validDate" class="result-item">
                     <span class="label">有效期:</span>
                     <span class="value">{{ idCardResult.validDate }}</span>
+                  </div>
+
+                  <!-- 一键复制按钮 -->
+                  <div class="copy-actions">
+                    <el-button type="primary" plain size="small" @click="copyIdCardResult">
+                      一键复制
+                    </el-button>
+                    <span v-if="copySuccess" class="copy-tip">已复制到剪贴板</span>
                   </div>
                 </div>
                 <el-empty v-else description="暂无识别结果" />
@@ -419,6 +423,7 @@
 import { ref, reactive, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { UploadFilled } from '@element-plus/icons-vue'
+import { CopyDocument } from '@element-plus/icons-vue'
 
 const apiBase = '/api'
 const token = localStorage.getItem('token') || ''
@@ -444,14 +449,88 @@ const handleOcrError = () => {
 
 // 身份证
 const idCardResult = ref(null)
-const handleIdCardSuccess = (res, side) => {
-  if (res.code === 0) {
-    if (side === 'front') {
-      idCardResult.value = { ...res.data, side: 'front' }
-    } else {
-      idCardResult.value = { ...idCardResult.value, ...res.data, side: 'back' }
+const copySuccess = ref(false)
+const idCardUploadRef = ref(null)
+const idCardSide = ref('front')
+
+// 身份证上传方法
+const uploadIdCard = (side) => {
+  return async (options) => {
+    const { file, onSuccess, onError } = options
+    idCardSide.value = side
+    
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('side', side)
+      
+      const response = await fetch(apiBase + '/ai/idcard', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token },
+        body: formData
+      })
+      
+      const res = await response.json()
+      console.log('身份证识别响应:', res)
+      
+      if (res.code === 0 || res.success) {
+        // 从res中直接获取身份证字段（后端已平铺到根级别）
+        if (side === 'front') {
+          idCardResult.value = {
+            name: res.name || '',
+            gender: res.gender || '',
+            ethnicity: res.ethnicity || '',
+            birthDate: res.birthDate || '',
+            idNumber: res.idNumber || '',
+            address: res.address || '',
+            side: 'front'
+          }
+          console.log('身份证正面识别结果:', idCardResult.value)
+        } else {
+          idCardResult.value = {
+            ...idCardResult.value,
+            issueAuthority: res.issueAuthority || '',
+            validDate: res.validDate || '',
+            side: 'back'
+          }
+          console.log('身份证背面识别结果:', idCardResult.value)
+        }
+        ElMessage.success('识别成功')
+        onSuccess(res)
+      } else {
+        ElMessage.error(res.message || res.errorMessage || '识别失败')
+        onError(new Error(res.message || '识别失败'))
+      }
+    } catch (e) {
+      console.error('上传失败:', e)
+      ElMessage.error('上传失败: ' + e.message)
+      onError(e)
     }
-    ElMessage.success('识别成功')
+  }
+}
+
+// 一键复制身份证结果
+const copyIdCardResult = async () => {
+  if (!idCardResult.value) return
+  const info = idCardResult.value
+  const text = [
+    `姓名: ${info.name || '-'}`,
+    `性别: ${info.gender || '-'}`,
+    `民族: ${info.ethnicity || '-'}`,
+    `出生日期: ${info.birthDate || '-'}`,
+    `身份证号: ${info.idNumber || '-'}`,
+    `地址: ${info.address || '-'}`,
+    info.issueAuthority ? `签发机关: ${info.issueAuthority}` : null,
+    info.validDate ? `有效期: ${info.validDate}` : null
+  ].filter(Boolean).join('\n')
+
+  try {
+    await navigator.clipboard.writeText(text)
+    copySuccess.value = true
+    ElMessage.success('已复制到剪贴板')
+    setTimeout(() => { copySuccess.value = false }, 2000)
+  } catch (e) {
+    ElMessage.error('复制失败，请手动复制')
   }
 }
 
@@ -685,6 +764,20 @@ const getSentimentText = (sentiment) => {
 .result-item .value.masked {
   font-family: monospace;
   color: #f56c6c;
+}
+
+.copy-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid #eee;
+}
+
+.copy-tip {
+  color: #67c23a;
+  font-size: 12px;
 }
 
 .invoice-result .amount {

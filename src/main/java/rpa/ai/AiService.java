@@ -58,6 +58,7 @@ public class AiService {
     private final OcrService ocrService;
     private final CaptchaService captchaService;
     private final NlpService nlpService;
+    private final LlmService llmService;
     private final SystemConfigService systemConfigService;
 
     @Value("${rpa.ai.mode:local}")
@@ -72,10 +73,11 @@ public class AiService {
     private String baiduSecretKey;
 
     public AiService(OcrService ocrService, CaptchaService captchaService, NlpService nlpService,
-                     SystemConfigService systemConfigService) {
+                     LlmService llmService, SystemConfigService systemConfigService) {
         this.ocrService = ocrService;
         this.captchaService = captchaService;
         this.nlpService = nlpService;
+        this.llmService = llmService;
         this.systemConfigService = systemConfigService;
     }
 
@@ -107,6 +109,33 @@ public class AiService {
         }
         Map<String, String> config = getBaiduConfig();
         return !config.get("apiKey").isEmpty() && !config.get("secretKey").isEmpty();
+    }
+
+    /**
+     * 检查LLM是否已配置
+     */
+    public boolean isLlmConfigured() {
+        return llmService.isConfigured();
+    }
+
+    /**
+     * 获取LLM配置信息
+     */
+    public Map<String, Object> getLlmInfo() {
+        Map<String, String> config = llmService.getConfig();
+        Map<String, Object> info = new HashMap<>();
+        info.put("provider", config.get("provider"));
+        info.put("apiUrl", config.get("apiUrl"));
+        info.put("model", config.get("model"));
+        info.put("configured", llmService.isConfigured());
+        return info;
+    }
+
+    /**
+     * 获取LLM服务实例（供Controller使用）
+     */
+    public LlmService getLlmService() {
+        return llmService;
     }
 
     /**

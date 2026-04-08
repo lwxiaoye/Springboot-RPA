@@ -265,7 +265,7 @@ public class AiController {
     public Map<String, Object> getCapabilities() {
         Map<String, Object> response = new HashMap<>();
         Map<String, Object> capabilities = new HashMap<>();
-        
+
         capabilities.put("ocr", Map.of(
             "name", "文字识别",
             "description", "通用文字识别，支持多种语言"
@@ -306,10 +306,73 @@ public class AiController {
             "name", "关键词提取",
             "description", "提取文本关键词"
         ));
-        
+
+        // 添加LLM配置状态
+        Map<String, Object> llmInfo = aiService.getLlmInfo();
+        capabilities.put("llm", Map.of(
+            "name", "大模型",
+            "description", "DeepSeek等大模型对话",
+            "provider", llmInfo.getOrDefault("provider", "local"),
+            "model", llmInfo.getOrDefault("model", "deepseek-r1:7b"),
+            "configured", llmInfo.getOrDefault("configured", false)
+        ));
+
         response.put("code", 0);
         response.put("data", capabilities);
         return response;
+    }
+
+    /**
+     * 大模型对话
+     */
+    @PostMapping("/chat")
+    public Map<String, Object> chat(@RequestBody ChatRequest request) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            Map<String, Object> options = new HashMap<>();
+            if (request.getTemperature() != null) {
+                options.put("temperature", request.getTemperature());
+            }
+            if (request.getMaxTokens() != null) {
+                options.put("max_tokens", request.getMaxTokens());
+            }
+            if (request.getSystem() != null) {
+                options.put("system", request.getSystem());
+            }
+
+            AiService.AiResult result = aiService.getLlmService().chat(request.getPrompt(), options);
+            response.put("code", 0);
+            response.put("data", convertAiResult(result));
+        } catch (Exception e) {
+            log.error("大模型对话失败", e);
+            response.put("code", 500);
+            response.put("message", "对话失败: " + e.getMessage());
+        }
+        return response;
+    }
+
+    /**
+     * 测试LLM连接
+     */
+    @GetMapping("/llm/status")
+    public Map<String, Object> getLlmStatus() {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            Map<String, Object> info = aiService.getLlmInfo();
+            response.put("code", 0);
+            response.put("data", info);
+        } catch (Exception e) {
+            response.put("code", 500);
+            response.put("message", "获取状态失败: " + e.getMessage());
+        }
+        return response;
+    }
+
+    /**
+     * 获取LLM服务实例
+     */
+    private rpa.ai.LlmService getLlmService() {
+        return aiService.getLlmService();
     }
 
     /**
@@ -323,11 +386,22 @@ public class AiController {
         map.put("confidence", result.getConfidence());
         map.put("duration", result.getDuration());
         map.put("errorMessage", result.getErrorMessage());
-        
-        if (result.getData() != null) {
+
+        // 身份证识别结果 - 将中文字段名映射为英文字段名
+        if (result.getServiceType() == AiService.AiServiceType.ID_CARD && result.getData() != null) {
+            Map<String, Object> data = result.getData();
+            map.put("name", data.get("name"));
+            map.put("gender", data.get("gender"));
+            map.put("ethnicity", data.get("ethnicity"));
+            map.put("birthDate", data.get("birthDate"));
+            map.put("idNumber", data.get("idNumber"));
+            map.put("address", data.get("address"));
+            map.put("issueAuthority", data.get("issueAuthority"));
+            map.put("validDate", data.get("validDate"));
+        } else if (result.getData() != null) {
             map.put("data", result.getData());
         }
-        
+
         return map;
     }
 
@@ -359,5 +433,13 @@ public class AiController {
     @Data
     public static class ClassifyRequest {
         private String text;
+    }
+
+    @Data
+    public static class ChatRequest {
+        private String prompt;
+        private Double temperature;
+        private Integer maxTokens;
+        private String system;
     }
 }

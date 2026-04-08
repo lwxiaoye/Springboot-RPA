@@ -23,6 +23,7 @@ rpa\controller\DataQueryController.class
 rpa\controller\ScriptController.class
 rpa\service\IntelligentSchedulerService$LoadBalanceStrategy.class
 rpa\ai\AiService$AiServiceType.class
+rpa\ai\LlmService.class
 rpa\service\ResourceService.class
 rpa\repository\ProcessedDataRepository.class
 rpa\service\DataQueryService.class
@@ -143,6 +144,7 @@ rpa\service\DataParseService.class
 rpa\entity\AlertRoster.class
 rpa\security\CredentialVault$CredentialSummary.class
 rpa\ai\AiService$AiResult.class
+rpa\controller\AiController$ChatRequest.class
 rpa\distributed\DistributedLockService$LockResult.class
 rpa\repository\NotificationChannelRepository.class
 rpa\controller\ScriptController$ScriptValidateRequest.class
@@ -160,6 +162,7 @@ rpa\recording\ScreenRecorder$RecordingResult.class
 rpa\repository\UserRepository.class
 rpa\repository\AuditLogHashRepository.class
 rpa\service\CacheService.class
+rpa\ai\NlpService$1.class
 rpa\controller\DeadLetterController.class
 rpa\repository\TraceLogRepository.class
 rpa\controller\AuditLogController.class

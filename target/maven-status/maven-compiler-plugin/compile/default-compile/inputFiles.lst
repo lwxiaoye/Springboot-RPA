@@ -51,6 +51,7 @@ D:\JavaSpringboot\rpa\src\main\java\rpa\repository\RpaProcessRepository.java
 D:\JavaSpringboot\rpa\src\main\java\rpa\service\UserService.java
 D:\JavaSpringboot\rpa\src\main\java\rpa\controller\TriggerRuleController.java
 D:\JavaSpringboot\rpa\src\main\java\rpa\controller\AsyncExportController.java
+D:\JavaSpringboot\rpa\src\main\java\rpa\ai\LlmService.java
 D:\JavaSpringboot\rpa\src\main\java\rpa\controller\ExecutionLogController.java
 D:\JavaSpringboot\rpa\src\main\java\rpa\service\AntiCrawlerService.java
 D:\JavaSpringboot\rpa\src\main\java\rpa\service\TriggerRuleService.java
