@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import rpa.service.SystemConfigService;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -57,6 +58,7 @@ public class AiService {
     private final OcrService ocrService;
     private final CaptchaService captchaService;
     private final NlpService nlpService;
+    private final SystemConfigService systemConfigService;
 
     @Value("${rpa.ai.mode:local}")
     private String aiMode;  // local 或 cloud
@@ -64,19 +66,47 @@ public class AiService {
     @Value("${rpa.ai.tesseract.path:/usr/bin/tesseract}")
     private String tesseractPath;
 
-    @Value("${rpa.ai.baidu.app-id:}")
+    // 百度AI配置（从数据库读取）
     private String baiduAppId;
-
-    @Value("${rpa.ai.baidu.api-key:}")
     private String baiduApiKey;
-
-    @Value("${rpa.ai.baidu.secret-key:}")
     private String baiduSecretKey;
 
-    public AiService(OcrService ocrService, CaptchaService captchaService, NlpService nlpService) {
+    public AiService(OcrService ocrService, CaptchaService captchaService, NlpService nlpService,
+                     SystemConfigService systemConfigService) {
         this.ocrService = ocrService;
         this.captchaService = captchaService;
         this.nlpService = nlpService;
+        this.systemConfigService = systemConfigService;
+    }
+
+    /**
+     * 获取AI模式
+     */
+    public String getAiMode() {
+        return systemConfigService.getConfig(SystemConfigService.KEY_OCR_PROVIDER, "baidu");
+    }
+
+    /**
+     * 获取百度API配置
+     */
+    public Map<String, String> getBaiduConfig() {
+        Map<String, String> config = new HashMap<>();
+        config.put("appId", systemConfigService.getConfig(SystemConfigService.KEY_OCR_APP_ID, ""));
+        config.put("apiKey", systemConfigService.getConfig(SystemConfigService.KEY_OCR_API_KEY, ""));
+        config.put("secretKey", systemConfigService.getConfig(SystemConfigService.KEY_OCR_SECRET_KEY, ""));
+        return config;
+    }
+
+    /**
+     * 检查OCR配置是否完整
+     */
+    public boolean isOcrConfigured() {
+        String provider = getAiMode();
+        if ("tesseract".equals(provider)) {
+            return true;
+        }
+        Map<String, String> config = getBaiduConfig();
+        return !config.get("apiKey").isEmpty() && !config.get("secretKey").isEmpty();
     }
 
     /**

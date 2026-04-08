@@ -1,9 +1,25 @@
 -- ============================================
 -- RPA系统数据库结构更新脚本 V2
--- 新增：任务队列、触发器、审计日志
+-- 新增：任务队列、触发器、审计日志、系统配置
 -- ============================================
 
 USE rpa_system;
+
+-- ============================================
+-- 0. 系统配置表
+-- ============================================
+CREATE TABLE IF NOT EXISTS system_config (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
+    category VARCHAR(50) NOT NULL COMMENT '配置分类（general/message/storage/ocr/llm/license）',
+    config_key VARCHAR(100) NOT NULL UNIQUE COMMENT '配置键名',
+    config_value TEXT COMMENT '配置值',
+    description VARCHAR(200) COMMENT '配置描述',
+    is_encrypted TINYINT(1) DEFAULT 0 COMMENT '是否加密存储',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    INDEX idx_category (category),
+    UNIQUE INDEX uk_config_key (config_key)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='系统配置表';
 
 -- ============================================
 -- 1. 任务队列表

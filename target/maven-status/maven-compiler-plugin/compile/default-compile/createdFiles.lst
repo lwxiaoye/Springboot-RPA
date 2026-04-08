@@ -27,6 +27,7 @@ rpa\service\ResourceService.class
 rpa\repository\ProcessedDataRepository.class
 rpa\service\DataQueryService.class
 rpa\repository\InvoiceDataRepository.class
+rpa\repository\SystemConfigRepository.class
 rpa\config\SecurityConfig.class
 rpa\service\RobotService.class
 rpa\entity\ProcessVersion.class
@@ -69,6 +70,7 @@ rpa\repository\TaskRepository.class
 rpa\entity\AlertRecord.class
 rpa\ai\AiService$RecognitionMode.class
 rpa\entity\ApprovalFlow.class
+rpa\controller\SystemConfigController.class
 rpa\service\RpaProcessService$1.class
 rpa\security\DataMaskingService$1.class
 rpa\service\AntiCrawlerService.class
@@ -76,6 +78,8 @@ rpa\repository\NotificationRepository.class
 rpa\repository\ResourceRepository.class
 rpa\service\TaskService.class
 rpa\config\RedisConfig.class
+rpa\util\RobotCodeExecutor.class
+rpa\entity\SystemConfig.class
 rpa\entity\TraceLog.class
 rpa\controller\AiController$EntityRequest.class
 rpa\executor\ScriptExecutor$ScriptRequest.class
@@ -96,6 +100,7 @@ rpa\service\PlaywrightService.class
 rpa\service\WebScraperService.class
 rpa\entity\InvoiceData.class
 rpa\controller\EnterpriseController$CredentialUpdateRequest.class
+rpa\service\SystemConfigService.class
 rpa\executor\ScriptExecutor$ScriptProcess.class
 rpa\executor\ScriptExecutor.class
 rpa\recording\ScreenRecorder$RecordingRequest.class

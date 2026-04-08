@@ -76,9 +76,11 @@ D:\JavaSpringboot\rpa\src\main\java\rpa\controller\RoleController.java
 D:\JavaSpringboot\rpa\src\main\java\rpa\service\DataProcessService.java
 D:\JavaSpringboot\rpa\src\main\java\rpa\config\RedisConfig.java
 D:\JavaSpringboot\rpa\src\main\java\rpa\service\AlertService.java
+D:\JavaSpringboot\rpa\src\main\java\rpa\util\RobotCodeExecutor.java
 D:\JavaSpringboot\rpa\src\main\java\rpa\ai\CaptchaService.java
 D:\JavaSpringboot\rpa\src\main\java\rpa\service\ExecutionLogService.java
 D:\JavaSpringboot\rpa\src\main\java\rpa\ai\NlpService.java
+D:\JavaSpringboot\rpa\src\main\java\rpa\entity\SystemConfig.java
 D:\JavaSpringboot\rpa\src\main\java\rpa\entity\TraceLog.java
 D:\JavaSpringboot\rpa\src\main\java\rpa\entity\AlertRule.java
 D:\JavaSpringboot\rpa\src\main\java\rpa\service\IntelligentSchedulerService.java
@@ -101,6 +103,7 @@ D:\JavaSpringboot\rpa\src\main\java\rpa\repository\DeadLetterQueueRepository.jav
 D:\JavaSpringboot\rpa\src\main\java\rpa\repository\DataQueryRepository.java
 D:\JavaSpringboot\rpa\src\main\java\rpa\controller\ScriptController.java
 D:\JavaSpringboot\rpa\src\main\java\rpa\repository\RobotBackupRepository.java
+D:\JavaSpringboot\rpa\src\main\java\rpa\controller\SystemConfigController.java
 D:\JavaSpringboot\rpa\src\main\java\rpa\repository\ApprovalFlowRepository.java
 D:\JavaSpringboot\rpa\src\main\java\rpa\service\DataParseService.java
 D:\JavaSpringboot\rpa\src\main\java\rpa\service\ResourceService.java
@@ -112,10 +115,12 @@ D:\JavaSpringboot\rpa\src\main\java\rpa\repository\RobotHealthRepository.java
 D:\JavaSpringboot\rpa\src\main\java\rpa\repository\TriggerRuleRepository.java
 D:\JavaSpringboot\rpa\src\main\java\rpa\entity\DataQuery.java
 D:\JavaSpringboot\rpa\src\main\java\rpa\controller\InvoiceDataController.java
+D:\JavaSpringboot\rpa\src\main\java\rpa\service\SystemConfigService.java
 D:\JavaSpringboot\rpa\src\main\java\rpa\repository\RobotCategoryRepository.java
 D:\JavaSpringboot\rpa\src\main\java\rpa\repository\RobotRepository.java
 D:\JavaSpringboot\rpa\src\main\java\rpa\executor\ScriptExecutor.java
 D:\JavaSpringboot\rpa\src\main\java\rpa\service\TaskService.java
+D:\JavaSpringboot\rpa\src\main\java\rpa\repository\SystemConfigRepository.java
 D:\JavaSpringboot\rpa\src\main\java\rpa\repository\TaskRepository.java
 D:\JavaSpringboot\rpa\src\main\java\rpa\recording\ScreenRecorder.java
 D:\JavaSpringboot\rpa\src\main\java\rpa\service\TaskQueueService.java
