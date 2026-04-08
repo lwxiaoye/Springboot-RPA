@@ -1,5 +1,5 @@
 <template>
-  <div class="processes-page">
+  <div class="processes-page" v-show="!designerVisible">
     <div class="page-header">
       <h2>流程管理</h2>
       <p class="page-desc">管理RPA自动化流程</p>
@@ -24,31 +24,14 @@
       <el-table-column prop="name" label="流程名称" min-width="180" show-overflow-tooltip />
       <el-table-column prop="code" label="流程编码" min-width="140" />
       <el-table-column prop="version" label="版本" width="80" align="center" />
-      <el-table-column prop="requiredCategory" label="需要机器人" width="100" align="center">
-        <template #default="{ row }">
-          <el-tag :type="getCategoryType(row.requiredCategory)" size="small">
-            {{ getCategoryText(row.requiredCategory) }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="queueName" label="绑定队列" width="120" show-overflow-tooltip>
-        <template #default="{ row }">
-          <span v-if="row.queueName" class="queue-tag">{{ row.queueName }}</span>
-          <span v-else class="text-muted">-</span>
-        </template>
+      <el-table-column prop="description" label="描述" min-width="200" show-overflow-tooltip>
+        <template #default="{ row }">{{ row.description || '-' }}</template>
       </el-table-column>
       <el-table-column prop="status" label="状态" width="90" align="center">
         <template #default="{ row }">
           <el-tag :type="row.status === 'active' ? 'success' : 'info'" size="small">
             {{ row.status === 'active' ? '已发布' : '草稿' }}
           </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="taskCount" label="执行次数" width="80" align="center" />
-      <el-table-column prop="todayExecutions" label="今日" width="60" align="center" />
-      <el-table-column prop="totalDataCount" label="采集数据" width="80" align="center">
-        <template #default="{ row }">
-          <span class="data-count">{{ formatNumber(row.totalDataCount) }}</span>
         </template>
       </el-table-column>
       <el-table-column prop="creatorName" label="创建人" width="100" align="center" />
@@ -107,30 +90,6 @@
           <el-form-item label="版本号" prop="version">
             <el-input v-model="processForm.version" placeholder="请输入版本号，如：1.0.0" />
           </el-form-item>
-          <el-form-item label="机器人分类">
-            <el-select v-model="processForm.requiredCategory" placeholder="选择需要的机器人分类" style="width: 100%" clearable>
-              <el-option v-for="cat in robotCategories" :key="cat.code" :label="cat.name" :value="cat.code" />
-            </el-select>
-            <div class="form-tip">指定执行此流程需要的机器人分类</div>
-          </el-form-item>
-          <el-form-item label="绑定队列">
-            <el-select v-model="processForm.queueId" placeholder="选择绑定的任务队列" style="width: 100%" clearable>
-              <el-option v-for="q in queues" :key="q.id" :label="q.name" :value="q.id" />
-            </el-select>
-            <div class="form-tip">流程任务将投递到此队列执行</div>
-          </el-form-item>
-          <el-row :gutter="20">
-            <el-col :span="12">
-              <el-form-item label="超时时间">
-                <el-input-number v-model="processForm.timeoutMinutes" :min="1" :max="1440" style="width: 100%" />
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label="重试次数">
-                <el-input-number v-model="processForm.retryCount" :min="0" :max="10" style="width: 100%" />
-              </el-form-item>
-            </el-col>
-          </el-row>
           <el-form-item label="流程描述">
             <el-input v-model="processForm.description" type="textarea" :rows="3" placeholder="请输入流程描述" />
           </el-form-item>
@@ -182,7 +141,7 @@
                       <template #prefix><el-icon><Folder /></el-icon></template>
                       <el-option v-for="cat in robotCategories" :key="cat.code" :value="cat.code" :label="cat.name" />
                     </el-select>
-                    <el-select v-model="element.robotIds" placeholder="选择执行机器人（可多选）" size="default" filterable clearable class="step-robot-select" :disabled="!element.category" multiple collapse-tags collapse-tags-tooltip>
+                    <el-select v-model="element.robotId" placeholder="选择执行机器人" size="default" filterable clearable class="step-robot-select" :disabled="!element.category">
                       <template #prefix><el-icon><Monitor /></el-icon></template>
                       <el-option v-for="robot in getFilteredRobots(element.category)" :key="robot.id" :value="robot.id" :label="robot.name">
                         <div class="robot-option">
@@ -193,9 +152,6 @@
                         </div>
                       </el-option>
                     </el-select>
-                  </div>
-                  <div v-if="element.robotIds && element.robotIds.length > 0" class="robot-count-hint">
-                    已选 {{ element.robotIds.length }} 个机器人
                   </div>
                 </div>
                 <el-button link type="danger" @click="removeWizardStep(index)">
@@ -326,175 +282,34 @@
         </div>
       </div>
     </el-dialog>
+  </div>
 
-    <!-- 流程设计器弹窗 -->
-    <el-dialog v-model="designerVisible" :title="`流程设计 - ${currentProcess.name || ''}`" width="1000px" class="process-designer-dialog" :close-on-click-modal="false">
-      <div class="designer-container">
-        <div class="designer-header">
-          <div class="header-left">
-            <el-icon class="header-icon"><Setting /></el-icon>
-            <div class="header-text">
-              <div class="header-title">设计流程步骤</div>
-              <div class="header-subtitle">为每个步骤分配合适的机器人执行</div>
-            </div>
-          </div>
-          <div class="header-actions">
-            <el-button @click="addStep" type="success" size="default">
-              <el-icon><Plus /></el-icon> 添加步骤
-            </el-button>
-            <el-button @click="saveDesign" type="primary" :loading="savingDesign" size="default">
-              <el-icon><Check /></el-icon> 保存设计
-            </el-button>
-          </div>
-        </div>
-
-        <el-divider style="margin: 0 0 20px 0;" />
-
-        <div class="steps-container">
-          <div class="steps-wrapper">
-            <draggable v-model="steps" item-key="id" class="steps-list" @end="onDragEnd">
-              <template #item="{ element, index }">
-                <div class="step-card">
-                  <div class="step-card-header">
-                    <div class="step-drag-handle">
-                      <el-icon><Rank /></el-icon>
-                    </div>
-                    <div class="step-number">
-                      <span class="number-badge">{{ index + 1 }}</span>
-                    </div>
-                    <div class="step-content">
-                      <div class="step-fields">
-                        <div class="field-row">
-                          <label class="field-label">步骤名称：</label>
-                          <el-input 
-                            v-model="element.name" 
-                            placeholder="请输入步骤名称" 
-                            size="default"
-                            class="field-input"
-                          >
-                            <template #prefix>
-                              <el-icon><Edit /></el-icon>
-                            </template>
-                          </el-input>
-                        </div>
-                        <div class="field-row">
-                          <label class="field-label">步骤类型：</label>
-                          <el-select 
-                            v-model="element.type" 
-                            placeholder="选择步骤类型" 
-                            size="default"
-                            class="field-select"
-                            clearable
-                            @change="onStepTypeChange(element)"
-                          >
-                            <template #prefix>
-                              <el-icon><Operation /></el-icon>
-                            </template>
-                            <el-option value="collect" label="数据采集" />
-                            <el-option value="parse" label="数据解析" />
-                            <el-option value="process" label="数据加工" />
-                            <el-option value="query" label="数据查询" />
-                            <el-option value="transform" label="数据转换" />
-                            <el-option value="output" label="数据输出" />
-                            <el-option value="validate" label="数据校验" />
-                          </el-select>
-                        </div>
-                        <div class="field-row">
-                          <label class="field-label">机器人分类：</label>
-                          <el-select 
-                            v-model="element.category" 
-                            placeholder="选择机器人分类" 
-                            size="default"
-                            class="field-select"
-                            clearable
-                            @change="onCategoryChange(element)"
-                          >
-                            <template #prefix>
-                              <el-icon><Folder /></el-icon>
-                            </template>
-                            <el-option
-                              v-for="cat in robotCategories"
-                              :key="cat.code"
-                              :value="cat.code"
-                              :label="cat.name"
-                            />
-                          </el-select>
-                        </div>
-                        <div class="field-row">
-                          <label class="field-label">执行机器人：</label>
-                          <div class="robot-display">
-                            <el-select
-                              v-model="element.robotIds"
-                              placeholder="请选择执行机器人（可多选）"
-                              size="default"
-                              class="field-select"
-                              filterable
-                              multiple
-                              collapse-tags
-                              collapse-tags-tooltip
-                              :disabled="!element.category"
-                            >
-                              <template #prefix>
-                                <el-icon><Monitor /></el-icon>
-                              </template>
-                              <el-option
-                                v-for="robot in getFilteredRobots(element.category)"
-                                :key="robot.id"
-                                :value="robot.id"
-                                :label="robot.name"
-                              >
-                                <div class="robot-option">
-                                  <span class="robot-name">{{ robot.name }}</span>
-                                  <el-tag
-                                    size="small"
-                                    :type="robot.status === 'idle' ? 'success' : robot.status === 'busy' ? 'warning' : 'info'"
-                                    effect="plain"
-                                  >
-                                    {{ robot.status === 'idle' ? '空闲' : robot.status === 'busy' ? '忙碌' : '离线' }}
-                                  </el-tag>
-                                </div>
-                              </el-option>
-                            </el-select>
-                            <span class="robot-hint" v-if="element.robotIds && element.robotIds.length > 0">
-                              已选 {{ element.robotIds.length }} 个机器人
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="step-actions">
-                      <el-popconfirm title="确定删除该步骤？" @confirm="removeStep(index)">
-                        <template #reference>
-                          <el-button link type="danger" size="small" class="delete-btn">
-                            <el-icon><Delete /></el-icon>
-                          </el-button>
-                        </template>
-                      </el-popconfirm>
-                    </div>
-                  </div>
-                </div>
-              </template>
-            </draggable>
-          </div>
-
-          <div v-if="steps.length === 0" class="empty-steps">
-            <el-empty description="暂无步骤，请添加步骤">
-              <el-button type="primary" @click="addStep">添加第一个步骤</el-button>
-            </el-empty>
-          </div>
-        </div>
-
-        <div class="designer-footer">
-          <div class="step-count">
-            <el-tag type="info" effect="plain">共 {{ steps.length }} 个步骤</el-tag>
-          </div>
-          <div class="footer-buttons">
-            <el-button @click="designerVisible = false">关闭</el-button>
-            <el-button type="primary" @click="saveDesign" :loading="savingDesign">保存设计</el-button>
-          </div>
-        </div>
+  <!-- 流程设计器 - 画布模式 -->
+  <div v-if="designerVisible" class="designer-page-container">
+    <div class="designer-nav">
+      <div class="nav-left">
+        <el-button @click="closeDesigner" text class="back-btn">
+          <el-icon><ArrowLeft /></el-icon>
+          返回列表
+        </el-button>
+        <el-divider direction="vertical" />
+        <span class="nav-title">流程设计 - {{ currentProcess.name }}</span>
       </div>
-    </el-dialog>
+      <div class="nav-actions">
+        <el-button @click="saveDesign" type="primary" :loading="savingDesign">
+          <el-icon><Check /></el-icon> 保存设计
+        </el-button>
+      </div>
+    </div>
+
+    <div class="designer-main-content">
+      <CanvasDesigner 
+        ref="canvasDesignerRef"
+        v-model="canvasData"
+        :robots="robots"
+        :robot-categories="robotCategories"
+      />
+    </div>
   </div>
 </template>
 
@@ -502,8 +317,9 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useRouter } from 'vue-router'
-import { Search, Plus, Check, Delete, Setting, Edit, Rank, Monitor, List, Document, Warning, Folder, Operation } from '@element-plus/icons-vue'
+import { Search, Plus, Check, Delete, Edit, Rank, Monitor, List, Document, Warning, Folder, Operation, ArrowLeft } from '@element-plus/icons-vue'
 import draggable from 'vuedraggable'
+import CanvasDesigner from './CanvasDesigner.vue'
 
 import { apiGet, apiPost, apiPut, apiDelete } from '../../utils/api.js'
 
@@ -511,7 +327,6 @@ const router = useRouter()
 
 const robots = ref([])
 const robotCategories = ref([])
-const queues = ref([])
 
 const loading = ref(false)
 const submitLoading = ref(false)
@@ -528,6 +343,8 @@ const currentDesignId = ref(null)
 const formRef = ref(null)
 const savingDesign = ref(false)
 const steps = ref([])
+const canvasData = ref({ nodes: [], edges: [] })
+const canvasDesignerRef = ref(null)
 const detailSteps = ref([])
 const wizardStep = ref(1)
 const wizardSteps = ref([])
@@ -544,11 +361,7 @@ const processForm = reactive({
   code: '',
   version: '1.0.0',
   description: '',
-  status: 'draft',
-  requiredCategory: '',
-  queueId: null,
-  retryCount: 0,
-  timeoutMinutes: 60
+  status: 'draft'
 })
 
 const formRules = {
@@ -595,8 +408,16 @@ const loadProcesses = async () => {
 }
 
 const showCreateModal = () => {
-  // 跳转到可视化设计器页面创建新流程
-  router.push({ path: '/rpa/process-designer' })
+  isEdit.value = false
+  currentEditId.value = null
+  wizardStep.value = 1
+  wizardSteps.value = []
+  tempProcessId.value = null
+  Object.assign(processForm, { name: '', code: '', version: '1.0.0', description: '', status: 'draft' })
+  // 预加载机器人和分类
+  loadRobots()
+  loadRobotCategories()
+  dialogVisible.value = true
 }
 
 // 下一步
@@ -658,13 +479,13 @@ const skipDesign = () => {
 
 // 添加向导步骤
 const addWizardStep = () => {
-  wizardSteps.value.push({
-    id: Date.now(),
-    name: '新步骤',
+  wizardSteps.value.push({ 
+    id: Date.now(), 
+    name: '新步骤', 
     type: '',
     description: '',
     category: '',
-    robotIds: [],
+    robotId: null,
     config: {}
   })
 }
@@ -836,11 +657,70 @@ const handleDeleteProcess = async () => {
 
 // 打开流程设计器
 const openDesigner = async (process) => {
-  // 跳转到独立的可视化设计器页面
-  router.push({ 
-    path: '/rpa/process-designer', 
-    query: { id: process.id } 
-  })
+  currentDesignId.value = process.id
+  currentProcess.value = process
+  
+  // 加载机器人列表和分类
+  await loadRobots()
+  await loadRobotCategories()
+  
+  try {
+    const result = await apiGet(`/process/${process.id}/design`)
+    if (result.code === 0) {
+      if (result.data) {
+        try {
+          const parsed = JSON.parse(result.data)
+          // 判断是新的画布格式还是旧的步骤格式
+          if (parsed.nodes && parsed.edges) {
+            // 新格式
+            canvasData.value = parsed
+          } else {
+            // 旧格式，转换为新格式
+            canvasData.value = convertOldStepsToCanvas(parsed)
+          }
+        } catch {
+          canvasData.value = { nodes: [], edges: [] }
+        }
+      } else {
+        canvasData.value = { nodes: [], edges: [] }
+      }
+    } else {
+      canvasData.value = { nodes: [], edges: [] }
+    }
+  } catch {
+    canvasData.value = { nodes: [], edges: [] }
+  }
+  
+  designerVisible.value = true
+}
+
+// 将旧格式的步骤转换为画布格式
+const convertOldStepsToCanvas = (oldSteps) => {
+  const nodes = oldSteps.map((step, index) => ({
+    id: step.id || `node_${index}`,
+    type: 'process',
+    name: step.name || '未命名步骤',
+    stepType: step.type || '',
+    category: step.category || '',
+    robotId: step.robotId || null,
+    robotName: step.robotName || '',
+    x: 200,
+    y: 100 + index * 150
+  }))
+  
+  // 创建连接线
+  const edges = []
+  for (let i = 0; i < nodes.length - 1; i++) {
+    edges.push({
+      id: `edge_${i}`,
+      source: nodes[i].id,
+      sourcePort: 'bottom',
+      target: nodes[i + 1].id,
+      targetPort: 'top'
+    })
+  }
+  
+  return { nodes, edges }
 }
 
 // 加载机器人列表
@@ -873,17 +753,6 @@ const getFilteredRobots = (category) => {
   return robots.value.filter(r => r.robotCategory === category)
 }
 
-// 分类变更时清空已选机器人
-const onCategoryChange = (element) => {
-  element.robotIds = []
-}
-
-// 步骤类型变更时清空已选机器人
-const onStepTypeChange = (element) => {
-  element.category = ''
-  element.robotIds = []
-}
-
 // 获取机器人状态信息
 const getRobotStatus = (robotId) => {
   const robot = robots.value.find(r => r.id === robotId)
@@ -901,37 +770,6 @@ const getRobotStatus = (robotId) => {
     statusText: status.text,
     type: status.type
   }
-}
-
-// 获取分类标签类型
-const getCategoryType = (category) => {
-  const typeMap = {
-    'data_collect': 'success',
-    'data_parse': 'warning',
-    'data_process': 'primary',
-    'data_storage': 'info'
-  }
-  return typeMap[category] || ''
-}
-
-// 获取分类文本
-const getCategoryText = (category) => {
-  const textMap = {
-    'data_collect': '数据采集',
-    'data_parse': '数据解析',
-    'data_process': '数据加工',
-    'data_storage': '数据落库'
-  }
-  return textMap[category] || category || '-'
-}
-
-// 格式化数字
-const formatNumber = (num) => {
-  if (num === null || num === undefined) return '0'
-  if (typeof num !== 'number') num = parseInt(num) || 0
-  if (num >= 10000) return (num / 10000).toFixed(1) + 'w'
-  if (num >= 1000) return (num / 1000).toFixed(1) + 'k'
-  return num.toString()
 }
 
 // 步骤类型标签映射
@@ -956,34 +794,13 @@ const getDetailStepTypeTag = (type) => {
   return stepTypeMap[type]?.tag || 'info'
 }
 
-// 添加步骤
-const addStep = () => {
-  steps.value.push({
-    id: Date.now(),
-    name: '新步骤',
-    type: '',
-    description: '',
-    category: '',
-    robotIds: [],
-    config: {}
-  })
-}
-
-// 删除步骤
-const removeStep = (index) => {
-  steps.value.splice(index, 1)
-}
-
-// 拖拽结束
-const onDragEnd = () => {
-  // 拖拽后不需要额外操作，vuedraggable 已经更新了顺序
-}
-
 // 保存设计
 const saveDesign = async () => {
   savingDesign.value = true
   try {
-    const stepsData = JSON.stringify(steps.value)
+    // 从画布组件获取数据
+    const data = canvasDesignerRef.value?.saveData() || canvasData.value
+    const stepsData = JSON.stringify(data)
     const result = await apiPost(`/process/${currentDesignId.value}/design`, {
       steps: stepsData
     })
@@ -999,6 +816,14 @@ const saveDesign = async () => {
   } finally {
     savingDesign.value = false
   }
+}
+
+// 关闭设计器
+const closeDesigner = () => {
+  designerVisible.value = false
+  currentDesignId.value = null
+  currentProcess.value = {}
+  canvasData.value = { nodes: [], edges: [] }
 }
 
 const handleSizeChange = (size) => { pagination.size = size; pagination.page = 1 }
@@ -2292,10 +2117,267 @@ onMounted(() => { loadProcesses() })
   background: #f0f5ff;
 }
 
-.robot-count-hint {
-  font-size: 12px;
-  color: #67c23a;
-  margin-top: 4px;
-  margin-left: 4px;
+</style>
+
+<style>
+/* 流程设计器 - 页面内嵌模式（保持在布局内，不覆盖全屏） */
+.designer-page-container {
+  background: #f0f2f5;
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 120px);
+}
+
+.designer-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 32px;
+  background: white;
+  border-bottom: 1px solid #e8ecef;
+  box-shadow: 0 1px 3px rgba(44, 62, 80, 0.04);
+  flex-shrink: 0;
+}
+
+.designer-nav .nav-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.designer-nav .back-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #7f8c8d;
+  font-size: 14px;
+  padding: 8px 14px;
+  border-radius: 6px;
+  transition: all 0.25s ease;
+}
+
+.designer-nav .back-btn:hover {
+  color: #2c3e50;
+  background: #f5f7fa;
+}
+
+.designer-nav .nav-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.designer-nav .nav-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.designer-nav .nav-actions .el-button {
+  border-radius: 6px;
+  padding: 9px 18px;
+  font-size: 14px;
+  transition: all 0.25s ease;
+}
+
+.designer-main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* 画布设计器容器 */
+.designer-main-content > div {
+  flex: 1;
+  overflow: hidden;
+}
+
+.designer-page-container .steps-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 32px;
+  background: #f0f2f5;
+}
+
+.designer-page-container .steps-wrapper {
+  min-height: 350px;
+}
+
+.designer-page-container .steps-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.designer-page-container .step-card {
+  background: white;
+  border-radius: 10px;
+  padding: 16px 20px;
+  box-shadow: 0 2px 8px rgba(26, 31, 54, 0.06);
+  border: 1px solid transparent;
+  transition: all 0.25s ease;
+}
+
+.designer-page-container .step-card:hover {
+  border-color: #409eff;
+  box-shadow: 0 4px 16px rgba(64, 158, 255, 0.15);
+  transform: translateY(-2px);
+}
+
+.designer-page-container .step-card-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.designer-page-container .step-drag-handle {
+  cursor: move;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background: #f5f7fa;
+  color: #909399;
+  transition: all 0.2s ease;
+}
+
+.designer-page-container .step-card:hover .step-drag-handle {
+  background: #e4e7ed;
+  color: #409eff;
+}
+
+.designer-page-container .step-number {
+  flex-shrink: 0;
+}
+
+.designer-page-container .number-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1a1f36 0%, #2d3748 100%);
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+  box-shadow: 0 2px 6px rgba(26, 31, 54, 0.25);
+}
+
+.designer-page-container .step-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.designer-page-container .step-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.designer-page-container .field-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.designer-page-container .field-label {
+  font-size: 13px;
+  color: #606266;
+  font-weight: 500;
+  min-width: 95px;
+  text-align: right;
+}
+
+.designer-page-container .field-input,
+.designer-page-container .field-select {
+  flex: 1;
+}
+
+.designer-page-container .robot-display {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.designer-page-container .field-input .el-input__wrapper,
+.designer-page-container .field-select .el-select__wrapper {
+  border-radius: 6px;
+  box-shadow: 0 0 0 1px #dcdfe6 inset;
+  transition: all 0.2s ease;
+}
+
+.designer-page-container .field-input:hover .el-input__wrapper,
+.designer-page-container .field-select:hover .el-select__wrapper {
+  box-shadow: 0 0 0 1px #409eff inset;
+}
+
+.designer-page-container .field-input:focus-within .el-input__wrapper,
+.designer-page-container .field-select:focus-within .el-select__wrapper {
+  box-shadow: 0 0 0 1px #409eff inset;
+}
+
+.designer-page-container .step-actions {
+  flex-shrink: 0;
+}
+
+.designer-page-container .delete-btn {
+  padding: 6px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.designer-page-container .delete-btn:hover {
+  background: #fef0f0;
+}
+
+.designer-page-container .empty-steps {
+  padding: 60px 20px;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(26, 31, 54, 0.06);
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.designer-page-container .empty-steps:hover {
+  box-shadow: 0 4px 16px rgba(26, 31, 54, 0.1);
+}
+
+.designer-footer-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 32px;
+  background: white;
+  border-top: 1px solid #e8ecef;
+  box-shadow: 0 -1px 3px rgba(44, 62, 80, 0.04);
+  flex-shrink: 0;
+}
+
+.designer-footer-bar .step-count {
+  font-size: 13px;
+  color: #606266;
+}
+
+.designer-footer-bar .footer-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.designer-footer-bar .footer-buttons .el-button {
+  min-width: 100px;
+  border-radius: 6px;
+  transition: all 0.25s ease;
+}
+
+.designer-footer-bar .footer-buttons .el-button:hover {
+  transform: translateY(-1px);
 }
 </style>
