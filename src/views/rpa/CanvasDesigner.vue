@@ -22,8 +22,72 @@
       </div>
     </div>
 
-    <!-- 画布区域 -->
-    <div class="canvas-container" ref="canvasContainer">
+    <!-- 主体区域：左侧组件面板 + 画布 -->
+    <div class="designer-body">
+      <!-- 左侧机器人组件面板 -->
+      <div class="robot-panel">
+        <div class="panel-header">
+          <span class="panel-title">机器人组件</span>
+          <el-input 
+            v-model="robotSearch" 
+            placeholder="搜索机器人..." 
+            size="small"
+            clearable
+            class="robot-search"
+          >
+            <template #prefix><el-icon><Search /></el-icon></template>
+          </el-input>
+        </div>
+        
+        <div class="robot-list">
+          <div 
+            v-for="category in groupedRobots" 
+            :key="category.code"
+            class="robot-category"
+          >
+            <div class="category-header" @click="toggleCategory(category.code)">
+              <div class="category-info">
+                <span class="category-name">{{ category.name }}</span>
+                <el-tag size="small" type="info" effect="plain">{{ category.robots.length }}</el-tag>
+              </div>
+              <el-icon class="arrow-icon" :class="{ expanded: expandedCategories[category.code] }">
+                <ArrowDown />
+              </el-icon>
+            </div>
+            
+            <div v-show="expandedCategories[category.code]" class="category-robots">
+              <div 
+                v-for="robot in category.robots"
+                :key="robot.id"
+                class="robot-item"
+                draggable="true"
+                @dragstart="handleRobotDragStart($event, robot)"
+                :class="{ 'robot-dragging': draggingRobot?.id === robot.id }"
+              >
+                <div class="robot-info">
+                  <el-icon class="robot-icon">
+                    <Monitor />
+                  </el-icon>
+                  <span class="robot-name">{{ robot.name }}</span>
+                </div>
+                <el-tag 
+                  size="small" 
+                  :type="robot.status === 'idle' ? 'success' : robot.status === 'busy' ? 'warning' : 'info'"
+                >
+                  {{ robot.status === 'idle' ? '空闲' : robot.status === 'busy' ? '忙碌' : '离线' }}
+                </el-tag>
+              </div>
+            </div>
+          </div>
+          
+          <div v-if="groupedRobots.length === 0" class="empty-robots">
+            <el-empty description="暂无机器人" :image-size="60" />
+          </div>
+        </div>
+      </div>
+
+      <!-- 画布区域 -->
+      <div class="canvas-container" ref="canvasContainer">
       <svg 
         class="canvas-svg" 
         :width="canvasWidth" 
@@ -78,11 +142,24 @@
             :key="node.id"
             :transform="`translate(${node.x}, ${node.y})`"
             class="node-group"
-            :class="{ 'selected': selectedNodeId === node.id }"
+            :class="{ 'selected': selectedNodeId === node.id, 'drop-target': isDropTarget === node.id }"
             @mousedown="handleNodeMouseDown($event, node)"
           >
             <!-- 流程节点（方框） -->
             <g v-if="node.type === 'process'">
+              <!-- 透明接收区域用于拖拽 - 放在最底层 -->
+              <rect
+                x="-80"
+                y="-30"
+                width="160"
+                height="60"
+                fill="transparent"
+                class="drop-area"
+                @dragover.prevent="handleNodeDragOver($event, node)"
+                @dragenter.prevent="handleNodeDragEnter($event, node)"
+                @dragleave="handleNodeDragLeave($event)"
+                @drop.prevent="handleNodeDrop($event, node)"
+              />
               <rect
                 x="-80"
                 y="-30"
@@ -92,9 +169,10 @@
                 ry="8"
                 class="node-rect process-node"
                 :class="{ 'has-robot': node.robotId }"
+                style="pointer-events: none;"
               />
-              <text x="0" y="-8" text-anchor="middle" class="node-title">{{ node.name }}</text>
-              <text x="0" y="12" text-anchor="middle" class="node-subtitle">
+              <text x="0" y="-8" text-anchor="middle" class="node-title" style="pointer-events: none;">{{ node.name }}</text>
+              <text x="0" y="12" text-anchor="middle" class="node-subtitle" style="pointer-events: none;">
                 {{ node.robotName || '未绑定机器人' }}
               </text>
               <!-- 连接点 - 上 -->
@@ -109,12 +187,23 @@
 
             <!-- 条件节点（菱形） -->
             <g v-if="node.type === 'condition'">
+              <!-- 透明接收区域用于拖拽 - 放在最底层 -->
+              <polygon
+                points="0,-50 80,0 0,50 -80,0"
+                fill="transparent"
+                class="drop-area"
+                @dragover.prevent="handleNodeDragOver($event, node)"
+                @dragenter.prevent="handleNodeDragEnter($event, node)"
+                @dragleave="handleNodeDragLeave($event)"
+                @drop.prevent="handleNodeDrop($event, node)"
+              />
               <polygon
                 points="0,-50 80,0 0,50 -80,0"
                 class="node-polygon condition-node"
+                style="pointer-events: none;"
               />
-              <text x="0" y="-10" text-anchor="middle" class="node-title">{{ node.name }}</text>
-              <text x="0" y="10" text-anchor="middle" class="node-subtitle">
+              <text x="0" y="-10" text-anchor="middle" class="node-title" style="pointer-events: none;">{{ node.name }}</text>
+              <text x="0" y="10" text-anchor="middle" class="node-subtitle" style="pointer-events: none;">
                 {{ node.condition || '设置条件' }}
               </text>
               <!-- 连接点 - 上 -->
@@ -281,11 +370,12 @@
       </div>
     </div>
   </div>
+  </div>
 </template>
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
-import { Plus, Delete, Grid, Close } from '@element-plus/icons-vue'
+import { Plus, Delete, Grid, Close, Search, Monitor, ArrowDown } from '@element-plus/icons-vue'
 import { apiGet } from '../../utils/api.js'
 
 const props = defineProps({
@@ -346,6 +436,124 @@ const loadData = (data) => {
     nodes.value = []
     edges.value = []
   }
+}
+
+// 机器人搜索
+const robotSearch = ref('')
+
+// 机器人组件分类展开状态
+const expandedCategories = ref({})
+
+// 正在拖拽的机器人
+const draggingRobot = ref(null)
+
+// 拖拽目标节点
+const isDropTarget = ref(null)
+
+// 按分类分组的机器人
+const groupedRobots = computed(() => {
+  const search = robotSearch.value.toLowerCase()
+  const categories = {}
+  
+  props.robots.forEach(robot => {
+    const categoryCode = robot.robotCategory || 'other'
+    const categoryName = props.robotCategories.find(c => c.code === categoryCode)?.name || '其他'
+    
+    if (!categories[categoryCode]) {
+      categories[categoryCode] = {
+        code: categoryCode,
+        name: categoryName,
+        robots: []
+      }
+    }
+    
+    // 搜索过滤
+    if (!search || robot.name.toLowerCase().includes(search)) {
+      categories[categoryCode].robots.push(robot)
+    }
+  })
+  
+  return Object.values(categories)
+})
+
+// 切换分类展开状态
+const toggleCategory = (code) => {
+  expandedCategories.value[code] = !expandedCategories.value[code]
+}
+
+// 机器人拖拽开始
+const handleRobotDragStart = (event, robot) => {
+  console.log('开始拖拽机器人:', robot.name, robot.id)
+  draggingRobot.value = robot
+  event.dataTransfer.setData('text/plain', robot.id) // 同时设置text/plain兼容不同浏览器
+  event.dataTransfer.setData('robotId', robot.id)
+  event.dataTransfer.effectAllowed = 'copy'
+}
+
+// 节点拖拽悬停
+const handleNodeDragOver = (event, node) => {
+  event.preventDefault() // 必须调用才能允许drop
+  event.dataTransfer.dropEffect = 'copy'
+}
+
+// 节点拖拽进入
+const handleNodeDragEnter = (event, node) => {
+  console.log('拖拽进入节点:', node.name)
+  event.preventDefault() // 必须调用才能允许drop
+  isDropTarget.value = node.id
+}
+
+// 节点拖拽离开
+const handleNodeDragLeave = (event) => {
+  // 需要检查是否真正离开节点，避免子元素触发
+  const rect = event.currentTarget.getBoundingClientRect()
+  const x = event.clientX
+  const y = event.clientY
+  
+  if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+    isDropTarget.value = null
+  }
+}
+
+// 节点拖拽放置
+const handleNodeDrop = (event, node) => {
+  event.preventDefault()
+  event.stopPropagation()
+  isDropTarget.value = null
+  
+  // 获取机器人ID
+  const robotIdStr = event.dataTransfer.getData('robotId')
+  
+  if (!robotIdStr) {
+    return
+  }
+  
+  // 尝试多种类型匹配（字符串、数字）
+  let robot = null
+  
+  // 先尝试字符串匹配
+  robot = props.robots.find(r => String(r.id) === robotIdStr)
+  
+  // 如果找不到，尝试数字匹配
+  if (!robot) {
+    const robotIdNum = Number(robotIdStr)
+    robot = props.robots.find(r => r.id === robotIdNum)
+  }
+  
+  if (!robot) {
+    console.error('未找到机器人, robotId:', robotIdStr, '机器人列表:', props.robots)
+    return
+  }
+  
+  // 绑定机器人到节点
+  node.robotId = robot.id
+  node.robotName = robot.name
+  node.category = robot.robotCategory || ''
+  
+  // 自动更新属性面板
+  selectedNodeId.value = node.id
+  
+  saveData()
 }
 
 // 初始化数据 - 只在外部传入新对象时加载，避免内部修改触发的循环
@@ -680,6 +888,144 @@ defineExpose({
   height: 100%;
   background: #f5f7fa;
   position: relative;
+}
+
+/* 主体区域布局 */
+.designer-body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* 左侧机器人组件面板 */
+.robot-panel {
+  width: 280px;
+  background: white;
+  border-right: 1px solid #e8ecef;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
+}
+
+.robot-panel .panel-header {
+  padding: 16px;
+  border-bottom: 1px solid #e8ecef;
+}
+
+.robot-panel .panel-title {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 12px;
+}
+
+.robot-search {
+  width: 100%;
+}
+
+.robot-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.robot-category {
+  margin-bottom: 4px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.category-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+.category-header:hover {
+  background: #f5f7fa;
+}
+
+.category-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.category-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #303133;
+}
+
+.arrow-icon {
+  transition: transform 0.3s;
+  color: #909399;
+}
+
+.arrow-icon.expanded {
+  transform: rotate(180deg);
+}
+
+.category-robots {
+  padding: 4px 8px;
+  background: #fafbfc;
+}
+
+.robot-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  margin: 4px 0;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #e4e7ed;
+  cursor: grab;
+  transition: all 0.2s;
+}
+
+.robot-item:hover {
+  border-color: #409eff;
+  box-shadow: 0 2px 8px rgba(64, 158, 255, 0.15);
+  transform: translateX(2px);
+}
+
+.robot-item.robot-dragging {
+  opacity: 0.5;
+  border-color: #409eff;
+}
+
+.robot-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.robot-icon {
+  font-size: 18px;
+  color: #409eff;
+  flex-shrink: 0;
+}
+
+.robot-name {
+  font-size: 13px;
+  color: #303133;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.empty-robots {
+  padding: 40px 20px;
+  text-align: center;
 }
 
 /* 工具栏 */
