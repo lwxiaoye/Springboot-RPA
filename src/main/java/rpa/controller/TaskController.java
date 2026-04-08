@@ -22,7 +22,9 @@ import org.springframework.web.bind.annotation.*;
 import rpa.entity.Task;
 import rpa.service.TaskService;
 import rpa.service.ExecutionLogService;
+import rpa.service.RpaProcessService;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +37,7 @@ public class TaskController {
 
     private final TaskService taskService;
     private final ExecutionLogService executionLogService;
+    private final RpaProcessService rpaProcessService;
 
     @GetMapping
     public Map<String, Object> list(@RequestParam(required = false) Long assigneeId,
@@ -82,13 +85,35 @@ public class TaskController {
                 assigneeId = Long.valueOf(assigneeIdObj.toString());
             }
             String assigneeName = (String) request.get("assigneeName");
-            
-            Task task = taskService.create(name, category, priority, null, null, assigneeId, assigneeName);
+
+            // 处理单个流程
+            Object processIdObj = request.get("processId");
+            Long processId = null;
+            if (processIdObj != null) {
+                processId = Long.valueOf(processIdObj.toString());
+            }
+            String processName = (String) request.get("processName");
+
+            // 处理多个流程
+            String processIds = null;
+            String processNames = null;
+            Object processIdsObj = request.get("processIds");
+            if (processIdsObj instanceof List) {
+                List<?> idsList = (List<?>) processIdsObj;
+                processIds = idsList.toString(); // JSON格式数组字符串
+            }
+            Object processNamesObj = request.get("processNames");
+            if (processNamesObj instanceof List) {
+                List<?> namesList = (List<?>) processNamesObj;
+                processNames = namesList.toString();
+            }
+
+            Task task = taskService.create(name, category, priority, processId, processIds, processName, processNames, assigneeId, assigneeName);
             response.put("code", 0);
             response.put("message", "创建成功");
             response.put("data", task);
-            
-            executionLogService.create(task.getId(), null, null, 
+
+            executionLogService.create(task.getId(), null, null,
                     "任务创建", "pending", "任务已创建等待分配");
         } catch (Exception e) {
             response.put("code", -1);
@@ -148,8 +173,30 @@ public class TaskController {
             String name = (String) request.get("name");
             String category = (String) request.get("category");
             String priority = (String) request.get("priority");
-            
-            Task task = taskService.update(id, name, category, priority);
+
+            // 处理单个流程
+            Object processIdObj = request.get("processId");
+            Long processId = null;
+            if (processIdObj != null) {
+                processId = Long.valueOf(processIdObj.toString());
+            }
+            String processName = (String) request.get("processName");
+
+            // 处理多个流程
+            String processIds = null;
+            String processNames = null;
+            Object processIdsObj = request.get("processIds");
+            if (processIdsObj instanceof List) {
+                List<?> idsList = (List<?>) processIdsObj;
+                processIds = idsList.toString();
+            }
+            Object processNamesObj = request.get("processNames");
+            if (processNamesObj instanceof List) {
+                List<?> namesList = (List<?>) processNamesObj;
+                processNames = namesList.toString();
+            }
+
+            Task task = taskService.update(id, name, category, priority, processId, processIds, processName, processNames);
             response.put("code", 0);
             response.put("message", "更新成功");
             response.put("data", task);
@@ -167,6 +214,48 @@ public class TaskController {
             taskService.delete(id);
             response.put("code", 0);
             response.put("message", "删除成功");
+        } catch (Exception e) {
+            response.put("code", -1);
+            response.put("message", e.getMessage());
+        }
+        return response;
+    }
+
+    /**
+     * 批量执行任务绑定的多个流程
+     */
+    @PostMapping("/{id}/execute")
+    public Map<String, Object> executeTaskProcesses(@PathVariable Long id) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            Task task = taskService.findById(id).orElseThrow(() -> new RuntimeException("任务不存在"));
+
+            List<Map<String, Object>> results = new ArrayList<>();
+
+            // 执行多个流程
+            String processIdsStr = task.getProcessIds();
+            if (processIdsStr != null && !processIdsStr.isEmpty()) {
+                // 解析JSON数组格式的流程ID
+                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                List<Long> processIdList = mapper.readValue(processIdsStr, List.class);
+
+                for (Long processId : processIdList) {
+                    Map<String, Object> result = rpaProcessService.execute(processId);
+                    results.add(result);
+                }
+            } else if (task.getProcessId() != null) {
+                // 执行单个流程
+                Map<String, Object> result = rpaProcessService.execute(task.getProcessId());
+                results.add(result);
+            } else {
+                response.put("code", -1);
+                response.put("message", "任务未绑定任何流程");
+                return response;
+            }
+
+            response.put("code", 0);
+            response.put("message", "流程执行已启动");
+            response.put("data", results);
         } catch (Exception e) {
             response.put("code", -1);
             response.put("message", e.getMessage());

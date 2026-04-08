@@ -101,13 +101,22 @@
             <span class="menu-text" v-if="!sidebarCollapsed">流程仓库</span>
           </div>
 
-          <!-- 队列与触发器 -->
-          <div class="menu-item"
-            :class="{ active: activeMenu === 'queue' }"
-            @click="switchMenu('queue')"
+          <!-- 队列管理 -->
+          <div class="menu-item submenu-item"
+            :class="{ active: activeMenu === 'queues' }"
+            @click="switchMenu('queues')"
           >
-            <el-icon class="menu-icon"><Connection /></el-icon>
-            <span class="menu-text" v-if="!sidebarCollapsed">队列与触发器</span>
+            <el-icon class="menu-icon"><Operation /></el-icon>
+            <span class="menu-text" v-if="!sidebarCollapsed">队列管理</span>
+          </div>
+
+          <!-- 触发器管理 -->
+          <div class="menu-item submenu-item"
+            :class="{ active: activeMenu === 'triggers' }"
+            @click="switchMenu('triggers')"
+          >
+            <el-icon class="menu-icon"><Timer /></el-icon>
+            <span class="menu-text" v-if="!sidebarCollapsed">触发器管理</span>
           </div>
 
           <!-- 执行日志 -->
@@ -135,6 +144,51 @@
           >
             <el-icon class="menu-icon"><Key /></el-icon>
             <span class="menu-text" v-if="!sidebarCollapsed">凭据中心</span>
+          </div>
+
+          <!-- AI能力中心 -->
+          <div class="menu-item"
+            :class="{ active: activeMenu === 'ai' }"
+            @click="switchMenu('ai')"
+          >
+            <el-icon class="menu-icon"><MagicStick /></el-icon>
+            <span class="menu-text" v-if="!sidebarCollapsed">AI能力</span>
+          </div>
+
+          <!-- 录屏管理 -->
+          <div class="menu-item"
+            :class="{ active: activeMenu === 'recording' }"
+            @click="switchMenu('recording')"
+          >
+            <el-icon class="menu-icon"><VideoCamera /></el-icon>
+            <span class="menu-text" v-if="!sidebarCollapsed">录屏管理</span>
+          </div>
+
+          <!-- 脚本执行器 -->
+          <div class="menu-item"
+            :class="{ active: activeMenu === 'script' }"
+            @click="switchMenu('script')"
+          >
+            <el-icon class="menu-icon"><Promotion /></el-icon>
+            <span class="menu-text" v-if="!sidebarCollapsed">脚本执行</span>
+          </div>
+
+          <!-- 数据脱敏 -->
+          <div class="menu-item"
+            :class="{ active: activeMenu === 'masking' }"
+            @click="switchMenu('masking')"
+          >
+            <el-icon class="menu-icon"><View /></el-icon>
+            <span class="menu-text" v-if="!sidebarCollapsed">数据脱敏</span>
+          </div>
+
+          <!-- 分布式锁 -->
+          <div class="menu-item"
+            :class="{ active: activeMenu === 'locks' }"
+            @click="switchMenu('locks')"
+          >
+            <el-icon class="menu-icon"><Unlock /></el-icon>
+            <span class="menu-text" v-if="!sidebarCollapsed">分布式锁</span>
           </div>
 
           <!-- 报表分析 -->
@@ -225,7 +279,13 @@ import {
   Search,
   Bell,
   Connection,
-  Tools
+  Tools,
+  Timer,
+  MagicStick,
+  VideoCamera,
+  Promotion,
+  View,
+  Unlock
 } from '@element-plus/icons-vue'
 
 const router = useRouter()
@@ -262,7 +322,8 @@ const routeMap = {
   tasks: '/rpa/tasks',
   robots: '/rpa/robots',
   processes: '/rpa/processes',
-  queue: '/rpa/queue',
+  queues: '/rpa/queues',
+  triggers: '/rpa/triggers',
   logs: '/rpa/logs',
   audit: '/rpa/audit',
   credentials: '/rpa/credentials',
@@ -273,7 +334,12 @@ const routeMap = {
   dataParse: '/rpa/data-parse',
   dataProcess: '/rpa/data-process',
   dataQuery: '/rpa/data-query',
-  invoice: '/rpa/invoice'
+  invoice: '/rpa/invoice',
+  ai: '/rpa/ai',
+  recording: '/rpa/recording',
+  script: '/rpa/script',
+  masking: '/rpa/masking',
+  locks: '/rpa/locks'
 }
   router.push(routeMap[menu])
 }
@@ -337,7 +403,8 @@ onMounted(() => {
   else if (path.includes('/rpa/tasks')) activeMenu.value = 'tasks'
   else if (path.includes('/rpa/robots')) activeMenu.value = 'robots'
   else if (path.includes('/rpa/processes')) activeMenu.value = 'processes'
-  else if (path.includes('/rpa/queue')) activeMenu.value = 'queue'
+  else if (path.includes('/rpa/queues')) activeMenu.value = 'queues'
+  else if (path.includes('/rpa/triggers')) activeMenu.value = 'triggers'
   else if (path.includes('/rpa/logs')) activeMenu.value = 'logs'
   else if (path.includes('/rpa/audit')) activeMenu.value = 'audit'
   else if (path.includes('/rpa/credentials')) activeMenu.value = 'credentials'

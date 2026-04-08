@@ -24,14 +24,31 @@
       <el-table-column prop="name" label="流程名称" min-width="180" show-overflow-tooltip />
       <el-table-column prop="code" label="流程编码" min-width="140" />
       <el-table-column prop="version" label="版本" width="80" align="center" />
-      <el-table-column prop="description" label="描述" min-width="200" show-overflow-tooltip>
-        <template #default="{ row }">{{ row.description || '-' }}</template>
+      <el-table-column prop="requiredCategory" label="需要机器人" width="100" align="center">
+        <template #default="{ row }">
+          <el-tag :type="getCategoryType(row.requiredCategory)" size="small">
+            {{ getCategoryText(row.requiredCategory) }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column prop="queueName" label="绑定队列" width="120" show-overflow-tooltip>
+        <template #default="{ row }">
+          <span v-if="row.queueName" class="queue-tag">{{ row.queueName }}</span>
+          <span v-else class="text-muted">-</span>
+        </template>
       </el-table-column>
       <el-table-column prop="status" label="状态" width="90" align="center">
         <template #default="{ row }">
           <el-tag :type="row.status === 'active' ? 'success' : 'info'" size="small">
             {{ row.status === 'active' ? '已发布' : '草稿' }}
           </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column prop="taskCount" label="执行次数" width="80" align="center" />
+      <el-table-column prop="todayExecutions" label="今日" width="60" align="center" />
+      <el-table-column prop="totalDataCount" label="采集数据" width="80" align="center">
+        <template #default="{ row }">
+          <span class="data-count">{{ formatNumber(row.totalDataCount) }}</span>
         </template>
       </el-table-column>
       <el-table-column prop="creatorName" label="创建人" width="100" align="center" />
@@ -90,6 +107,30 @@
           <el-form-item label="版本号" prop="version">
             <el-input v-model="processForm.version" placeholder="请输入版本号，如：1.0.0" />
           </el-form-item>
+          <el-form-item label="机器人分类">
+            <el-select v-model="processForm.requiredCategory" placeholder="选择需要的机器人分类" style="width: 100%" clearable>
+              <el-option v-for="cat in robotCategories" :key="cat.code" :label="cat.name" :value="cat.code" />
+            </el-select>
+            <div class="form-tip">指定执行此流程需要的机器人分类</div>
+          </el-form-item>
+          <el-form-item label="绑定队列">
+            <el-select v-model="processForm.queueId" placeholder="选择绑定的任务队列" style="width: 100%" clearable>
+              <el-option v-for="q in queues" :key="q.id" :label="q.name" :value="q.id" />
+            </el-select>
+            <div class="form-tip">流程任务将投递到此队列执行</div>
+          </el-form-item>
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="超时时间">
+                <el-input-number v-model="processForm.timeoutMinutes" :min="1" :max="1440" style="width: 100%" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="重试次数">
+                <el-input-number v-model="processForm.retryCount" :min="0" :max="10" style="width: 100%" />
+              </el-form-item>
+            </el-col>
+          </el-row>
           <el-form-item label="流程描述">
             <el-input v-model="processForm.description" type="textarea" :rows="3" placeholder="请输入流程描述" />
           </el-form-item>
@@ -141,7 +182,7 @@
                       <template #prefix><el-icon><Folder /></el-icon></template>
                       <el-option v-for="cat in robotCategories" :key="cat.code" :value="cat.code" :label="cat.name" />
                     </el-select>
-                    <el-select v-model="element.robotId" placeholder="选择执行机器人" size="default" filterable clearable class="step-robot-select" :disabled="!element.category">
+                    <el-select v-model="element.robotIds" placeholder="选择执行机器人（可多选）" size="default" filterable clearable class="step-robot-select" :disabled="!element.category" multiple collapse-tags collapse-tags-tooltip>
                       <template #prefix><el-icon><Monitor /></el-icon></template>
                       <el-option v-for="robot in getFilteredRobots(element.category)" :key="robot.id" :value="robot.id" :label="robot.name">
                         <div class="robot-option">
@@ -152,6 +193,9 @@
                         </div>
                       </el-option>
                     </el-select>
+                  </div>
+                  <div v-if="element.robotIds && element.robotIds.length > 0" class="robot-count-hint">
+                    已选 {{ element.robotIds.length }} 个机器人
                   </div>
                 </div>
                 <el-button link type="danger" @click="removeWizardStep(index)">
@@ -379,13 +423,15 @@
                         <div class="field-row">
                           <label class="field-label">执行机器人：</label>
                           <div class="robot-display">
-                            <el-select 
-                              v-model="element.robotId" 
-                              placeholder="请选择执行机器人" 
+                            <el-select
+                              v-model="element.robotIds"
+                              placeholder="请选择执行机器人（可多选）"
                               size="default"
                               class="field-select"
                               filterable
-                              clearable
+                              multiple
+                              collapse-tags
+                              collapse-tags-tooltip
                               :disabled="!element.category"
                             >
                               <template #prefix>
@@ -395,11 +441,12 @@
                                 v-for="robot in getFilteredRobots(element.category)"
                                 :key="robot.id"
                                 :value="robot.id"
+                                :label="robot.name"
                               >
                                 <div class="robot-option">
                                   <span class="robot-name">{{ robot.name }}</span>
-                                  <el-tag 
-                                    size="small" 
+                                  <el-tag
+                                    size="small"
                                     :type="robot.status === 'idle' ? 'success' : robot.status === 'busy' ? 'warning' : 'info'"
                                     effect="plain"
                                   >
@@ -408,6 +455,9 @@
                                 </div>
                               </el-option>
                             </el-select>
+                            <span class="robot-hint" v-if="element.robotIds && element.robotIds.length > 0">
+                              已选 {{ element.robotIds.length }} 个机器人
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -461,6 +511,7 @@ const router = useRouter()
 
 const robots = ref([])
 const robotCategories = ref([])
+const queues = ref([])
 
 const loading = ref(false)
 const submitLoading = ref(false)
@@ -493,7 +544,11 @@ const processForm = reactive({
   code: '',
   version: '1.0.0',
   description: '',
-  status: 'draft'
+  status: 'draft',
+  requiredCategory: '',
+  queueId: null,
+  retryCount: 0,
+  timeoutMinutes: 60
 })
 
 const formRules = {
@@ -540,16 +595,8 @@ const loadProcesses = async () => {
 }
 
 const showCreateModal = () => {
-  isEdit.value = false
-  currentEditId.value = null
-  wizardStep.value = 1
-  wizardSteps.value = []
-  tempProcessId.value = null
-  Object.assign(processForm, { name: '', code: '', version: '1.0.0', description: '', status: 'draft' })
-  // 预加载机器人和分类
-  loadRobots()
-  loadRobotCategories()
-  dialogVisible.value = true
+  // 跳转到可视化设计器页面创建新流程
+  router.push({ path: '/rpa/process-designer' })
 }
 
 // 下一步
@@ -611,13 +658,13 @@ const skipDesign = () => {
 
 // 添加向导步骤
 const addWizardStep = () => {
-  wizardSteps.value.push({ 
-    id: Date.now(), 
-    name: '新步骤', 
+  wizardSteps.value.push({
+    id: Date.now(),
+    name: '新步骤',
     type: '',
     description: '',
     category: '',
-    robotId: null,
+    robotIds: [],
     config: {}
   })
 }
@@ -789,33 +836,11 @@ const handleDeleteProcess = async () => {
 
 // 打开流程设计器
 const openDesigner = async (process) => {
-  currentDesignId.value = process.id
-  currentProcess.value = process
-  
-  // 加载机器人列表和分类
-  await loadRobots()
-  await loadRobotCategories()
-  
-  try {
-    const result = await apiGet(`/process/${process.id}/design`)
-    if (result.code === 0) {
-      if (result.data) {
-        try {
-          steps.value = JSON.parse(result.data)
-        } catch {
-          steps.value = []
-        }
-      } else {
-        steps.value = []
-      }
-    } else {
-      steps.value = []
-    }
-  } catch {
-    steps.value = []
-  }
-  
-  designerVisible.value = true
+  // 跳转到独立的可视化设计器页面
+  router.push({ 
+    path: '/rpa/process-designer', 
+    query: { id: process.id } 
+  })
 }
 
 // 加载机器人列表
@@ -850,14 +875,13 @@ const getFilteredRobots = (category) => {
 
 // 分类变更时清空已选机器人
 const onCategoryChange = (element) => {
-  element.robotId = null
+  element.robotIds = []
 }
 
 // 步骤类型变更时清空已选机器人
 const onStepTypeChange = (element) => {
-  // 可以根据步骤类型自动选择对应的分类
-  element.category = null
-  element.robotId = null
+  element.category = ''
+  element.robotIds = []
 }
 
 // 获取机器人状态信息
@@ -877,6 +901,37 @@ const getRobotStatus = (robotId) => {
     statusText: status.text,
     type: status.type
   }
+}
+
+// 获取分类标签类型
+const getCategoryType = (category) => {
+  const typeMap = {
+    'data_collect': 'success',
+    'data_parse': 'warning',
+    'data_process': 'primary',
+    'data_storage': 'info'
+  }
+  return typeMap[category] || ''
+}
+
+// 获取分类文本
+const getCategoryText = (category) => {
+  const textMap = {
+    'data_collect': '数据采集',
+    'data_parse': '数据解析',
+    'data_process': '数据加工',
+    'data_storage': '数据落库'
+  }
+  return textMap[category] || category || '-'
+}
+
+// 格式化数字
+const formatNumber = (num) => {
+  if (num === null || num === undefined) return '0'
+  if (typeof num !== 'number') num = parseInt(num) || 0
+  if (num >= 10000) return (num / 10000).toFixed(1) + 'w'
+  if (num >= 1000) return (num / 1000).toFixed(1) + 'k'
+  return num.toString()
 }
 
 // 步骤类型标签映射
@@ -909,8 +964,7 @@ const addStep = () => {
     type: '',
     description: '',
     category: '',
-    robotId: null,
-    robotName: '',
+    robotIds: [],
     config: {}
   })
 }
@@ -2236,5 +2290,12 @@ onMounted(() => { loadProcesses() })
 .empty-wizard-steps:hover {
   border-color: #409eff;
   background: #f0f5ff;
+}
+
+.robot-count-hint {
+  font-size: 12px;
+  color: #67c23a;
+  margin-top: 4px;
+  margin-left: 4px;
 }
 </style>

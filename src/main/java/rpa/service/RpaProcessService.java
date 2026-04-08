@@ -348,24 +348,59 @@ public class RpaProcessService {
         long durationSeconds = Duration.between(startTime, endTime).getSeconds();
         String duration = String.format("%02d:%02d:%02d", durationSeconds / 3600, (durationSeconds % 3600) / 60, durationSeconds % 60);
 
-        fullLog.append("=== 流程执行").append(allSuccess ? "完成" : "完成(有错误)").append(" ===\n");
+        // 统计采集到的数据总量
+        int totalDataCount = 0;
+        boolean hasDataCollected = false;
+        for (Map<String, Object> result : stepResults) {
+            Map<String, Object> stepResultData = (Map<String, Object>) result.get("result");
+            if (stepResultData != null && stepResultData.containsKey("dataCount")) {
+                Object dataCountObj = stepResultData.get("dataCount");
+                if (dataCountObj instanceof Number) {
+                    int dataCount = ((Number) dataCountObj).intValue();
+                    totalDataCount += dataCount;
+                    if (dataCount > 0) {
+                        hasDataCollected = true;
+                    }
+                }
+            }
+        }
+
+        fullLog.append("=== 流程执行完成 ===\n");
         fullLog.append("结束时间: ").append(endTime).append("\n");
         fullLog.append("总耗时: ").append(duration).append("\n");
         fullLog.append("成功步骤: ").append(stepResults.stream().filter(r -> "success".equals(r.get("status"))).count()).append("/").append(steps.size()).append("\n");
+        fullLog.append("采集数据: ").append(totalDataCount).append(" 条\n");
 
-        // 更新执行日志
-        final String finalStatus = allSuccess ? "completed" : "completed_with_errors";
+        // 根据数据采集结果判断最终状态
+        // - 如果有步骤失败：failed
+        // - 如果没有数据采集：abnormal（异常）
+        // - 如果全部成功且有数据：completed（正常）
+        // - 如果全部成功但没有数据采集：completed_with_errors 或 abnormal
+        String finalStatus;
+        if (!allSuccess) {
+            finalStatus = "failed";
+            fullLog.append("状态判定: 执行失败（有步骤出错）\n");
+        } else if (totalDataCount > 0) {
+            finalStatus = "completed"; // 正常 - 有数据采集
+            fullLog.append("状态判定: 正常（采集到数据）\n");
+        } else {
+            finalStatus = "abnormal"; // 异常 - 没有数据采集
+            fullLog.append("状态判定: 异常（未采集到数据）\n");
+        }
+
         final String finalMessage = fullLog.toString();
         final LocalDateTime finalEndTime = endTime;
         final String finalDuration = duration;
         final String finalResultData = toJson(stepResults);
-        
+        final int finalDataCount = totalDataCount;
+
         executionLogRepository.findById(logId).ifPresent(execLog -> {
             execLog.setStatus(finalStatus);
             execLog.setMessage(finalMessage);
             execLog.setEndTime(finalEndTime);
             execLog.setDuration(finalDuration);
             execLog.setResultData(finalResultData);
+            execLog.setDataCount(finalDataCount);
             executionLogRepository.save(execLog);
         });
     }

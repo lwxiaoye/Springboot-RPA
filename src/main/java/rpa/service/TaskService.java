@@ -61,20 +61,25 @@ public class TaskService {
      * @param name 任务名称
      * @param category 分类
      * @param priority 优先级
-     * @param processId 流程ID
-     * @param processName 流程名称
+     * @param processId 流程ID（单个）
+     * @param processIds 多个流程ID（JSON格式数组）
+     * @param processName 流程名称（单个）
+     * @param processNames 多个流程名称（JSON格式数组）
      * @param assigneeId 接收人ID
      * @param assigneeName 接收人名称
      * @return 创建的任务
      */
-    public Task create(String name, String category, String priority, 
-                       Long processId, String processName, Long assigneeId, String assigneeName) {
+    public Task create(String name, String category, String priority,
+                       Long processId, String processIds, String processName, String processNames,
+                       Long assigneeId, String assigneeName) {
         Task task = new Task();
         task.setName(name);
         task.setCategory(category);
         task.setPriority(priority);
         task.setProcessId(processId);
+        task.setProcessIds(processIds);
         task.setProcessName(processName);
+        task.setProcessNames(processNames);
         task.setAssigneeId(assigneeId);
         task.setAssigneeName(assigneeName);
         return repository.save(task);
@@ -127,9 +132,14 @@ public class TaskService {
      * @param name 名称
      * @param category 分类
      * @param priority 优先级
+     * @param processId 流程ID（单个）
+     * @param processIds 多个流程ID（JSON格式数组）
+     * @param processName 流程名称（单个）
+     * @param processNames 多个流程名称（JSON格式数组）
      * @return 更新后的任务
      */
-    public Task update(Long taskId, String name, String category, String priority) {
+    public Task update(Long taskId, String name, String category, String priority,
+                      Long processId, String processIds, String processName, String processNames) {
         return repository.findById(taskId).map(task -> {
             if (name != null) {
                 task.setName(name);
@@ -139,6 +149,18 @@ public class TaskService {
             }
             if (priority != null) {
                 task.setPriority(priority);
+            }
+            if (processId != null) {
+                task.setProcessId(processId);
+            }
+            if (processIds != null) {
+                task.setProcessIds(processIds);
+            }
+            if (processName != null) {
+                task.setProcessName(processName);
+            }
+            if (processNames != null) {
+                task.setProcessNames(processNames);
             }
             return repository.save(task);
         }).orElseThrow(() -> new RuntimeException("任务不存在"));

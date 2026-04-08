@@ -44,12 +44,32 @@ public class Task {
     /** 优先级（low-低，normal-普通，high-高，urgent-紧急） */
     private String priority = "normal";
     
-    /** 关联的流程ID */
+    /** 关联的流程ID（单个） */
     private Long processId;
-    
-    /** 关联的流程名称 */
+
+    /** 关联的多个流程ID（JSON格式数组，如 [1,2,3]） */
+    @Column(length = 1000)
+    private String processIds;
+
+    /** 关联的流程名称（单个） */
     private String processName;
-    
+
+    /** 关联的多个流程名称（JSON格式数组） */
+    @Column(length = 2000)
+    private String processNames;
+
+    /** 关联的队列ID */
+    private Long queueId;
+
+    /** 关联的队列名称 */
+    private String queueName;
+
+    /** 追踪ID */
+    private String traceId;
+
+    /** 重试次数 */
+    private Integer retryCount = 0;
+
     /** 分配的机器人ID */
     private Long robotId;
     

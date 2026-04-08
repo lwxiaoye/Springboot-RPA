@@ -1,9 +1,161 @@
 -- ============================================
--- RPA系统数据库结构更新脚本
--- 请逐条执行以下SQL语句
+-- RPA系统数据库结构更新脚本 V2
+-- 新增：任务队列、触发器、审计日志
 -- ============================================
 
 USE rpa_system;
+
+-- ============================================
+-- 1. 任务队列表
+-- ============================================
+CREATE TABLE IF NOT EXISTS task_queue (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
+    name VARCHAR(100) NOT NULL COMMENT '队列名称',
+    code VARCHAR(50) NOT NULL UNIQUE COMMENT '队列编码（唯一）',
+    description VARCHAR(500) COMMENT '队列描述',
+    status VARCHAR(20) DEFAULT 'active' COMMENT '队列状态（active-运行中，paused-暂停，stopped-已停止）',
+    priority_level INT DEFAULT 2 COMMENT '优先级（1-低，2-普通，3-高，4-紧急）',
+    max_concurrent_tasks INT DEFAULT 5 COMMENT '最大并发任务数',
+    current_pending_count INT DEFAULT 0 COMMENT '当前排队任务数',
+    current_running_count INT DEFAULT 0 COMMENT '当前执行任务数',
+    completed_count BIGINT DEFAULT 0 COMMENT '已完成任务数',
+    failed_count BIGINT DEFAULT 0 COMMENT '失败任务数',
+    process_ids TEXT COMMENT '关联的流程ID（JSON格式数组）',
+    process_names TEXT COMMENT '关联的流程名称（JSON格式数组）',
+    required_categories VARCHAR(500) COMMENT '需要的机器人分类（JSON格式数组）',
+    department VARCHAR(100) COMMENT '所属部门',
+    creator VARCHAR(100) COMMENT '创建人',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    enabled TINYINT(1) DEFAULT 1 COMMENT '是否启用',
+    remark TEXT COMMENT '备注',
+    INDEX idx_code (code),
+    INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='任务队列表';
+
+-- 插入默认队列
+INSERT IGNORE INTO task_queue (name, code, description, status, priority_level, max_concurrent_tasks, required_categories, creator)
+VALUES
+    ('发票处理队列', 'INVOICE_QUEUE', '用于发票采集、审核、处理的自动化任务队列', 'active', 3, 10, '["DATA_COLLECT","DATA_PARSE","DATA_PROCESS"]', 'system'),
+    ('数据采集队列', 'DATA_COLLECT_QUEUE', '用于各类数据采集任务的自动化队列', 'active', 2, 5, '["DATA_COLLECT"]', 'system'),
+    ('通用执行队列', 'GENERAL_QUEUE', '通用自动化任务执行队列', 'active', 1, 8, '["GENERAL","DATA_COLLECT","DATA_PARSE","DATA_PROCESS"]', 'system');
+
+-- ============================================
+-- 2. 触发器规则表
+-- ============================================
+CREATE TABLE IF NOT EXISTS trigger_rule (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
+    name VARCHAR(100) NOT NULL COMMENT '触发器名称',
+    code VARCHAR(50) NOT NULL UNIQUE COMMENT '触发器编码（唯一）',
+    description VARCHAR(500) COMMENT '触发器描述',
+    trigger_type VARCHAR(20) NOT NULL COMMENT '触发器类型（schedule-定时，file-文件，api-API，webhook-Webhook）',
+    status VARCHAR(20) DEFAULT 'active' COMMENT '状态（active-启用，paused-暂停，disabled-禁用）',
+    process_id BIGINT COMMENT '关联的流程ID',
+    process_name VARCHAR(200) COMMENT '关联的流程名称',
+    process_code VARCHAR(100) COMMENT '关联的流程编码',
+    queue_id BIGINT COMMENT '关联的队列ID',
+    queue_name VARCHAR(200) COMMENT '关联的队列名称',
+    cron VARCHAR(100) COMMENT 'Cron表达式（定时触发时使用）',
+    schedule_type VARCHAR(20) COMMENT '触发周期类型（minute-分钟，hour-小时，day-天，week-周，month-月）',
+    schedule_time VARCHAR(10) COMMENT '定时执行时间（HH:mm格式）',
+    schedule_days VARCHAR(50) COMMENT '定时执行日期（周：1-7，月：1-31）',
+    watch_path VARCHAR(500) COMMENT '监控目录（文件触发时使用）',
+    file_pattern VARCHAR(200) COMMENT '文件匹配规则（glob模式）',
+    watch_subdirs TINYINT(1) DEFAULT 0 COMMENT '是否监控子目录',
+    api_key VARCHAR(200) COMMENT 'API密钥',
+    webhook_url VARCHAR(500) COMMENT 'Webhook URL',
+    http_method VARCHAR(10) DEFAULT 'POST' COMMENT '请求方法（POST/GET）',
+    trigger_condition TEXT COMMENT '触发条件（JSON格式）',
+    trigger_params TEXT COMMENT '触发参数（JSON格式）',
+    auto_start TINYINT(1) DEFAULT 1 COMMENT '触发后是否自动启动',
+    max_concurrent INT DEFAULT 1 COMMENT '最大并发触发数',
+    total_triggers BIGINT DEFAULT 0 COMMENT '累计触发次数',
+    success_triggers BIGINT DEFAULT 0 COMMENT '成功触发次数',
+    failed_triggers BIGINT DEFAULT 0 COMMENT '失败触发次数',
+    last_trigger_time DATETIME COMMENT '最后触发时间',
+    last_success_time DATETIME COMMENT '最后成功时间',
+    last_failed_time DATETIME COMMENT '最后失败时间',
+    creator VARCHAR(100) COMMENT '创建人',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    enabled TINYINT(1) DEFAULT 1 COMMENT '是否启用',
+    remark TEXT COMMENT '备注',
+    INDEX idx_code (code),
+    INDEX idx_trigger_type (trigger_type),
+    INDEX idx_status (status),
+    INDEX idx_process_id (process_id),
+    INDEX idx_queue_id (queue_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='触发器规则表';
+
+-- ============================================
+-- 3. 审计日志表
+-- ============================================
+CREATE TABLE IF NOT EXISTS audit_log (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
+    module VARCHAR(50) NOT NULL COMMENT '操作模块',
+    action VARCHAR(50) NOT NULL COMMENT '操作类型',
+    target_type VARCHAR(50) COMMENT '操作对象类型',
+    target_id BIGINT COMMENT '操作对象ID',
+    target_name VARCHAR(200) COMMENT '操作对象名称',
+    description VARCHAR(500) COMMENT '操作描述',
+    risk_level VARCHAR(20) DEFAULT 'low' COMMENT '风险等级（low-低，medium-中，high-高）',
+    user_id BIGINT COMMENT '操作人ID',
+    user_name VARCHAR(100) COMMENT '操作人名称',
+    ip VARCHAR(50) COMMENT '操作IP地址',
+    request_params TEXT COMMENT '请求参数',
+    response_result TEXT COMMENT '响应结果',
+    status VARCHAR(20) DEFAULT 'success' COMMENT '执行状态（success-成功，failed-失败）',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    INDEX idx_module (module),
+    INDEX idx_user_id (user_id),
+    INDEX idx_risk_level (risk_level),
+    INDEX idx_create_time (create_time)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='审计日志表';
+
+-- ============================================
+-- 4. 为robot表添加队列关联字段（如果不存在）
+-- ============================================
+-- 注意：以下字段已在 update-db.sql 中添加，此处仅作检查
+-- ALTER TABLE robot ADD COLUMN queue_id BIGINT COMMENT '关联的队列ID';
+-- ALTER TABLE robot ADD COLUMN queue_name VARCHAR(200) COMMENT '关联的队列名称';
+-- ALTER TABLE robot ADD COLUMN allowed_categories VARCHAR(500) COMMENT '可执行的机器人分类（JSON格式数组）';
+-- ALTER TABLE robot ADD COLUMN bound_process_ids TEXT COMMENT '绑定的多个流程ID（JSON格式数组）';
+
+-- ============================================
+-- 5. 为rpa_process表添加队列和触发器关联字段（如果不存在）
+-- ============================================
+-- ALTER TABLE rpa_process ADD COLUMN queue_id BIGINT COMMENT '关联的队列ID';
+-- ALTER TABLE rpa_process ADD COLUMN queue_name VARCHAR(200) COMMENT '关联的队列名称';
+-- ALTER TABLE rpa_process ADD COLUMN trigger_id BIGINT COMMENT '绑定的触发器ID';
+
+-- ============================================
+-- 6. 为execution_log表添加数据导出相关字段（如果不存在）
+-- ============================================
+-- ALTER TABLE execution_log ADD COLUMN data_amount DECIMAL(15,2) DEFAULT 0 COMMENT '采集数据金额';
+-- ALTER TABLE execution_log ADD COLUMN invoice_count INT DEFAULT 0 COMMENT '发票数量';
+
+-- ============================================
+-- 插入示例触发器
+-- ============================================
+INSERT IGNORE INTO trigger_rule (name, code, description, trigger_type, status, process_id, process_name, cron, schedule_type, schedule_time, auto_start, creator)
+SELECT * FROM (
+    SELECT '每日发票采集' AS name, 'DAILY_INVOICE_COLLECT' AS code, '每天凌晨自动执行发票采集任务' AS description, 'schedule' AS trigger_type, 'active' AS status, 4 AS process_id, '数据采集流程' AS process_name, '0 0 2 * * ?' AS cron, 'day' AS schedule_type, '02:00' AS schedule_time, 1 AS auto_start, 'system' AS creator
+) AS tmp
+WHERE NOT EXISTS (SELECT 1 FROM trigger_rule WHERE code = 'DAILY_INVOICE_COLLECT');
+
+INSERT IGNORE INTO trigger_rule (name, code, description, trigger_type, status, process_id, process_name, cron, schedule_type, schedule_time, auto_start, creator)
+SELECT * FROM (
+    SELECT '每周报表生成' AS name, 'WEEKLY_REPORT' AS code, '每周一自动生成报表' AS description, 'schedule' AS trigger_type, 'active' AS status, 5 AS process_id, '报表生成流程' AS process_name, '0 0 8 ? * MON' AS cron, 'week' AS schedule_type, '08:00' AS schedule_time, 1 AS auto_start, 'system' AS creator
+) AS tmp
+WHERE NOT EXISTS (SELECT 1 FROM trigger_rule WHERE code = 'WEEKLY_REPORT');
+
+INSERT IGNORE INTO trigger_rule (name, code, description, trigger_type, status, process_id, process_name, api_key, auto_start, creator)
+SELECT * FROM (
+    SELECT 'API发票触发' AS name, 'API_INVOICE_TRIGGER' AS code, '通过API接口触发发票处理' AS description, 'api' AS trigger_type, 'active' AS status, 3 AS process_id, '发票审核流程' AS process_name, 'rpa_api_key_2024' AS api_key, 1 AS auto_start, 'system' AS creator
+) AS tmp
+WHERE NOT EXISTS (SELECT 1 FROM trigger_rule WHERE code = 'API_INVOICE_TRIGGER');
+
+SELECT '数据库扩展表创建完成！' AS Result;
 
 -- 0. 创建机器人分类表（如果不存在）
 CREATE TABLE IF NOT EXISTS robot_category (
@@ -79,6 +231,13 @@ ALTER TABLE execution_log ADD COLUMN duration VARCHAR(50) COMMENT '执行耗时'
 
 -- 添加执行步骤JSON字段
 ALTER TABLE execution_log ADD COLUMN steps TEXT COMMENT '执行步骤JSON';
+
+-- 添加采集数据数量字段
+ALTER TABLE execution_log ADD COLUMN data_count INT DEFAULT 0 COMMENT '采集数据数量';
+
+-- 4. 为task表添加多流程字段
+ALTER TABLE task ADD COLUMN process_ids TEXT COMMENT '多个流程ID（JSON数组）';
+ALTER TABLE task ADD COLUMN process_names TEXT COMMENT '多个流程名称（JSON数组）';
 
 -- ============================================
 -- 插入示例数据（先检查是否已存在）
