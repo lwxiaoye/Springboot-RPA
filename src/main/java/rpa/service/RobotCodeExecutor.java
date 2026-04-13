@@ -274,6 +274,9 @@ public class RobotCodeExecutor {
             }
             logs.add("[配置] 表格列: " + tableColumns);
 
+        } else if (lowerLine.equals("@parse")) {
+            logs.addAll(doParse(logs));
+
         } else if (lowerLine.equals("@execute")) {
             logs.addAll(doParse(logs));
 

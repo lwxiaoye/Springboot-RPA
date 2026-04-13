@@ -39,6 +39,10 @@ import ScriptExecutor from '../views/rpa/ScriptExecutor.vue'
 import DataMasking from '../views/rpa/DataMasking.vue'
 import DistributedLock from '../views/rpa/DistributedLock.vue'
 
+// 新增：智能录制器和AI助手页面
+import Recorder from '../views/rpa/Recorder.vue'
+import AiAssistant from '../views/rpa/AiAssistant.vue'
+
 const routes = [
     {
         path: '/login',
@@ -80,7 +84,10 @@ const routes = [
             { path: 'recording', name: 'RecordingCenter', component: RecordingCenter },
             { path: 'script', name: 'ScriptExecutor', component: ScriptExecutor },
             { path: 'masking', name: 'DataMasking', component: DataMasking },
-            { path: 'locks', name: 'DistributedLock', component: DistributedLock }
+            { path: 'locks', name: 'DistributedLock', component: DistributedLock },
+            // 新增：智能录制器和AI助手
+            { path: 'recorder', name: 'Recorder', component: Recorder },
+            { path: 'ai-assistant', name: 'AiAssistant', component: AiAssistant }
         ]
     },
     // 系统管理模块 - 使用 SystemLayout 布局

@@ -155,6 +155,24 @@
             <span class="menu-text" v-if="!sidebarCollapsed">AI能力</span>
           </div>
 
+          <!-- AI流程助手 -->
+          <div class="menu-item"
+            :class="{ active: activeMenu === 'ai-assistant' }"
+            @click="switchMenu('ai-assistant')"
+          >
+            <el-icon class="menu-icon"><ChatLineSquare /></el-icon>
+            <span class="menu-text" v-if="!sidebarCollapsed">AI流程助手</span>
+          </div>
+
+          <!-- 智能录制器 -->
+          <div class="menu-item"
+            :class="{ active: activeMenu === 'recorder' }"
+            @click="switchMenu('recorder')"
+          >
+            <el-icon class="menu-icon"><VideoPlay /></el-icon>
+            <span class="menu-text" v-if="!sidebarCollapsed">智能录制</span>
+          </div>
+
           <!-- 录屏管理 -->
           <div class="menu-item"
             :class="{ active: activeMenu === 'recording' }"
@@ -285,7 +303,9 @@ import {
   VideoCamera,
   Promotion,
   View,
-  Unlock
+  Unlock,
+  VideoPlay,
+  ChatLineSquare
 } from '@element-plus/icons-vue'
 
 const router = useRouter()
@@ -339,7 +359,9 @@ const routeMap = {
   recording: '/rpa/recording',
   script: '/rpa/script',
   masking: '/rpa/masking',
-  locks: '/rpa/locks'
+  locks: '/rpa/locks',
+  'ai-assistant': '/rpa/ai-assistant',
+  recorder: '/rpa/recorder'
 }
   router.push(routeMap[menu])
 }
@@ -416,6 +438,9 @@ onMounted(() => {
   else if (path.includes('/rpa/data-process')) activeMenu.value = 'dataProcess'
   else if (path.includes('/rpa/data-query')) activeMenu.value = 'dataQuery'
   else if (path.includes('/rpa/invoice')) activeMenu.value = 'invoice'
+
+  else if (path.includes('/rpa/ai-assistant')) activeMenu.value = 'ai-assistant'
+  else if (path.includes('/rpa/recorder')) activeMenu.value = 'recorder'
 
   // 加载未读通知数
   loadUnreadCount()

@@ -262,6 +262,52 @@
             </div>
           </div>
         </el-collapse-item>
+
+        <!-- 图像识别分类 -->
+        <el-collapse-item title="图像识别" name="vision">
+          <template #title>
+            <div class="category-title">
+              <span class="category-icon">👁️</span>
+              <span>图像识别</span>
+              <el-tag size="small" type="warning">{{ getFilteredNodes('vision').length }}</el-tag>
+            </div>
+          </template>
+          <div class="node-list">
+            <div
+              v-for="node in getFilteredNodes('vision')"
+              :key="node.type"
+              class="palette-node"
+              draggable="true"
+              @dragstart="onDragStart($event, node)"
+            >
+              <span class="node-icon">{{ node.icon }}</span>
+              <span class="node-name">{{ node.name }}</span>
+            </div>
+          </div>
+        </el-collapse-item>
+
+        <!-- 智能录制分类 -->
+        <el-collapse-item title="智能录制" name="recorder">
+          <template #title>
+            <div class="category-title">
+              <span class="category-icon">🎬</span>
+              <span>智能录制</span>
+              <el-tag size="small" type="success">NEW</el-tag>
+            </div>
+          </template>
+          <div class="node-list">
+            <div
+              v-for="node in getFilteredNodes('recorder')"
+              :key="node.type"
+              class="palette-node"
+              draggable="true"
+              @dragstart="onDragStart($event, node)"
+            >
+              <span class="node-icon">{{ node.icon }}</span>
+              <span class="node-name">{{ node.name }}</span>
+            </div>
+          </div>
+        </el-collapse-item>
       </el-collapse>
     </div>
 
@@ -293,7 +339,9 @@ const nodeCategories = {
   ai: 'AI能力',
   logic: '逻辑控制',
   script: '脚本代码',
-  communication: '通信工具'
+  communication: '通信工具',
+  vision: '图像识别',
+  recorder: '智能录制'
 }
 
 // 活动节点定义
@@ -336,6 +384,12 @@ const allNodes = [
   { type: 'excel_filter', name: '筛选数据', icon: '🔍', category: 'excel', description: '根据条件筛选数据' },
   { type: 'excel_save', name: '保存Excel', icon: '💾', category: 'excel', description: '保存Excel文件' },
   { type: 'excel_close', name: '关闭Excel', icon: '❌', category: 'excel', description: '关闭Excel应用' },
+  // Excel大文件支持
+  { type: 'excel_stream_read', name: '流式读取', icon: '📑', category: 'excel', description: '流式读取大文件（百万行支持）' },
+  { type: 'excel_stream_write', name: '流式写入', icon: '📤', category: 'excel', description: '流式写入大文件避免内存溢出' },
+  { type: 'excel_template', name: '模板生成', icon: '📋', category: 'excel', description: '使用模板生成Excel文件' },
+  { type: 'excel_search', name: '搜索数据', icon: '🔎', category: 'excel', description: '在Excel中搜索数据' },
+  { type: 'excel_sheet', name: 'Sheet操作', icon: '📃', category: 'excel', description: '切换、创建、删除Sheet' },
 
   // 文件操作
   { type: 'file_read', name: '读取文件', icon: '📖', category: 'file', description: '读取文本文件内容' },
@@ -397,7 +451,23 @@ const allNodes = [
   { type: 'general_log', name: '写入日志', icon: '📝', category: 'logic', description: '输出日志信息' },
   { type: 'general_variable', name: '变量赋值', icon: '📌', category: 'logic', description: '设置变量值' },
   { type: 'general_clipboard', name: '剪贴板', icon: '📋', category: 'logic', description: '读取或写入剪贴板' },
-  { type: 'general_notify', name: '发送通知', icon: '🔔', category: 'communication', description: '发送系统通知' }
+  { type: 'general_notify', name: '发送通知', icon: '🔔', category: 'communication', description: '发送系统通知' },
+
+  // 图像识别
+  { type: 'vision_find', name: '查找图像', icon: '🔍', category: 'vision', description: '在屏幕上查找模板图像' },
+  { type: 'vision_click', name: '图像点击', icon: '🖱️', category: 'vision', description: '查找图像并点击' },
+  { type: 'vision_wait', name: '等待图像', icon: '⏳', category: 'vision', description: '等待图像出现在屏幕上' },
+  { type: 'vision_screenshot', name: '屏幕截图', icon: '📸', category: 'vision', description: '截取屏幕或区域图像' },
+  { type: 'vision_capture', name: '截取模板', icon: '🎯', category: 'vision', description: '截取图像区域作为模板' },
+  { type: 'vision_exists', name: '图像存在', icon: '❓', category: 'vision', description: '检查图像是否存在于屏幕' },
+
+  // 智能录制
+  { type: 'recorder_start', name: '开始录制', icon: '🎬', category: 'recorder', description: '开始录制用户操作' },
+  { type: 'recorder_stop', name: '停止录制', icon: '⏹️', category: 'recorder', description: '停止录制并生成脚本' },
+  { type: 'recorder_pause', name: '暂停录制', icon: '⏸️', category: 'recorder', description: '暂停录制操作' },
+  { type: 'recorder_resume', name: '恢复录制', icon: '▶️', category: 'recorder', description: '恢复录制操作' },
+  { type: 'recorder_anchor', name: '添加锚点', icon: '📍', category: 'recorder', description: '在录制中添加位置标注' },
+  { type: 'recorder_import', name: '导入脚本', icon: '📥', category: 'recorder', description: '导入录制生成的脚本' }
 ]
 
 // 计算属性
