@@ -163,10 +163,21 @@ public class RpaProcessService {
         List<Map<String, Object>> steps = new ArrayList<>();
         if (process.getSteps() != null && !process.getSteps().isEmpty()) {
             try {
-                steps = objectMapper.readValue(process.getSteps(), new TypeReference<List<Map<String, Object>>>() {
-                });
+                // 尝试解析为JSON对象，判断是否为画布格式
+                com.fasterxml.jackson.databind.JsonNode jsonNode = objectMapper.readTree(process.getSteps());
+                
+                if (jsonNode.isObject() && jsonNode.has("nodes") && jsonNode.has("edges")) {
+                    // 画布格式：{nodes:[...], edges:[...]}
+                    // 需要转换为步骤数组格式
+                    steps = convertCanvasToSteps(jsonNode);
+                } else if (jsonNode.isArray()) {
+                    // 旧步骤格式：[{name, type, robotId, config}, ...]
+                    steps = objectMapper.readValue(process.getSteps(), new TypeReference<List<Map<String, Object>>>() {});
+                } else {
+                    throw new RuntimeException("流程步骤格式错误");
+                }
             } catch (Exception e) {
-                throw new RuntimeException("流程步骤解析失败");
+                throw new RuntimeException("流程步骤解析失败: " + e.getMessage());
             }
         }
         
@@ -749,5 +760,136 @@ public class RpaProcessService {
             return task.cancel(true);
         }
         return false;
+    }
+
+    /**
+     * 将画布格式转换为步骤数组格式
+     * 画布格式：{nodes:[{id, type, name, stepType, robotId, ...}], edges:[{source, target}]}
+     * 步骤格式：[{name, type, robotId, config, ...}, ...]
+     */
+    private List<Map<String, Object>> convertCanvasToSteps(com.fasterxml.jackson.databind.JsonNode jsonNode) {
+        List<Map<String, Object>> steps = new ArrayList<>();
+        
+        com.fasterxml.jackson.databind.JsonNode nodes = jsonNode.get("nodes");
+        com.fasterxml.jackson.databind.JsonNode edges = jsonNode.get("edges");
+        
+        if (nodes == null || !nodes.isArray()) {
+            return steps;
+        }
+        
+        // 只保留流程节点（type='process'），过滤掉条件节点等其他类型
+        List<com.fasterxml.jackson.databind.JsonNode> processNodes = new ArrayList<>();
+        for (com.fasterxml.jackson.databind.JsonNode node : nodes) {
+            String nodeType = node.path("type").asText();
+            if ("process".equals(nodeType)) {
+                processNodes.add(node);
+            }
+        }
+        
+        // 如果edges存在，按连接顺序排序（拓扑排序）
+        if (edges != null && edges.isArray() && !edges.isEmpty()) {
+            // 构建邻接表
+            Map<String, List<String>> adjacency = new HashMap<>();
+            for (com.fasterxml.jackson.databind.JsonNode edge : edges) {
+                String source = edge.path("source").asText();
+                String target = edge.path("target").asText();
+                adjacency.computeIfAbsent(source, k -> new ArrayList<>()).add(target);
+            }
+            
+            // 找到所有被指向的节点ID
+            Set<String> targetIds = new HashSet<>();
+            for (com.fasterxml.jackson.databind.JsonNode edge : edges) {
+                targetIds.add(edge.path("target").asText());
+            }
+            
+            // 找到起始节点（没有被其他节点指向的节点）
+            List<String> startIds = new ArrayList<>();
+            for (com.fasterxml.jackson.databind.JsonNode node : processNodes) {
+                if (!targetIds.contains(node.path("id").asText())) {
+                    startIds.add(node.path("id").asText());
+                }
+            }
+            
+            // BFS遍历
+            Set<String> visited = new HashSet<>();
+            Queue<String> queue = new LinkedList<>();
+            
+            if (!startIds.isEmpty()) {
+                for (String id : startIds) {
+                    queue.offer(id);
+                }
+            } else if (!processNodes.isEmpty()) {
+                // 如果没有明显的起始节点，从第一个节点开始
+                queue.offer(processNodes.get(0).path("id").asText());
+            }
+            
+            while (!queue.isEmpty()) {
+                String nodeId = queue.poll();
+                if (visited.contains(nodeId)) continue;
+                visited.add(nodeId);
+                
+                // 找到对应的节点
+                for (com.fasterxml.jackson.databind.JsonNode node : processNodes) {
+                    if (nodeId.equals(node.path("id").asText())) {
+                        steps.add(convertNodeToStep(node));
+                        break;
+                    }
+                }
+                
+                // 将后继节点加入队列
+                List<String> nextIds = adjacency.getOrDefault(nodeId, new ArrayList<>());
+                for (String nextId : nextIds) {
+                    if (!visited.contains(nextId)) {
+                        queue.offer(nextId);
+                    }
+                }
+            }
+            
+            // 处理未访问到的节点（可能没有边的节点）
+            for (com.fasterxml.jackson.databind.JsonNode node : processNodes) {
+                String nodeId = node.path("id").asText();
+                if (!visited.contains(nodeId)) {
+                    steps.add(convertNodeToStep(node));
+                }
+            }
+        } else {
+            // 没有边的情况，按节点在数组中的顺序排列
+            for (com.fasterxml.jackson.databind.JsonNode node : processNodes) {
+                steps.add(convertNodeToStep(node));
+            }
+        }
+        
+        return steps;
+    }
+    
+    /**
+     * 将画布节点转换为步骤格式
+     */
+    private Map<String, Object> convertNodeToStep(com.fasterxml.jackson.databind.JsonNode node) {
+        Map<String, Object> step = new HashMap<>();
+        step.put("name", node.path("name").asText("未命名步骤"));
+        step.put("type", node.path("stepType").asText(""));
+        step.put("category", node.path("category").asText(""));
+        
+        // 处理robotId
+        com.fasterxml.jackson.databind.JsonNode robotIdNode = node.get("robotId");
+        if (robotIdNode != null && !robotIdNode.isNull()) {
+            if (robotIdNode.isInt()) {
+                step.put("robotId", robotIdNode.asInt());
+            } else if (robotIdNode.isLong()) {
+                step.put("robotId", robotIdNode.asLong());
+            } else {
+                try {
+                    step.put("robotId", Long.parseLong(robotIdNode.asText()));
+                } catch (NumberFormatException e) {
+                    // 忽略无效的robotId
+                }
+            }
+        }
+        
+        step.put("robotName", node.path("robotName").asText(""));
+        step.put("config", new HashMap<String, Object>());
+        
+        return step;
     }
 }
