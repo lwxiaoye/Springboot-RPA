@@ -163,7 +163,31 @@ const taskForm = reactive({
 })
 
 const formRules = {
-  name: [{ required: true, message: '请输入任务名称', trigger: 'blur' }]
+  name: [
+    { required: true, message: '请输入任务名称', trigger: 'blur' },
+    { validator: validateTaskName, trigger: ['blur', 'change'] }
+  ]
+}
+
+// 校验任务名称是否重复
+async function validateTaskName(rule, value, callback) {
+  if (!value || value.trim() === '') {
+    callback()
+    return
+  }
+  try {
+    const result = await apiPost('/task/check-name', {
+      name: value.trim(),
+      excludeId: selectedTask.value?.id || null
+    })
+    if (result.code === 0 && result.data === true) {
+      callback(new Error('任务名称已存在，请使用其他名称'))
+    } else {
+      callback()
+    }
+  } catch {
+    callback()
+  }
 }
 
 const filteredTasks = computed(() => {

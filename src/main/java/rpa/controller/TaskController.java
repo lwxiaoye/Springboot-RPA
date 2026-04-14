@@ -226,4 +226,27 @@ public class TaskController {
         }
         return response;
     }
+    
+    /**
+     * 检查任务名称是否重复
+     */
+    @PostMapping("/check-name")
+    public Map<String, Object> checkNameDuplicate(@RequestBody Map<String, Object> request) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            String name = (String) request.get("name");
+            Long excludeId = null;
+            Object excludeIdObj = request.get("excludeId");
+            if (excludeIdObj != null) {
+                excludeId = Long.valueOf(excludeIdObj.toString());
+            }
+            boolean duplicate = taskService.isNameDuplicate(name, excludeId);
+            response.put("code", 0);
+            response.put("data", duplicate);
+        } catch (Exception e) {
+            response.put("code", -1);
+            response.put("message", e.getMessage());
+        }
+        return response;
+    }
 }

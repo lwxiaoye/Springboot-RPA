@@ -56,6 +56,28 @@ public class TaskService {
     }
 
     /**
+     * 检查任务名称是否已存在（排除当前任务）
+     *
+     * @param name 任务名称
+     * @param excludeId 排除的任务ID（编辑时排除自身）
+     * @return 是否存在重复
+     */
+    public boolean isNameDuplicate(String name, Long excludeId) {
+        if (name == null || name.trim().isEmpty()) {
+            return false;
+        }
+        Task existing = repository.findByName(name);
+        if (existing == null) {
+            return false;
+        }
+        // 编辑时，如果重名的是当前任务本身，不算重复
+        if (excludeId != null && existing.getId().equals(excludeId)) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
      * 创建任务
      *
      * @param name 任务名称
