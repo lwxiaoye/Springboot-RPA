@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 import rpa.entity.Task;
 import rpa.service.TaskService;
 import rpa.service.ExecutionLogService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -35,6 +36,7 @@ public class TaskController {
 
     private final TaskService taskService;
     private final ExecutionLogService executionLogService;
+    private static final ObjectMapper objectMapper = new ObjectMapper();
 
     @GetMapping
     public Map<String, Object> list(@RequestParam(required = false) Long assigneeId,
@@ -76,6 +78,8 @@ public class TaskController {
             String name = (String) request.get("name");
             String category = (String) request.get("category");
             String priority = (String) request.get("priority");
+            String remark = (String) request.get("remark");
+            
             Object assigneeIdObj = request.get("assigneeId");
             Long assigneeId = null;
             if (assigneeIdObj != null) {
@@ -83,7 +87,31 @@ public class TaskController {
             }
             String assigneeName = (String) request.get("assigneeName");
             
-            Task task = taskService.create(name, category, priority, null, null, assigneeId, assigneeName);
+            // 处理 processIds（支持 List 和字符串）
+            Object processIdsObj = request.get("processIds");
+            String processIds = null;
+            if (processIdsObj instanceof List) {
+                processIds = objectMapper.writeValueAsString(processIdsObj);
+            } else if (processIdsObj != null) {
+                processIds = processIdsObj.toString();
+            }
+            Object processNamesObj = request.get("processNames");
+            String processNames = null;
+            if (processNamesObj instanceof List) {
+                processNames = objectMapper.writeValueAsString(processNamesObj);
+            } else if (processNamesObj != null) {
+                processNames = processNamesObj.toString();
+            }
+            
+            // 处理单个 processId（兼容）
+            Object processIdObj = request.get("processId");
+            Long processId = null;
+            if (processIdObj != null) {
+                processId = Long.valueOf(processIdObj.toString());
+            }
+            String processName = (String) request.get("processName");
+            
+            Task task = taskService.create(name, category, priority, processId, processName, processIds, processNames, assigneeId, assigneeName, remark);
             response.put("code", 0);
             response.put("message", "创建成功");
             response.put("data", task);
@@ -158,7 +186,23 @@ public class TaskController {
             }
             String processName = (String) request.get("processName");
             
-            Task task = taskService.update(id, name, category, priority, processId, processName, remark);
+            // 处理 processIds（多流程，支持 List 和字符串）
+            Object processIdsObj = request.get("processIds");
+            String processIds = null;
+            if (processIdsObj instanceof List) {
+                processIds = objectMapper.writeValueAsString(processIdsObj);
+            } else if (processIdsObj != null) {
+                processIds = processIdsObj.toString();
+            }
+            Object processNamesObj = request.get("processNames");
+            String processNames = null;
+            if (processNamesObj instanceof List) {
+                processNames = objectMapper.writeValueAsString(processNamesObj);
+            } else if (processNamesObj != null) {
+                processNames = processNamesObj.toString();
+            }
+            
+            Task task = taskService.update(id, name, category, priority, processId, processName, processIds, processNames, remark);
             response.put("code", 0);
             response.put("message", "更新成功");
             response.put("data", task);

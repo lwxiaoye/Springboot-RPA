@@ -61,22 +61,29 @@ public class TaskService {
      * @param name 任务名称
      * @param category 分类
      * @param priority 优先级
-     * @param processId 流程ID
-     * @param processName 流程名称
+     * @param processId 流程ID（单个）
+     * @param processName 流程名称（单个）
+     * @param processIds 多个流程ID（JSON格式数组）
+     * @param processNames 多个流程名称（JSON格式数组）
      * @param assigneeId 接收人ID
      * @param assigneeName 接收人名称
+     * @param remark 备注
      * @return 创建的任务
      */
     public Task create(String name, String category, String priority, 
-                       Long processId, String processName, Long assigneeId, String assigneeName) {
+                       Long processId, String processName, String processIds, String processNames,
+                       Long assigneeId, String assigneeName, String remark) {
         Task task = new Task();
         task.setName(name);
         task.setCategory(category);
         task.setPriority(priority);
         task.setProcessId(processId);
         task.setProcessName(processName);
+        task.setProcessIds(processIds);
+        task.setProcessNames(processNames);
         task.setAssigneeId(assigneeId);
         task.setAssigneeName(assigneeName);
+        task.setRemark(remark);
         return repository.save(task);
     }
 
@@ -127,13 +134,15 @@ public class TaskService {
      * @param name 名称
      * @param category 分类
      * @param priority 优先级
-     * @param processId 流程ID
-     * @param processName 流程名称
+     * @param processId 流程ID（单个）
+     * @param processName 流程名称（单个）
+     * @param processIds 多个流程ID（JSON格式数组）
+     * @param processNames 多个流程名称（JSON格式数组）
      * @param remark 备注
      * @return 更新后的任务
      */
     public Task update(Long taskId, String name, String category, String priority, 
-                       Long processId, String processName, String remark) {
+                       Long processId, String processName, String processIds, String processNames, String remark) {
         return repository.findById(taskId).map(task -> {
             if (name != null) {
                 task.setName(name);
@@ -149,6 +158,12 @@ public class TaskService {
             }
             if (processName != null) {
                 task.setProcessName(processName);
+            }
+            if (processIds != null) {
+                task.setProcessIds(processIds);
+            }
+            if (processNames != null) {
+                task.setProcessNames(processNames);
             }
             if (remark != null) {
                 task.setRemark(remark);
