@@ -31,7 +31,12 @@
               <span class="task-name">{{ task.name }}</span>
               <span class="task-process">流程: {{ task.processName || '-' }}</span>
             </div>
-            <el-tag size="small" :type="getStatusType(task.status)">{{ getStatusText(task.status) }}</el-tag>
+            <div class="task-actions">
+              <el-tag size="small" :type="getStatusType(task.status)">{{ getStatusText(task.status) }}</el-tag>
+              <el-button link type="danger" size="small" @click.stop="deleteTask(task)">
+                <el-icon><Delete /></el-icon>
+              </el-button>
+            </div>
           </div>
           <el-empty v-if="filteredTasks.length === 0" description="暂无任务" />
         </div>
@@ -79,6 +84,10 @@
             <el-button type="success" @click="executeTask" :disabled="!hasValidProcessIds" :loading="executeLoading">
               <el-icon><VideoPlay /></el-icon>
               立即执行
+            </el-button>
+            <el-button type="danger" @click="deleteTask(selectedTask)" v-if="isEditTask && selectedTask" :loading="deleteLoading">
+              <el-icon><Delete /></el-icon>
+              删除任务
             </el-button>
           </div>
         </div>
@@ -132,12 +141,13 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, VideoPlay, Plus, Delete } from '@element-plus/icons-vue'
 import { apiGet, apiPost, apiPut, apiDelete } from '../../utils/api.js'
 
 const saveLoading = ref(false)
 const executeLoading = ref(false)
+const deleteLoading = ref(false)
 const taskList = ref([])
 const processes = ref([])
 const selectedTask = ref(null)
@@ -378,6 +388,40 @@ const runProcess = async (process) => {
   }
 }
 
+const deleteTask = async (task) => {
+  if (!task) {
+    ElMessage.warning('请先选择要删除的任务')
+    return
+  }
+  try {
+    await ElMessageBox.confirm(
+      `确定要删除任务"${task.name}"吗？此操作不可恢复。`,
+      '删除确认',
+      {
+        confirmButtonText: '确定删除',
+        cancelButtonText: '取消',
+        type: 'warning',
+        confirmButtonClass: 'el-button--danger'
+      }
+    )
+    deleteLoading.value = true
+    const result = await apiDelete(`/task/${task.id}`)
+    if (result.code === 0) {
+      ElMessage.success('任务删除成功')
+      cancelEdit()
+      await loadTasks()
+    } else {
+      ElMessage.error(result.message || '删除失败')
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('删除请求失败')
+    }
+  } finally {
+    deleteLoading.value = false
+  }
+}
+
 onMounted(() => {
   loadTasks()
   loadProcesses()
@@ -405,9 +449,10 @@ onMounted(() => {
 .task-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-radius: 8px; cursor: pointer; margin-bottom: 8px; transition: all 0.2s; border: 1px solid transparent; }
 .task-item:hover { background: #f5f7fa; }
 .task-item.active { background: #e6f4ff; border-color: #1890ff; }
-.task-info { display: flex; flex-direction: column; gap: 2px; }
+.task-info { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
 .task-name { font-weight: 500; color: #262626; }
 .task-process { font-size: 12px; color: #8c8c8c; }
+.task-actions { display: flex; align-items: center; gap: 8px; margin-left: 8px; }
 
 .config-content { padding: 20px; border-bottom: 1px solid #f0f0f0; }
 .config-actions { display: flex; gap: 12px; margin-top: 20px; }
