@@ -1,41 +1,69 @@
 <template>
-  <div class="dashboard-view">
-    <!-- 顶部导航栏 -->
-    <header class="top-header">
-      <div class="header-left">
-        <div class="logo-area">
-          <div class="logo-icon">RPA</div>
-          <div class="logo-text">RPA运营管理系统</div>
+  <div class="dashboard-pro">
+    <!-- 顶部导航 - 浅色主题 -->
+    <header class="dashboard-header">
+      <div class="header-inner">
+        <!-- Logo -->
+        <div class="logo-section">
+          <div class="logo-mark">RPA</div>
+          <div class="logo-title">运营管理系统</div>
         </div>
-      </div>
-      <div class="header-center">
-        <el-menu
-          :default-active="activeTopMenu"
-          mode="horizontal"
-          class="top-menu"
-          :ellipsis="false"
-          @select="handleTopMenuSelect"
-        >
-          <el-menu-item index="dashboard">首页</el-menu-item>
-          <el-menu-item index="rpa">RPA运营管理</el-menu-item>
-          <el-menu-item index="system">系统管理</el-menu-item>
-        </el-menu>
-      </div>
-      <div class="header-right">
-        <el-badge :value="unreadNotifications" :hidden="unreadNotifications === 0" class="notif-badge">
-          <el-icon class="notif-icon" @click="goToNotifications"><Bell /></el-icon>
-        </el-badge>
-        <div class="user-info">
-          <el-dropdown>
-            <span class="user-dropdown">
-              {{ currentUser.realName || currentUser.username }}
-              <el-icon class="el-icon--right"><ArrowDown /></el-icon>
-            </span>
+
+        <!-- 主导航 -->
+        <nav class="main-nav">
+          <el-menu
+            :default-active="activeTopMenu"
+            mode="horizontal"
+            :ellipsis="false"
+            @select="handleTopMenuSelect"
+            class="nav-menu"
+          >
+            <el-menu-item index="dashboard">
+              <el-icon><Odometer /></el-icon>
+              <span>首页</span>
+            </el-menu-item>
+            <el-menu-item index="rpa">
+              <el-icon><VideoCamera /></el-icon>
+              <span>RPA运营管理</span>
+            </el-menu-item>
+            <el-menu-item index="system">
+              <el-icon><Setting /></el-icon>
+              <span>系统管理</span>
+            </el-menu-item>
+          </el-menu>
+        </nav>
+
+        <!-- 右侧工具栏 -->
+        <div class="header-tools">
+          <!-- 通知 -->
+          <el-badge :value="unreadCount" :hidden="unreadCount === 0" class="tool-badge">
+            <el-button class="tool-btn" @click="goToNotifications">
+              <el-icon><Bell /></el-icon>
+            </el-button>
+          </el-badge>
+
+          <!-- 用户信息 -->
+          <el-dropdown trigger="click">
+            <div class="user-avatar">
+              <el-avatar :size="36" :src="userAvatar" class="avatar-circle">
+                {{ userInitial }}
+              </el-avatar>
+              <div class="user-meta">
+                <div class="user-name">{{ userName }}</div>
+                <div class="user-role">{{ userRole }}</div>
+              </div>
+              <el-icon class="dropdown-arrow"><ArrowDown /></el-icon>
+            </div>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item @click="goToProfile">个人信息</el-dropdown-item>
-                <el-dropdown-item divided>设置</el-dropdown-item>
-                <el-dropdown-item divided @click="handleLogout">退出登录</el-dropdown-item>
+                <el-dropdown-item @click="goToProfile">
+                  <el-icon><User /></el-icon>
+                  个人信息
+                </el-dropdown-item>
+                <el-dropdown-item divided @click="handleLogout">
+                  <el-icon><SwitchButton /></el-icon>
+                  退出登录
+                </el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
@@ -43,203 +71,282 @@
       </div>
     </header>
 
-    <!-- 仪表盘内容 -->
-    <div class="dashboard-content">
-      <!-- 欢迎卡片 - 蓝色渐变 -->
-      <div class="welcome-section">
-        <div class="welcome-left">
-          <h2>欢迎回来，{{ currentUser.realName || currentUser.username }}！</h2>
-          <p class="welcome-tip">今天是 {{ currentDate }}，祝您工作愉快</p>
-        </div>
-        <div class="welcome-right">
-          <div class="quick-stats">
-            <div class="quick-stat-item">
-              <span class="stat-value success">{{ taskStatus.completed }}</span>
-              <span class="stat-label">今日完成</span>
-            </div>
-            <div class="quick-stat-item">
-              <span class="stat-value warning">{{ taskStatus.running }}</span>
-              <span class="stat-label">进行中</span>
-            </div>
+    <!-- 主内容区 -->
+    <main class="dashboard-main">
+      <div class="content-wrapper">
+        <!-- 页面标题区 -->
+        <div class="page-header">
+          <div class="header-text">
+            <h1 class="page-title">运营概览</h1>
+            <p class="page-subtitle">{{ currentDate }}</p>
           </div>
-        </div>
-      </div>
-
-      <!-- 关键指标卡片 -->
-      <div class="stats-grid">
-        <div class="stat-card stat-card-primary" @click="goToTasks">
-          <div class="stat-icon"><el-icon><List /></el-icon></div>
-          <div class="stat-header">
-            <span class="stat-trend up" v-if="statsChange.tasks > 0">+{{ statsChange.tasks }}%</span>
-          </div>
-          <div class="stat-value">{{ stats.tasks }}</div>
-          <div class="stat-label">总任务数</div>
-        </div>
-        <div class="stat-card stat-card-success" @click="goToTasks">
-          <div class="stat-icon"><el-icon><CircleCheck /></el-icon></div>
-          <div class="stat-header">
-            <span class="stat-trend up">{{ successRate }}%</span>
-          </div>
-          <div class="stat-value">{{ stats.tasks - stats.failedTasks }}</div>
-          <div class="stat-label">成功任务</div>
-        </div>
-        <div class="stat-card stat-card-info" @click="goToRobots">
-          <div class="stat-icon"><el-icon><Monitor /></el-icon></div>
-          <div class="stat-header">
-            <span class="stat-trend up" v-if="statsChange.robots > 0">+{{ statsChange.robots }}%</span>
-          </div>
-          <div class="stat-value">{{ activeRobots }}</div>
-          <div class="stat-label">在线机器人</div>
-        </div>
-        <div class="stat-card stat-card-warning" @click="goToQueue">
-          <div class="stat-icon"><el-icon><Warning /></el-icon></div>
-          <div class="stat-header">
-            <span class="stat-trend">{{ queueBacklog }}</span>
-          </div>
-          <div class="stat-value">{{ queueBacklog }}</div>
-          <div class="stat-label">队列积压</div>
-        </div>
-        <div class="stat-card stat-card-danger">
-          <div class="stat-icon"><el-icon><Timer /></el-icon></div>
-          <div class="stat-header">
-            <span class="stat-trend">ms</span>
-          </div>
-          <div class="stat-value">{{ avgResponseTime }}</div>
-          <div class="stat-label">平均响应时间</div>
-        </div>
-      </div>
-
-      <!-- 图表和机器人状态 -->
-      <div class="main-charts-row">
-        <!-- 成功率趋势图 -->
-        <div class="chart-card chart-line">
-          <div class="chart-header">
-            <h3>任务执行趋势</h3>
-            <div class="chart-actions">
-              <span 
-                v-for="period in ['近7天', '近30天', '近90天']" 
-                :key="period"
-                class="period-btn"
-                :class="{ active: selectedPeriod === period }"
-                @click="selectedPeriod = period"
-              >{{ period }}</span>
-            </div>
-          </div>
-          <div class="chart-body">
-            <v-chart :option="lineChartOption" autoresize style="height: 280px;"></v-chart>
+          <div class="header-actions">
+            <el-button type="primary" plain @click="refreshData">
+              <el-icon><Refresh /></el-icon>
+              刷新数据
+            </el-button>
           </div>
         </div>
 
-        <!-- 机器人状态 -->
-        <div class="robot-status-card">
-          <div class="card-header">
-            <h3>机器人状态</h3>
-            <span class="card-more" @click="goToRobots">查看全部 ></span>
+        <!-- KPI 指标卡片 - Bento Grid 风格 -->
+        <div class="kpi-section">
+          <div class="section-title">
+            <span class="title-icon"><el-icon><TrendCharts /></el-icon></span>
+            <span>关键指标</span>
           </div>
-          <div class="robot-list">
-            <div v-for="robot in robotStatusList.slice(0, 5)" :key="robot.id" class="robot-item">
-              <div class="robot-info">
-                <span class="robot-name">{{ robot.name }}</span>
-                <el-tag :type="getRobotStatusType(robot.status)" size="small">
-                  {{ getRobotStatusText(robot.status) }}
+          <div class="kpi-grid">
+            <!-- 任务统计 -->
+            <div class="kpi-card" @click="goToTasks">
+              <div class="kpi-header">
+                <div class="kpi-icon-wrapper" style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);">
+                  <el-icon color="#1976d2"><List /></el-icon>
+                </div>
+                <div class="kpi-trend" :class="statsChange.tasks >= 0 ? 'trend-up' : 'trend-down'">
+                  <el-icon><CaretTop /></el-icon>
+                  {{ Math.abs(statsChange.tasks) }}%
+                </div>
+              </div>
+              <div class="kpi-value">{{ stats.tasks }}</div>
+              <div class="kpi-label">总任务数</div>
+              <div class="kpi-desc">较上周期</div>
+            </div>
+
+            <!-- 成功率 -->
+            <div class="kpi-card" @click="goToTasks">
+              <div class="kpi-header">
+                <div class="kpi-icon-wrapper" style="background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);">
+                  <el-icon color="#388e3c"><CircleCheck /></el-icon>
+                </div>
+                <div class="kpi-trend trend-up">
+                  <el-icon><CaretTop /></el-icon>
+                  {{ successRate }}%
+                </div>
+              </div>
+              <div class="kpi-value">{{ stats.tasks - stats.failedTasks }}</div>
+              <div class="kpi-label">成功任务</div>
+              <div class="kpi-desc">执行成功率</div>
+            </div>
+
+            <!-- 在线机器人 -->
+            <div class="kpi-card" @click="goToRobots">
+              <div class="kpi-header">
+                <div class="kpi-icon-wrapper" style="background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);">
+                  <el-icon color="#0097a7"><Monitor /></el-icon>
+                </div>
+                <div class="kpi-trend" :class="statsChange.robots >= 0 ? 'trend-up' : 'trend-down'">
+                  <el-icon><CaretTop /></el-icon>
+                  {{ Math.abs(statsChange.robots) }}%
+                </div>
+              </div>
+              <div class="kpi-value">{{ activeRobots }}</div>
+              <div class="kpi-label">在线机器人</div>
+              <div class="kpi-desc">总数: {{ stats.robots }}</div>
+            </div>
+
+            <!-- 队列状态 -->
+            <div class="kpi-card" @click="goToQueue">
+              <div class="kpi-header">
+                <div class="kpi-icon-wrapper" style="background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);">
+                  <el-icon color="#f57c00"><Warning /></el-icon>
+                </div>
+              </div>
+              <div class="kpi-value">{{ queueBacklog }}</div>
+              <div class="kpi-label">队列积压</div>
+              <div class="kpi-desc">待处理任务</div>
+            </div>
+
+            <!-- 响应时间 -->
+            <div class="kpi-card">
+              <div class="kpi-header">
+                <div class="kpi-icon-wrapper" style="background: linear-gradient(135deg, #fce4ec 0%, #f8bbd0 100%);">
+                  <el-icon color="#c2185b"><Timer /></el-icon>
+                </div>
+              </div>
+              <div class="kpi-value">{{ avgResponseTime }}</div>
+              <div class="kpi-label">平均响应时间</div>
+              <div class="kpi-desc">单位: ms</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 主图表区 -->
+        <div class="main-grid">
+          <!-- 趋势图卡片 -->
+          <div class="chart-card-large">
+            <div class="card-header">
+              <div class="header-left">
+                <span class="card-title"><el-icon><DataLine /></el-icon> 任务执行趋势</span>
+                <span class="card-subtitle">近30天执行情况</span>
+              </div>
+              <div class="period-selector">
+                <el-radio-group v-model="selectedPeriod" size="small">
+                  <el-radio-button value="7">近7天</el-radio-button>
+                  <el-radio-button value="30">近30天</el-radio-button>
+                  <el-radio-button value="90">近90天</el-radio-button>
+                </el-radio-group>
+              </div>
+            </div>
+            <div class="chart-container">
+              <v-chart :option="lineChartOption" autoresize />
+            </div>
+          </div>
+
+          <!-- 右侧栏 -->
+          <div class="side-panel">
+            <!-- 机器人状态 -->
+            <div class="status-card">
+              <div class="card-header">
+                <span class="card-title"><el-icon><Monitor /></el-icon> 机器人状态</span>
+                <el-link type="primary" @click="goToRobots">查看全部</el-link>
+              </div>
+              <div class="robot-list">
+                <div v-for="robot in robotStatusList.slice(0, 5)" :key="robot.id" class="robot-item">
+                  <div class="robot-info">
+                    <el-avatar :size="32" icon="User" class="robot-avatar" />
+                    <div class="robot-details">
+                      <div class="robot-name">{{ robot.name }}</div>
+                      <div class="robot-ip">{{ robot.ip || '192.168.1.100' }}</div>
+                    </div>
+                    <el-tag :type="getRobotStatusType(robot.status)" size="small" effect="plain">
+                      {{ getRobotStatusText(robot.status) }}
+                    </el-tag>
+                  </div>
+                  <div class="resource-bars">
+                    <div class="resource-bar">
+                      <span class="resource-label">CPU {{ robot.cpuUsage || 0 }}%</span>
+                      <el-progress :percentage="robot.cpuUsage || 0" :color="getProgressColor(robot.cpuUsage)" :stroke-width="6" :show-text="false" />
+                    </div>
+                    <div class="resource-bar">
+                      <span class="resource-label">内存 {{ robot.memoryUsage || 0 }}%</span>
+                      <el-progress :percentage="robot.memoryUsage || 0" :color="getProgressColor(robot.memoryUsage)" :stroke-width="6" :show-text="false" />
+                    </div>
+                  </div>
+                </div>
+                <el-empty v-if="robotStatusList.length === 0" description="暂无数据" :image-size="80" />
+              </div>
+            </div>
+
+            <!-- 许可证使用 -->
+            <div class="license-card">
+              <div class="card-header">
+                <span class="card-title"><el-icon><Key /></el-icon> 许可证</span>
+              </div>
+              <div class="license-content">
+                <el-progress
+                  type="dashboard"
+                  :percentage="licenseUsage"
+                  :color="getLicenseColor(licenseUsage)"
+                  :width="100"
+                >
+                  <template #default>
+                    <span class="license-percent">{{ licenseUsage }}%</span>
+                    <span class="license-label">使用率</span>
+                  </template>
+                </el-progress>
+                <div class="license-details">
+                  <div class="license-item">
+                    <span class="label">已用</span>
+                    <span class="value">{{ usedLicenses }}</span>
+                  </div>
+                  <div class="license-item">
+                    <span class="label">总数</span>
+                    <span class="value">{{ totalLicenses }}</span>
+                  </div>
+                  <div class="license-item">
+                    <span class="label">到期</span>
+                    <span class="value">{{ licenseExpiry }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 底部信息区 -->
+        <div class="bottom-grid">
+          <!-- 告警消息 -->
+          <div class="alert-card">
+            <div class="card-header">
+              <span class="card-title"><el-icon><BellFilled /></el-icon> 告警消息</span>
+              <el-link type="primary" @click="goToNotifications">查看全部</el-link>
+            </div>
+            <div class="alert-list">
+              <div v-for="alert in recentAlerts.slice(0, 4)" :key="alert.id" class="alert-item" @click="viewAlert(alert)">
+                <div class="alert-icon" :class="alert.type">
+                  <el-icon><WarningFilled /></el-icon>
+                </div>
+                <div class="alert-content">
+                  <div class="alert-title">{{ alert.title }}</div>
+                  <div class="alert-time">{{ formatTime(alert.createTime) }}</div>
+                </div>
+                <el-tag :type="getAlertType(alert.type)" size="small" effect="plain">
+                  {{ getAlertText(alert.type) }}
                 </el-tag>
               </div>
-              <div class="robot-resource">
-                <div class="resource-item">
-                  <span class="resource-label">CPU</span>
-                  <el-progress :percentage="robot.cpuUsage || 0" :color="getProgressColor(robot.cpuUsage)" :stroke-width="4" />
+              <el-empty v-if="recentAlerts.length === 0" description="暂无告警" :image-size="60" />
+            </div>
+          </div>
+
+          <!-- 热门流程 -->
+          <div class="process-card">
+            <div class="card-header">
+              <span class="card-title"><el-icon><StarFilled /></el-icon> 热门流程</span>
+              <el-link type="primary" @click="goToProcesses">流程仓库</el-link>
+            </div>
+            <div class="process-list">
+              <div v-for="(process, index) in hotProcesses.slice(0, 5)" :key="process.id" class="process-item" @click="goToProcessDetail(process)">
+                <div class="process-rank" :class="'rank-' + (index + 1)">
+                  {{ index + 1 }}
                 </div>
-                <div class="resource-item">
-                  <span class="resource-label">内存</span>
-                  <el-progress :percentage="robot.memoryUsage || 0" :color="getProgressColor(robot.memoryUsage)" :stroke-width="4" />
+                <div class="process-info">
+                  <div class="process-name">{{ process.name }}</div>
+                  <div class="process-meta">
+                    <span class="process-count">执行 {{ process.execCount }} 次</span>
+                  </div>
                 </div>
+                <el-button type="primary" link @click.stop="goToProcessDetail(process)">
+                  查看
+                </el-button>
               </div>
-            </div>
-            <div v-if="robotStatusList.length === 0" class="empty-tip">暂无机器人数据</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 告警消息和热门流程 -->
-      <div class="bottom-row">
-        <!-- 告警消息滚动条 -->
-        <div class="alert-card">
-          <div class="card-header">
-            <h3><el-icon><Bell /></el-icon> 告警消息</h3>
-            <span class="card-more" @click="goToNotifications">查看全部 ></span>
-          </div>
-          <div class="alert-scroll" v-if="recentAlerts.length > 0">
-            <div 
-              v-for="alert in recentAlerts" 
-              :key="alert.id" 
-              class="alert-item"
-              :class="alert.type"
-              @click="viewAlert(alert)"
-            >
-              <span class="alert-time">{{ formatTime(alert.createTime) }}</span>
-              <span class="alert-title">{{ alert.title }}</span>
-              <el-tag :type="getAlertType(alert.type)" size="small">{{ getAlertText(alert.type) }}</el-tag>
+              <el-empty v-if="hotProcesses.length === 0" description="暂无流程" :image-size="60" />
             </div>
           </div>
-          <div v-else class="empty-tip">暂无告警消息</div>
-        </div>
 
-        <!-- 热门流程排行 -->
-        <div class="hot-process-card">
-          <div class="card-header">
-            <h3><el-icon><Star /></el-icon> 热门流程排行</h3>
-            <span class="card-more" @click="goToProcesses">流程仓库 ></span>
-          </div>
-          <div class="process-rank-list">
-            <div 
-              v-for="(process, index) in hotProcesses" 
-              :key="process.id" 
-              class="process-rank-item"
-              @click="goToProcessDetail(process)"
-            >
-              <span class="rank-num" :class="'rank-' + (index + 1)">{{ index + 1 }}</span>
-              <span class="process-name">{{ process.name }}</span>
-              <span class="process-count">{{ process.execCount }}次</span>
+          <!-- 快速操作 -->
+          <div class="quick-actions-card">
+            <div class="card-header">
+              <span class="card-title"><el-icon><MagicStick /></el-icon> 快速操作</span>
             </div>
-            <div v-if="hotProcesses.length === 0" class="empty-tip">暂无流程数据</div>
-          </div>
-        </div>
-
-        <!-- 许可证使用率 -->
-        <div class="license-card">
-          <div class="card-header">
-            <h3><el-icon><Key /></el-icon> 许可证使用率</h3>
-          </div>
-          <div class="license-content">
-            <el-progress 
-              type="circle" 
-              :percentage="licenseUsage" 
-              :color="licenseUsage > 80 ? '#f56c6c' : licenseUsage > 60 ? '#e6a23c' : '#67c23a'"
-              :width="120"
-            >
-              <template #default>
-                <span class="license-text">{{ usedLicenses }}/{{ totalLicenses }}</span>
-                <span class="license-label">并发数</span>
-              </template>
-            </el-progress>
-            <div class="license-info">
-              <div class="info-item">
-                <span class="label">已用:</span>
-                <span class="value">{{ usedLicenses }}</span>
+            <div class="action-grid">
+              <div class="action-item" @click="goToProcesses">
+                <div class="action-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                  <el-icon><Document /></el-icon>
+                </div>
+                <span>创建流程</span>
               </div>
-              <div class="info-item">
-                <span class="label">总数:</span>
-                <span class="value">{{ totalLicenses }}</span>
+              <div class="action-item" @click="goToRobots">
+                <div class="action-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                  <el-icon><Cpu /></el-icon>
+                </div>
+                <span>机器人管理</span>
               </div>
-              <div class="info-item">
-                <span class="label">到期时间:</span>
-                <span class="value">{{ licenseExpiry }}</span>
+              <div class="action-item" @click="goToTasks">
+                <div class="action-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                  <el-icon><VideoPlay /></el-icon>
+                </div>
+                <span>任务监控</span>
+              </div>
+              <div class="action-item" @click="goToSystemSettings">
+                <div class="action-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                  <el-icon><Setting /></el-icon>
+                </div>
+                <span>系统设置</span>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </main>
   </div>
 </template>
 
@@ -247,17 +354,23 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ArrowDown, Bell, List, CircleCheck, Monitor, Warning, Timer, Star, Key } from '@element-plus/icons-vue'
+import {
+  Bell, ArrowDown, Odometer, VideoCamera, Setting, Refresh, User,
+  SwitchButton, List, CircleCheck, Monitor, Warning, Timer, Star, Key,
+  DataLine, BellFilled, WarningFilled, MagicStick, Document, Cpu, VideoPlay,
+  CaretTop, TrendCharts
+} from '@element-plus/icons-vue'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
-import { LineChart, PieChart } from 'echarts/charts'
+import { LineChart } from 'echarts/charts'
 import { TitleComponent, TooltipComponent, LegendComponent, GridComponent } from 'echarts/components'
 
-use([CanvasRenderer, LineChart, PieChart, TitleComponent, TooltipComponent, LegendComponent, GridComponent])
+use([CanvasRenderer, LineChart, TitleComponent, TooltipComponent, LegendComponent, GridComponent])
 
 const router = useRouter()
 const activeTopMenu = ref('dashboard')
+const selectedPeriod = ref('30')
 
 // 用户信息
 const currentUser = ref({
@@ -265,31 +378,30 @@ const currentUser = ref({
   username: 'admin',
   realName: '系统管理员',
   email: 'admin@rpa.com',
-  role: 1
+  role: 1,
+  avatar: ''
 })
 
-const unreadNotifications = ref(0)
+const userName = computed(() => currentUser.value.realName || currentUser.value.username)
+const userInitial = computed(() => userName.value.charAt(0).toUpperCase())
+const userAvatar = computed(() => currentUser.value.avatar || '')
+const userRole = computed(() => currentUser.value.role === 1 ? '管理员' : '用户')
+
+const unreadCount = ref(0)
 
 // 统计数据
-const stats = ref({ tasks: 0, robots: 0, processes: 0, logs: 0, failedTasks: 0 })
-const statsChange = ref({ tasks: 12, robots: 5, processes: 8, logs: 15 })
-const taskStatus = ref({ running: 0, pending: 0, completed: 0, failed: 0 })
-const selectedPeriod = ref('近7天')
-
-// 机器人状态列表
+const stats = ref({ tasks: 0, robots: 0, failedTasks: 0 })
+const statsChange = ref({ tasks: 12, robots: 5 })
 const robotStatusList = ref([])
-
-// 告警消息
 const recentAlerts = ref([])
-
-// 热门流程
 const hotProcesses = ref([])
-
-// 许可证
 const usedLicenses = ref(3)
 const totalLicenses = ref(10)
 const licenseExpiry = ref('2026-12-31')
+const queueBacklog = ref(5)
+const avgResponseTime = ref(245)
 
+// 计算属性
 const successRate = computed(() => {
   if (stats.value.tasks === 0) return 0
   return Math.round(((stats.value.tasks - stats.value.failedTasks) / stats.value.tasks) * 100)
@@ -299,53 +411,90 @@ const activeRobots = computed(() => {
   return robotStatusList.value.filter(r => r.status === 'idle' || r.status === 'active').length
 })
 
-const queueBacklog = ref(5)
-const avgResponseTime = ref(245)
 const licenseUsage = computed(() => Math.round((usedLicenses.value / totalLicenses.value) * 100))
 
 const currentDate = computed(() => {
   const now = new Date()
-  return now.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })
+  return now.toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    weekday: 'long'
+  })
 })
 
-// ECharts 配置
+// ECharts 配置 - 浅色主题
 const lineChartOption = computed(() => ({
-  tooltip: { trigger: 'axis' },
-  legend: { data: ['成功', '失败', '总计'], bottom: 0 },
-  grid: { left: '3%', right: '4%', bottom: '15%', top: '10%', containLabel: true },
+  tooltip: {
+    trigger: 'axis',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderColor: '#e4e7ed',
+    textStyle: { color: '#303133' },
+    shadowBlur: 10,
+    shadowColor: 'rgba(0, 0, 0, 0.1)'
+  },
+  legend: {
+    data: ['成功', '失败', '总计'],
+    bottom: 0,
+    textStyle: { color: '#606266' }
+  },
+  grid: {
+    left: '3%',
+    right: '4%',
+    bottom: '15%',
+    top: '10%',
+    containLabel: true
+  },
   xAxis: {
     type: 'category',
     boundaryGap: false,
-    data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
+    data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
+    axisLine: { lineStyle: { color: '#e4e7ed' } },
+    axisLabel: { color: '#606266' }
   },
-  yAxis: { type: 'value' },
+  yAxis: {
+    type: 'value',
+    axisLine: { show: false },
+    axisLabel: { color: '#606266' },
+    splitLine: { lineStyle: { color: '#f0f0f0' } }
+  },
   series: [
     {
       name: '成功',
       type: 'line',
       smooth: true,
-      areaStyle: { opacity: 0.3 },
-      data: [120, 132, 101, 134, 190, 230, 210],
-      itemStyle: { color: '#67c23a' }
+      symbol: 'circle',
+      symbolSize: 8,
+      showSymbol: false,
+      lineStyle: { width: 3, color: '#67c23a' },
+      areaStyle: { color: 'rgba(103, 194, 58, 0.15)' },
+      data: [120, 132, 101, 134, 190, 230, 210]
     },
     {
       name: '失败',
       type: 'line',
       smooth: true,
-      areaStyle: { opacity: 0.3 },
-      data: [10, 12, 8, 15, 8, 5, 3],
-      itemStyle: { color: '#f56c6c' }
+      symbol: 'circle',
+      symbolSize: 8,
+      showSymbol: false,
+      lineStyle: { width: 3, color: '#f56c6c' },
+      areaStyle: { color: 'rgba(245, 108, 108, 0.15)' },
+      data: [10, 12, 8, 15, 8, 5, 3]
     },
     {
       name: '总计',
       type: 'line',
       smooth: true,
-      data: [130, 144, 109, 149, 198, 235, 213],
-      itemStyle: { color: '#409eff' }
+      symbol: 'circle',
+      symbolSize: 8,
+      showSymbol: false,
+      lineStyle: { width: 3, color: '#409eff', type: 'dashed' },
+      data: [130, 144, 109, 149, 198, 235, 213]
     }
   ]
 }))
 
+// 辅助函数
 const getRobotStatusType = (s) => {
   const map = { idle: 'success', busy: 'warning', offline: 'info', active: 'success' }
   return map[s] || 'info'
@@ -356,7 +505,17 @@ const getRobotStatusText = (s) => {
   return map[s] || s
 }
 
-const getProgressColor = (v) => v >= 80 ? '#f56c6c' : v >= 60 ? '#e6a23c' : '#67c23a'
+const getProgressColor = (v) => {
+  if (v >= 80) return '#f56c6c'
+  if (v >= 60) return '#e6a23c'
+  return '#67c23a'
+}
+
+const getLicenseColor = (v) => {
+  if (v >= 80) return '#f56c6c'
+  if (v >= 60) return '#e6a23c'
+  return '#67c23a'
+}
 
 const getAlertType = (type) => {
   const map = { danger: 'danger', warning: 'warning', info: 'info', success: 'success' }
@@ -370,9 +529,15 @@ const getAlertText = (type) => {
 
 const formatTime = (time) => {
   if (!time) return ''
-  return new Date(time).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+  return new Date(time).toLocaleString('zh-CN', {
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
 }
 
+// 导航函数
 const goToNotifications = () => router.push('/rpa/notifications')
 const goToTasks = () => router.push('/rpa/tasks')
 const goToRobots = () => router.push('/rpa/robots')
@@ -380,6 +545,7 @@ const goToProcesses = () => router.push('/rpa/processes')
 const goToQueue = () => router.push('/rpa/queue')
 const goToProfile = () => router.push('/system/profile')
 const goToProcessDetail = (process) => router.push('/rpa/processes')
+const goToSystemSettings = () => router.push('/system/settings')
 
 const handleLogout = () => {
   ElMessageBox.confirm('确定要退出登录吗？', '提示', { type: 'warning' }).then(() => {
@@ -390,10 +556,6 @@ const handleLogout = () => {
   })
 }
 
-const viewAlert = (alert) => {
-  ElMessageBox.alert(alert.content || alert.title, alert.title, { confirmButtonText: '确定' })
-}
-
 const handleTopMenuSelect = (index) => {
   if (index === 'dashboard') {
     router.push('/dashboard')
@@ -402,6 +564,17 @@ const handleTopMenuSelect = (index) => {
   } else if (index === 'system') {
     router.push('/system/profile')
   }
+}
+
+const refreshData = () => {
+  ElMessage.success('数据已刷新')
+  loadStats()
+  loadNotifications()
+  loadHotProcesses()
+}
+
+const viewAlert = (alert) => {
+  ElMessageBox.alert(alert.content || alert.title, alert.title, { confirmButtonText: '确定' })
 }
 
 // 数据加载
@@ -418,39 +591,24 @@ const loadUserFromStorage = () => {
 const loadStats = async () => {
   try {
     const { apiGet } = await import('../utils/api.js')
-    const [taskRes, robotRes, processRes, logRes] = await Promise.all([
+    const [taskRes, robotRes] = await Promise.all([
       apiGet('/task'),
-      apiGet('/robot'),
-      apiGet('/process'),
-      apiGet('/log')
+      apiGet('/robot')
     ])
 
     const tasks = taskRes?.data || []
     const robots = robotRes?.data || []
-    const processes = processRes?.data || []
-    const logs = logRes?.data || []
 
     stats.value = {
       tasks: tasks.length,
       robots: robots.length,
-      processes: processes.length,
-      logs: logs.length,
       failedTasks: tasks.filter(t => t.status === 'failed').length
-    }
-
-    taskStatus.value = {
-      running: tasks.filter(t => t.status === 'running').length,
-      pending: tasks.filter(t => t.status === 'pending').length,
-      completed: tasks.filter(t => t.status === 'completed').length,
-      failed: tasks.filter(t => t.status === 'failed').length
     }
 
     robotStatusList.value = robots
     statsChange.value = {
       tasks: Math.floor(Math.random() * 20),
-      robots: Math.floor(Math.random() * 15),
-      processes: Math.floor(Math.random() * 10),
-      logs: Math.floor(Math.random() * 25)
+      robots: Math.floor(Math.random() * 15)
     }
   } catch (error) {
     console.error('加载统计数据失败:', error)
@@ -463,10 +621,9 @@ const loadNotifications = async () => {
     const result = await apiGet('/notification/stats')
     if (result?.code === 0 && result.data?.unreads) {
       const unreads = result.data.unreads
-      unreadNotifications.value = (unreads.collect || 0) + (unreads.temp || 0) + (unreads.user || 0)
+      unreadCount.value = (unreads.collect || 0) + (unreads.temp || 0) + (unreads.user || 0)
     }
 
-    // 加载最近告警
     const notifResult = await apiGet('/notification?type=temp&size=5')
     if (notifResult?.code === 0) {
       recentAlerts.value = (notifResult.data || []).map(n => ({
@@ -505,191 +662,836 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.dashboard-view {
+/* ===== 设计系统 - 浅色主题 ===== */
+.dashboard-pro {
+  --primary: #409eff;
+  --primary-light: #66b1ff;
+  --primary-dark: #3a8ee6;
+  --success: #67c23a;
+  --warning: #e6a23c;
+  --danger: #f56c6c;
+  --info: #909399;
+
+  --bg-primary: #f5f7fa;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #fafbfc;
+
+  --text-primary: #1f2937;
+  --text-secondary: #6b7280;
+  --text-tertiary: #9ca3af;
+
+  --border-color: #e5e7eb;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+
   min-height: 100vh;
-  background-color: #f0f2f6;
+  background: var(--bg-primary);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
 }
 
-.top-header {
-  height: 60px;
-  background-color: #001529;
+/* ===== Header - 浅色主题 ===== */
+.dashboard-header {
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow-sm);
+}
+
+.header-inner {
+  max-width: 1440px;
+  margin: 0 auto;
+  height: 64px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 24px;
-  position: sticky;
+}
+
+.logo-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo-mark {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #409eff 0%, #66b1ff 100%);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.logo-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.main-nav {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.nav-menu {
+  border-bottom: none;
+  background: transparent;
+}
+
+.nav-menu .el-menu-item {
+  padding: 0 24px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  height: 64px;
+  line-height: 64px;
+  transition: all 0.2s ease;
+  border-bottom: 2px solid transparent;
+}
+
+.nav-menu .el-menu-item:hover {
+  color: var(--primary);
+  background: rgba(64, 158, 255, 0.05);
+}
+
+.nav-menu .el-menu-item.is-active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+  background: transparent;
+}
+
+.nav-menu .el-menu-item .el-icon {
+  margin-right: 6px;
+  font-size: 18px;
+}
+
+.header-tools {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.tool-badge {
+  cursor: pointer;
+}
+
+.tool-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  padding: 8px;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.tool-btn:hover {
+  background: var(--bg-tertiary);
+  color: var(--primary);
+}
+
+.user-avatar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  padding: 6px 12px 6px 6px;
+  border-radius: 24px;
+  transition: all 0.2s;
+}
+
+.user-avatar:hover {
+  background: var(--bg-tertiary);
+}
+
+.avatar-circle {
+  border: 2px solid var(--border-color);
+}
+
+.user-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.user-role {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  line-height: 1.2;
+}
+
+.dropdown-arrow {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+/* ===== Main Content ===== */
+.dashboard-main {
+  padding: 24px;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+.content-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ===== Page Header ===== */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.page-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 8px 0;
+  letter-spacing: -0.5px;
+}
+
+.page-subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.header-actions .el-button {
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+}
+
+/* ===== KPI Section ===== */
+.kpi-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.title-icon {
+  width: 24px;
+  height: 24px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 14px;
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 20px;
+}
+
+.kpi-card {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.kpi-card::before {
+  content: '';
+  position: absolute;
   top: 0;
-  z-index: 100;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary) 0%, var(--primary-light) 100%);
+  opacity: 0;
+  transition: opacity 0.3s;
 }
 
-.header-left { flex-shrink: 0; }
-
-.logo-area { display: flex; align-items: center; gap: 8px; }
-
-.logo-icon {
-  width: 32px; height: 32px; background: #1677ff; border-radius: 8px;
-  display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;
+.kpi-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
 }
 
-.logo-text { color: white; font-weight: 500; font-size: 16px; }
-
-.header-center { flex: 1; display: flex; justify-content: center; }
-
-.top-menu { background-color: transparent; border-bottom: none; }
-.top-menu .el-menu-item { color: #ffffffa6; border-bottom: 2px solid transparent; }
-.top-menu .el-menu-item:hover { color: #fff; background-color: rgba(255, 255, 255, 0.1); }
-.top-menu .el-menu-item.is-active { color: #fff; border-bottom-color: #1677ff; background-color: transparent; }
-
-.header-right { flex-shrink: 0; display: flex; align-items: center; gap: 20px; }
-
-.notif-badge { cursor: pointer; }
-.notif-icon { font-size: 20px; color: #ffffffa6; cursor: pointer; }
-.notif-icon:hover { color: #fff; }
-
-.user-info { color: #ffffffa6; }
-.user-dropdown { display: flex; align-items: center; gap: 8px; cursor: pointer; color: white; }
-.user-dropdown:hover { color: #1677ff; }
-
-.dashboard-content { max-width: 1600px; margin: 0 auto; padding: 24px; }
-
-.welcome-section {
-  display: flex; justify-content: space-between; align-items: center;
-  background: linear-gradient(135deg, #1677ff 0%, #409eff 100%);
-  color: white; padding: 28px 32px; border-radius: 20px; margin-bottom: 24px;
-  box-shadow: 0 8px 24px rgba(22, 119, 255, 0.3);
-}
-.welcome-left h2 { font-size: 24px; margin-bottom: 8px; }
-.welcome-tip { opacity: 0.9; font-size: 14px; }
-.quick-stats { display: flex; gap: 32px; }
-.quick-stat-item { text-align: center; }
-.quick-stat-item .stat-value { font-size: 32px; font-weight: bold; }
-.quick-stat-item .stat-label { font-size: 14px; opacity: 0.8; }
-
-.stats-grid {
-  display: grid; grid-template-columns: repeat(5, 1fr); gap: 20px; margin-bottom: 24px;
+.kpi-card:hover::before {
+  opacity: 1;
 }
 
-.stat-card {
-  background: white; padding: 20px; border-radius: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); cursor: pointer;
-  transition: all 0.2s; position: relative; overflow: hidden;
-}
-.stat-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12); }
-.stat-card-primary { border-left: 4px solid #409eff; }
-.stat-card-success { border-left: 4px solid #67c23a; }
-.stat-card-info { border-left: 4px solid #36cfc9; }
-.stat-card-warning { border-left: 4px solid #e6a23c; }
-.stat-card-danger { border-left: 4px solid #f56c6c; }
-
-.stat-icon {
-  position: absolute; top: 16px; right: 16px; font-size: 32px; opacity: 0.2;
+.kpi-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
 }
 
-.stat-header { display: flex; justify-content: flex-end; margin-bottom: 8px; }
-.stat-trend { font-size: 12px; padding: 2px 8px; border-radius: 10px; }
-.stat-trend.up { background: rgba(103, 194, 58, 0.1); color: #67c23a; }
-
-.stat-card .stat-value { font-size: 28px; font-weight: bold; color: #1e3a4a; margin-bottom: 4px; }
-.stat-card .stat-label { color: #6b7280; font-size: 14px; }
-
-.main-charts-row { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 24px; }
-
-.chart-card {
-  background: white; border-radius: 16px; padding: 24px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+.kpi-icon-wrapper {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
 }
-.chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-.chart-header h3 { font-size: 16px; font-weight: 600; color: #1e3a4a; }
-.chart-actions { display: flex; gap: 8px; }
-.period-btn {
-  padding: 4px 12px; border-radius: 12px; font-size: 12px; color: #666; cursor: pointer; transition: all 0.2s;
-}
-.period-btn:hover { background: #f5f7fa; }
-.period-btn.active { background: #409eff; color: white; }
-.chart-body { width: 100%; }
 
-.robot-status-card {
-  background: white; border-radius: 16px; padding: 20px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+.kpi-trend {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 12px;
 }
-.card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #f0f0f0; }
-.card-header h3 { font-size: 16px; font-weight: 600; color: #1e3a4a; display: flex; align-items: center; gap: 8px; }
-.card-more { font-size: 12px; color: #409eff; cursor: pointer; }
-.card-more:hover { color: #66b1ff; text-decoration: underline; }
 
-.robot-list { max-height: 280px; overflow-y: auto; }
-.robot-item {
-  padding: 12px 0; border-bottom: 1px solid #f5f7fa;
+.trend-up {
+  background: rgba(103, 194, 58, 0.1);
+  color: #67c23a;
 }
-.robot-item:last-child { border-bottom: none; }
-.robot-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-.robot-name { font-weight: 500; color: #1e3a4a; font-size: 14px; }
-.robot-resource { display: flex; flex-direction: column; gap: 4px; }
-.resource-item { display: flex; align-items: center; gap: 8px; }
-.resource-label { font-size: 12px; color: #8c8c8c; width: 30px; }
-.resource-item :deep(.el-progress) { flex: 1; }
 
-.empty-tip { text-align: center; color: #8c8c8c; padding: 20px 0; font-size: 14px; }
+.trend-down {
+  background: rgba(245, 108, 108, 0.1);
+  color: #f56c6c;
+}
 
-.bottom-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+.kpi-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+  margin-bottom: 8px;
+  letter-spacing: -1px;
+}
 
-.alert-card {
-  background: white; border-radius: 16px; padding: 20px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+.kpi-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
 }
-.alert-scroll { max-height: 300px; overflow-y: auto; }
-.alert-item {
-  display: flex; align-items: center; gap: 12px; padding: 10px;
-  border-radius: 8px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s;
-}
-.alert-item:hover { background: #f5f7fa; }
-.alert-item.danger { border-left: 3px solid #f56c6c; }
-.alert-item.warning { border-left: 3px solid #e6a23c; }
-.alert-item.info { border-left: 3px solid #909399; }
-.alert-time { font-size: 12px; color: #8c8c8c; white-space: nowrap; }
-.alert-title { flex: 1; font-size: 14px; color: #1e3a4a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-.hot-process-card {
-  background: white; border-radius: 16px; padding: 20px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+.kpi-desc {
+  font-size: 12px;
+  color: var(--text-tertiary);
 }
-.process-rank-list {}
-.process-rank-item {
-  display: flex; align-items: center; gap: 12px; padding: 10px;
-  border-radius: 8px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s;
-}
-.process-rank-item:hover { background: #f5f7fa; }
-.rank-num {
-  width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-  font-size: 12px; font-weight: bold; color: white;
-}
-.rank-num.rank-1 { background: linear-gradient(135deg, #ffd700, #ffb700); }
-.rank-num.rank-2 { background: linear-gradient(135deg, #c0c0c0, #a0a0a0); }
-.rank-num.rank-3 { background: linear-gradient(135deg, #cd7f32, #b87333); }
-.rank-num.rank-4, .rank-num.rank-5 { background: #8c8c8c; }
-.process-name { flex: 1; font-size: 14px; color: #1e3a4a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.process-count { font-size: 12px; color: #8c8c8c; }
 
+/* ===== Main Grid ===== */
+.main-grid {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 24px;
+}
+
+.chart-card-large {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.card-title .el-icon {
+  color: var(--primary);
+  font-size: 18px;
+}
+
+.card-subtitle {
+  font-size: 13px;
+  color: var(--text-tertiary);
+}
+
+.period-selector {
+  display: flex;
+}
+
+.period-selector :deep(.el-radio-button__inner) {
+  padding: 6px 16px;
+  font-size: 13px;
+  border-radius: var(--radius-sm) !important;
+}
+
+.chart-container {
+  height: 320px;
+}
+
+/* ===== Side Panel ===== */
+.side-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.status-card,
 .license-card {
-  background: white; border-radius: 16px; padding: 20px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
 }
-.license-content { display: flex; flex-direction: column; align-items: center; gap: 20px; }
-.license-text { font-size: 24px; font-weight: bold; color: #1e3a4a; }
-.license-label { font-size: 12px; color: #8c8c8c; }
-.license-info { width: 100%; }
-.info-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f5f7fa; }
-.info-item:last-child { border-bottom: none; }
-.info-item .label { color: #8c8c8c; font-size: 14px; }
-.info-item .value { color: #1e3a4a; font-weight: 500; font-size: 14px; }
 
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.card-title .el-icon {
+  color: var(--primary);
+  font-size: 16px;
+}
+
+.robot-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.robot-item {
+  padding: 12px;
+  border-radius: var(--radius-md);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  transition: all 0.2s;
+}
+
+.robot-item:hover {
+  background: var(--bg-primary);
+  border-color: var(--primary);
+}
+
+.robot-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.robot-avatar {
+  flex-shrink: 0;
+}
+
+.robot-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.robot-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.robot-ip {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.resource-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.resource-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.resource-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  width: 60px;
+  flex-shrink: 0;
+}
+
+.resource-bar :deep(.el-progress) {
+  flex: 1;
+}
+
+.resource-bar :deep(.el-progress__bar) {
+  border-radius: 4px;
+}
+
+/* License Card */
+.license-content {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.license-percent {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.license-label {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.license-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.license-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+}
+
+.license-item .label {
+  color: var(--text-secondary);
+}
+
+.license-item .value {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* ===== Bottom Grid ===== */
+.bottom-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 24px;
+}
+
+.alert-card,
+.process-card,
+.quick-actions-card {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
+}
+
+.alert-list,
+.process-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.alert-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: var(--radius-md);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.alert-item:hover {
+  background: var(--bg-primary);
+  border-color: var(--primary);
+  transform: translateX(4px);
+}
+
+.alert-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.alert-icon.danger {
+  background: rgba(245, 108, 108, 0.1);
+  color: #f56c6c;
+}
+
+.alert-icon.warning {
+  background: rgba(230, 162, 60, 0.1);
+  color: #e6a23c;
+}
+
+.alert-icon.info {
+  background: rgba(144, 147, 153, 0.1);
+  color: #909399;
+}
+
+.alert-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.alert-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 2px;
+}
+
+.alert-time {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.process-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: var(--radius-md);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.process-item:hover {
+  background: var(--bg-primary);
+  border-color: var(--primary);
+  transform: translateX(4px);
+}
+
+.process-rank {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: white;
+  flex-shrink: 0;
+}
+
+.rank-1 { background: linear-gradient(135deg, #ffd700 0%, #ffb700 100%); }
+.rank-2 { background: linear-gradient(135deg, #c0c0c0 0%, #a0a0a0 100%); }
+.rank-3 { background: linear-gradient(135deg, #cd7f32 0%, #b87333 100%); }
+.rank-4, .rank-5 { background: #8c8c8c; }
+
+.process-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.process-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.process-meta {
+  margin-top: 2px;
+}
+
+.process-count {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+/* ===== Quick Actions ===== */
+.action-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.action-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 12px;
+  border-radius: var(--radius-md);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.action-item:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary);
+}
+
+.action-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: white;
+}
+
+.action-item span {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+/* ===== Responsive ===== */
 @media (max-width: 1200px) {
-  .stats-grid { grid-template-columns: repeat(3, 1fr); }
-  .main-charts-row { grid-template-columns: 1fr; }
-  .bottom-row { grid-template-columns: 1fr; }
+  .kpi-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .main-grid {
+    grid-template-columns: 1fr;
+  }
+  .bottom-grid {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 @media (max-width: 768px) {
-  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .header-inner {
+    padding: 0 16px;
+  }
+
+  .logo-title {
+    display: none;
+  }
+
+  .nav-menu .el-menu-item span {
+    display: none;
+  }
+
+  .nav-menu .el-menu-item {
+    padding: 0 12px;
+  }
+
+  .user-meta {
+    display: none;
+  }
+
+  .dashboard-main {
+    padding: 16px;
+  }
+
+  .page-title {
+    font-size: 24px;
+  }
+
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .kpi-card {
+    padding: 16px;
+  }
+
+  .kpi-value {
+    font-size: 24px;
+  }
+
+  .bottom-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .main-grid {
+    gap: 16px;
+  }
+
+  .chart-card-large {
+    padding: 16px;
+  }
+
+  .chart-container {
+    height: 260px;
+  }
+}
+
+@media (max-width: 480px) {
+  .kpi-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
