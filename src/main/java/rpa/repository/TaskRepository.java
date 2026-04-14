@@ -53,4 +53,23 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
      * @return List<Task> 任务列表
      */
     List<Task> findByCategory(String category);
+    
+    /**
+     * 根据任务名称查询任务
+     *
+     * @param name 任务名称
+     * @return Task 任务对象
+     */
+    Task findByName(String name);
+    
+    /**
+     * 根据任务名称查询任务（排除指定ID）
+     *
+     * @param name 任务名称
+     * @param excludeId 排除的任务ID
+     * @return Task 任务对象
+     */
+    @org.springframework.data.jpa.repository.Query("SELECT t FROM Task t WHERE t.name = :name AND t.id != :excludeId")
+    Task findByNameAndIdNot(@org.springframework.data.repository.query.Param("name") String name, 
+                            @org.springframework.data.repository.query.Param("excludeId") Long excludeId);
 }

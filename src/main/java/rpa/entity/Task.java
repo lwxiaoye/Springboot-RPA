@@ -96,6 +96,10 @@ public class Task {
     /** 错误信息 */
     private String errorMessage;
     
+    /** 任务备注 */
+    @Column(length = 500)
+    private String remark;
+    
     /** 开始执行时间 */
     private LocalDateTime startTime;
     
