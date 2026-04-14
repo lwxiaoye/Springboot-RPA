@@ -127,9 +127,13 @@ public class TaskService {
      * @param name 名称
      * @param category 分类
      * @param priority 优先级
+     * @param processId 流程ID
+     * @param processName 流程名称
+     * @param remark 备注
      * @return 更新后的任务
      */
-    public Task update(Long taskId, String name, String category, String priority) {
+    public Task update(Long taskId, String name, String category, String priority, 
+                       Long processId, String processName, String remark) {
         return repository.findById(taskId).map(task -> {
             if (name != null) {
                 task.setName(name);
@@ -140,6 +144,16 @@ public class TaskService {
             if (priority != null) {
                 task.setPriority(priority);
             }
+            if (processId != null) {
+                task.setProcessId(processId);
+            }
+            if (processName != null) {
+                task.setProcessName(processName);
+            }
+            if (remark != null) {
+                task.setRemark(remark);
+            }
+            task.setUpdateTime(LocalDateTime.now());
             return repository.save(task);
         }).orElseThrow(() -> new RuntimeException("任务不存在"));
     }

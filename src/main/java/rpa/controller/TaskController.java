@@ -148,8 +148,17 @@ public class TaskController {
             String name = (String) request.get("name");
             String category = (String) request.get("category");
             String priority = (String) request.get("priority");
+            String remark = (String) request.get("remark");
             
-            Task task = taskService.update(id, name, category, priority);
+            // 处理 processId
+            Object processIdObj = request.get("processId");
+            Long processId = null;
+            if (processIdObj != null) {
+                processId = Long.valueOf(processIdObj.toString());
+            }
+            String processName = (String) request.get("processName");
+            
+            Task task = taskService.update(id, name, category, priority, processId, processName, remark);
             response.put("code", 0);
             response.put("message", "更新成功");
             response.put("data", task);
