@@ -65,6 +65,9 @@ public class ExecutionLog {
     @Column(name = "result_data", columnDefinition = "TEXT")
     private String resultData;
 
+    /** 采集数据数量 */
+    private Integer dataCount = 0;
+
     /** 创建时间 */
     private LocalDateTime createTime = LocalDateTime.now();
 }

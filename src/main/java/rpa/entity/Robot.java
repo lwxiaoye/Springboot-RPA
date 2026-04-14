@@ -47,6 +47,10 @@ public class Robot {
     /** 机器人分类（DATA_COLLECT-数据采集，DATA_PARSE-数据解析，DATA_PROCESS-数据加工，GENERAL-通用执行） */
     @Column(name = "robot_category")
     private String robotCategory = "GENERAL";
+
+    /** 允许的分类列表（逗号分隔，如：DATA_COLLECT,DATA_PARSE） */
+    @Column(name = "allowed_categories", length = 200)
+    private String allowedCategories;
     
     /** 状态（idle-空闲，busy-忙碌，offline-离线） */
     private String status = "idle";
@@ -89,10 +93,54 @@ public class Robot {
     /** 机器人执行代码 */
     @Column(name = "robot_code", columnDefinition = "TEXT")
     private String robotCode;
-    
+
+    /** 关联的队列ID */
+    @Column(name = "queue_id")
+    private Long queueId;
+
+    /** 关联的队列名称 */
+    @Column(name = "queue_name", length = 200)
+    private String queueName;
+
+    /** 最大并发任务数 */
+    @Column(name = "max_concurrent_tasks")
+    private Integer maxConcurrentTasks = 1;
+
+    /** 当前执行的任务数 */
+    @Column(name = "current_task_count")
+    private Integer currentTaskCount = 0;
+
+    /** 总执行次数 */
+    @Column(name = "total_executions")
+    private Integer totalExecutions = 0;
+
+    /** 成功执行次数 */
+    @Column(name = "success_executions")
+    private Integer successExecutions = 0;
+
+    /** 失败执行次数 */
+    @Column(name = "failed_executions")
+    private Integer failedExecutions = 0;
+
+    /** 累计运行时长（秒） */
+    @Column(name = "total_runtime")
+    private Long totalRuntime = 0L;
+
     /** 最后心跳时间 */
     private LocalDateTime lastHeartbeat = LocalDateTime.now();
-    
+
+    /** 最后任务执行时间 */
+    private LocalDateTime lastExecutionTime;
+
     /** 创建时间 */
     private LocalDateTime createTime = LocalDateTime.now();
+
+    /** 更新时间 */
+    private LocalDateTime updateTime = LocalDateTime.now();
+
+    /** 创建人 */
+    private String creator;
+
+    /** 是否启用 */
+    private Boolean enabled = true;
 }

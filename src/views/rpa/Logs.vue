@@ -14,6 +14,8 @@
         <el-option label="成功" value="success" />
         <el-option label="失败" value="failed" />
         <el-option label="进行中" value="running" />
+        <el-option label="正常" value="正常" />
+        <el-option label="异常" value="异常" />
       </el-select>
       <el-date-picker
         v-model="dateRange"
@@ -23,18 +25,27 @@
         end-placeholder="结束日期"
         style="width: 260px"
       />
+      <el-button type="success" @click="exportData">
+        <el-icon><Download /></el-icon> 导出
+      </el-button>
     </div>
 
     <el-table :data="paginatedLogs" v-loading="loading" border stripe>
       <el-table-column type="index" label="序号" width="60" align="center" />
       <el-table-column prop="taskName" label="任务名称" min-width="160" show-overflow-tooltip />
-      <el-table-column prop="robotName" label="执行机器人" min-width="120" />
       <el-table-column prop="action" label="操作" min-width="100" />
       <el-table-column prop="status" label="状态" width="90" align="center">
         <template #default="{ row }">
-          <el-tag :type="getStatusType(row.status)" size="small">
-            {{ getStatusText(row.status) }}
+          <el-tag :type="getStatusType(getDisplayStatus(row))" size="small">
+            {{ getDisplayStatus(row) }}
           </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column label="采集数据" width="90" align="center">
+        <template #default="{ row }">
+          <span :class="parseDataCount(row) > 0 ? 'data-count-success' : 'data-count-zero'">
+            {{ parseDataCount(row) }}
+          </span>
         </template>
       </el-table-column>
       <el-table-column prop="message" label="信息" min-width="200" show-overflow-tooltip>
@@ -70,7 +81,10 @@
         <div class="detail-item"><label>任务名称：</label><span>{{ currentLog.taskName }}</span></div>
         <div class="detail-item"><label>执行机器人：</label><span>{{ currentLog.robotName }}</span></div>
         <div class="detail-item"><label>操作：</label><span>{{ currentLog.action }}</span></div>
-        <div class="detail-item"><label>状态：</label><el-tag :type="getStatusType(currentLog.status)" size="small">{{ getStatusText(currentLog.status) }}</el-tag></div>
+        <div class="detail-item"><label>状态：</label>
+          <el-tag :type="getStatusType(getDisplayStatus(currentLog))" size="small">{{ getDisplayStatus(currentLog) }}</el-tag>
+        </div>
+        <div class="detail-item"><label>采集数据：</label><span :class="parseDataCount(currentLog) > 0 ? 'data-count-success' : 'data-count-zero'">{{ parseDataCount(currentLog) }} 条</span></div>
         <div class="detail-item"><label>开始时间：</label><span>{{ currentLog.startTime }}</span></div>
         <div class="detail-item"><label>结束时间：</label><span>{{ currentLog.endTime || '-' }}</span></div>
         <div class="detail-item"><label>耗时：</label><span>{{ currentLog.duration || '-' }}</span></div>
@@ -82,7 +96,7 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
-import { Search } from '@element-plus/icons-vue'
+import { Search, Download } from '@element-plus/icons-vue'
 
 import { apiGet } from '../../utils/api.js'
 
@@ -96,13 +110,69 @@ const currentLog = ref({})
 
 const pagination = reactive({ page: 1, size: 10, total: 0 })
 
+// 从信息中解析采集数据数量
+const parseDataCount = (log) => {
+  // 如果有直接的 dataCount 字段，优先使用
+  if (log.dataCount !== undefined && log.dataCount !== null) {
+    return log.dataCount
+  }
+  // 从 message 中解析
+  if (log.message) {
+    // 匹配 "采集数据: 123 条" 或 "处理数据: 123 条"
+    const match = log.message.match(/采集数据[:：]\s*(\d+)|处理数据[:：]\s*(\d+)/)
+    if (match) {
+      return parseInt(match[1] || match[2])
+    }
+  }
+  return 0
+}
+
+// 根据采集数据判断显示状态
+const getDisplayStatus = (log) => {
+  const dataCount = parseDataCount(log)
+  // 如果信息中有"条"数据，视为正常
+  if (dataCount > 0) {
+    return '正常'
+  }
+  // 如果执行完成但没有数据，视为异常
+  if (log.status === 'completed' || log.status === 'running') {
+    if (log.message && (log.message.includes('完成') || log.message.includes('结束'))) {
+      return '异常'
+    }
+  }
+  // 其他情况使用原始状态
+  return log.status
+}
+
 const getStatusText = (s) => {
-  const map = { success: '成功', failed: '失败', running: '进行中' }
-  return map[s] || s
+  const map = {
+    success: '成功',
+    failed: '失败',
+    running: '进行中',
+    completed: '正常',
+    completed_with_errors: '部分成功',
+    abnormal: '异常',
+    pending: '待执行',
+    cancelled: '已取消',
+    正常: '正常',
+    异常: '异常'
+  }
+  return map[s] || s || '-'
 }
 
 const getStatusType = (s) => {
-  const map = { success: 'success', failed: 'danger', running: 'warning' }
+  const map = {
+    success: 'success',
+    completed: 'success',
+    正常: 'success',
+    failed: 'danger',
+    abnormal: 'danger',
+    异常: 'danger',
+    running: 'warning',
+    pending: 'info',
+    completed_with_errors: 'warning',
+    cancelled: 'info'
+  }
   return map[s] || 'info'
 }
 
@@ -112,7 +182,10 @@ const filteredLogs = computed(() => {
     list = list.filter(l => l.taskName?.includes(searchKeyword.value) || l.robotName?.includes(searchKeyword.value))
   }
   if (statusFilter.value) {
-    list = list.filter(l => l.status === statusFilter.value)
+    list = list.filter(l => {
+      const displayStatus = getDisplayStatus(l)
+      return displayStatus === statusFilter.value
+    })
   }
   if (dateRange.value && dateRange.value.length === 2) {
     const [start, end] = dateRange.value
@@ -156,6 +229,53 @@ const viewDetail = (log) => {
 const handleSizeChange = (size) => { pagination.size = size; pagination.page = 1 }
 const handleCurrentChange = (page) => { pagination.page = page }
 
+// 导出数据为Excel
+const exportData = async () => {
+  try {
+    const exportLogs = filteredLogs.value
+    if (exportLogs.length === 0) {
+      ElMessage.warning('没有可导出的数据')
+      return
+    }
+
+    // 构建CSV内容
+    const headers = ['序号', '任务名称', '操作', '状态', '采集数据', '信息', '开始时间', '结束时间', '耗时']
+    const rows = exportLogs.map((log, index) => [
+      index + 1,
+      log.taskName || '-',
+      log.action || '-',
+      getDisplayStatus(log),
+      parseDataCount(log),
+      (log.message || '-').replace(/[\n\r]/g, ' '),
+      log.startTime || '-',
+      log.endTime || '-',
+      log.duration || '-'
+    ])
+
+    // 转CSV
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+    ].join('\n')
+
+    // 下载文件
+    const BOM = '\uFEFF'
+    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `执行日志_${new Date().toISOString().split('T')[0]}.csv`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+
+    ElMessage.success(`已导出 ${exportLogs.length} 条记录`)
+  } catch {
+    ElMessage.error('导出失败')
+  }
+}
+
 onMounted(() => { loadLogs() })
 </script>
 
@@ -175,4 +295,6 @@ onMounted(() => { loadLogs() })
 .detail-item.full { flex-direction: column; }
 .detail-item.full label { margin-bottom: 8px; }
 .log-message { background: #f5f7fa; padding: 12px; border-radius: 8px; font-size: 13px; line-height: 1.5; margin: 0; white-space: pre-wrap; word-break: break-all; }
+.data-count-success { color: #67c23a; font-weight: 600; }
+.data-count-zero { color: #f56c6c; }
 </style>

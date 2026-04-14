@@ -40,6 +40,11 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
      * @return List<Task> 任务列表
      */
     List<Task> findByStatus(String status);
+
+    /**
+     * 根据机器人和状态查询任务列表
+     */
+    List<Task> findByRobotIdAndStatus(Long robotId, String status);
     
     /**
      * 根据分类查询任务列表

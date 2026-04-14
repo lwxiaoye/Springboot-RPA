@@ -261,7 +261,38 @@ const viewDetail = (log) => {
 }
 
 const exportLogs = () => {
-  ElMessage.success('审计日志报表导出成功')
+  // 获取要导出的数据（当前筛选后的所有数据）
+  const exportData = filteredLogs.value.map(log => ({
+    '操作时间': log.time,
+    '操作用户': log.user,
+    'IP地址': log.ip,
+    '操作类型': getTypeText(log.type),
+    '模块': getModuleText(log.module),
+    '操作内容': log.content,
+    '风险等级': getRiskText(log.risk),
+    '请求参数': log.params || '',
+    '响应结果': log.result || ''
+  }))
+
+  // 生成CSV内容
+  const headers = Object.keys(exportData[0] || {})
+  const csvContent = [
+    headers.join(','),
+    ...exportData.map(row => headers.map(h => `"${(row[h] || '').toString().replace(/"/g, '""')}"`).join(','))
+  ].join('\n')
+
+  // 添加BOM以支持Excel正确显示中文
+  const bom = '\uFEFF'
+  const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `审计日志_${new Date().toISOString().slice(0, 10)}.csv`
+  link.click()
+
+  URL.revokeObjectURL(url)
+  ElMessage.success(`审计日志导出成功，共 ${exportData.length} 条记录`)
 }
 
 const handleSizeChange = (size) => { 

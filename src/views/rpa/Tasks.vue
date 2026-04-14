@@ -48,10 +48,23 @@
             <el-form-item label="任务名称" prop="name">
               <el-input v-model="taskForm.name" placeholder="请输入任务名称" />
             </el-form-item>
-            <el-form-item label="绑定流程">
-              <el-select v-model="taskForm.processId" placeholder="请选择绑定的流程" style="width: 100%" clearable>
-                <el-option v-for="p in processes" :key="p.id" :label="p.name" :value="p.id" />
-              </el-select>
+            <el-form-item label="绑定流程" prop="processId">
+              <div class="process-bind-list">
+                <div v-for="(pid, index) in taskForm.processIds" :key="index" class="process-bind-item">
+                  <el-select v-model="taskForm.processIds[index]" placeholder="请选择流程" style="flex: 1">
+                    <el-option v-for="p in processes" :key="p.id" :label="p.name" :value="p.id">
+                      <span>{{ p.name }}</span>
+                      <el-tag size="small" type="info" style="margin-left: 8px;">{{ p.code }}</el-tag>
+                    </el-option>
+                  </el-select>
+                  <el-button link type="danger" @click="removeProcessBind(index)" :disabled="taskForm.processIds.length <= 1">
+                    <el-icon><Delete /></el-icon>
+                  </el-button>
+                </div>
+                <el-button type="primary" link @click="addProcessBind">
+                  <el-icon><Plus /></el-icon> 添加流程
+                </el-button>
+              </div>
             </el-form-item>
             <el-form-item label="备注">
               <el-input v-model="taskForm.remark" type="textarea" :rows="3" placeholder="任务备注（可选）" />
@@ -63,7 +76,7 @@
             <el-button type="primary" @click="saveTask" :loading="saveLoading">
               {{ isEditTask ? '保存修改' : '创建任务' }}
             </el-button>
-            <el-button type="success" @click="executeTask" :disabled="!selectedTask?.processId && !taskForm.processId">
+            <el-button type="success" @click="executeTask" :disabled="!hasValidProcessIds" :loading="executeLoading">
               <el-icon><VideoPlay /></el-icon>
               立即执行
             </el-button>
@@ -120,12 +133,11 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Search, VideoPlay, Plus } from '@element-plus/icons-vue'
+import { Search, VideoPlay, Plus, Delete } from '@element-plus/icons-vue'
 import { apiGet, apiPost, apiPut, apiDelete } from '../../utils/api.js'
 
-const loading = ref(false)
 const saveLoading = ref(false)
-const executing = ref(false)
+const executeLoading = ref(false)
 const taskList = ref([])
 const processes = ref([])
 const selectedTask = ref(null)
@@ -136,7 +148,7 @@ const isEditTask = ref(false)
 
 const taskForm = reactive({
   name: '',
-  processId: '',
+  processIds: [''],
   remark: ''
 })
 
@@ -148,6 +160,11 @@ const filteredTasks = computed(() => {
   if (!taskSearch.value) return taskList.value
   const kw = taskSearch.value.toLowerCase()
   return taskList.value.filter(t => (t.name || '').toLowerCase().includes(kw))
+})
+
+// 是否有有效的流程绑定
+const hasValidProcessIds = computed(() => {
+  return taskForm.processIds.some(pid => pid) || selectedTask.value?.processId
 })
 
 const getStatusText = (s) => {
@@ -172,7 +189,6 @@ const loadTasks = async () => {
 }
 
 const loadProcesses = async () => {
-  loading.value = true
   try {
     const result = await apiGet('/process')
     if (result.code === 0) {
@@ -180,8 +196,6 @@ const loadProcesses = async () => {
     }
   } catch {
     processes.value = []
-  } finally {
-    loading.value = false
   }
 }
 
@@ -200,7 +214,17 @@ const selectTask = (task) => {
   selectedTask.value = task
   isEditTask.value = true
   taskForm.name = task.name
-  taskForm.processId = task.processId || ''
+  // 解析多个流程ID
+  if (task.processIds) {
+    try {
+      const parsed = JSON.parse(task.processIds)
+      taskForm.processIds = Array.isArray(parsed) && parsed.length > 0 ? parsed : ['']
+    } catch {
+      taskForm.processIds = task.processId ? [task.processId] : ['']
+    }
+  } else {
+    taskForm.processIds = task.processId ? [task.processId] : ['']
+  }
   taskForm.remark = task.remark || ''
 }
 
@@ -208,7 +232,7 @@ const showCreateTask = () => {
   selectedTask.value = null
   isEditTask.value = false
   taskForm.name = ''
-  taskForm.processId = ''
+  taskForm.processIds = ['']
   taskForm.remark = ''
 }
 
@@ -216,22 +240,62 @@ const cancelEdit = () => {
   selectedTask.value = null
   isEditTask.value = false
   taskForm.name = ''
-  taskForm.processId = ''
+  taskForm.processIds = ['']
   taskForm.remark = ''
+}
+
+// 添加流程绑定
+const addProcessBind = () => {
+  taskForm.processIds.push('')
+}
+
+// 删除流程绑定
+const removeProcessBind = (index) => {
+  if (taskForm.processIds.length > 1) {
+    taskForm.processIds.splice(index, 1)
+  }
+}
+
+// 获取已选择的流程名称列表
+const getSelectedProcessNames = () => {
+  return taskForm.processIds
+    .filter(pid => pid) // 过滤空值
+    .map(pid => {
+      const p = processes.value.find(proc => proc.id === pid)
+      return p ? p.name : ''
+    })
+    .filter(name => name)
+}
+
+// 获取第一个有效的流程ID
+const getFirstProcessId = () => {
+  const firstValid = taskForm.processIds.find(pid => pid)
+  return firstValid || null
 }
 
 const saveTask = async () => {
   if (!formRef.value) return
   await formRef.value.validate(async (valid) => {
     if (!valid) return
+
+    // 过滤空值
+    const validProcessIds = taskForm.processIds.filter(pid => pid)
+    if (validProcessIds.length === 0) {
+      ElMessage.warning('请至少选择一个流程')
+      return
+    }
+
     saveLoading.value = true
     try {
-      const process = processes.value.find(p => p.id === taskForm.processId)
+      const processNames = getSelectedProcessNames()
+
       if (isEditTask.value && selectedTask.value) {
         const result = await apiPut(`/task/${selectedTask.value.id}`, {
           name: taskForm.name,
-          processId: taskForm.processId,
-          processName: process?.name || '',
+          processId: getFirstProcessId(),
+          processIds: validProcessIds,
+          processName: processNames[0] || '',
+          processNames: processNames,
           remark: taskForm.remark
         })
         if (result.code === 0) {
@@ -244,8 +308,10 @@ const saveTask = async () => {
       } else {
         const result = await apiPost('/task', {
           name: taskForm.name,
-          processId: taskForm.processId,
-          processName: process?.name || '',
+          processId: getFirstProcessId(),
+          processIds: validProcessIds,
+          processName: processNames[0] || '',
+          processNames: processNames,
           remark: taskForm.remark,
           status: 'pending'
         })
@@ -266,32 +332,35 @@ const saveTask = async () => {
 }
 
 const executeTask = async () => {
-  const processId = taskForm.processId || selectedTask.value?.processId
-  if (!processId) {
-    ElMessage.warning('请先为任务绑定一个流程')
+  const processIds = taskForm.processIds.filter(pid => pid)
+  if (processIds.length === 0) {
+    ElMessage.warning('请先选择要执行的流程')
     return
   }
-  executing.value = true
+  executeLoading.value = true
   try {
     const taskName = taskForm.name || selectedTask.value?.name || '任务'
-    const result = await apiPost(`/process/${processId}/execute`, {
-      name: taskName
-    })
-    if (result.code === 0 || result.success) {
-      ElMessage.success('流程执行已启动')
-      await loadLogs()
-    } else {
-      ElMessage.error(result.message || '执行失败')
+    // 批量执行多个流程
+    for (const processId of processIds) {
+      const process = processes.value.find(p => p.id === processId)
+      const result = await apiPost(`/process/${processId}/execute`, {
+        name: taskName + '-' + (process?.name || '')
+      })
+      if (result.code !== 0 && !result.success) {
+        ElMessage.error(`${process?.name || '流程'}执行失败: ${result.message || '未知错误'}`)
+      }
     }
+    ElMessage.success(`已启动执行 ${processIds.length} 个流程`)
+    await loadLogs()
   } catch {
     ElMessage.error('执行请求失败')
   } finally {
-    executing.value = false
+    executeLoading.value = false
   }
 }
 
 const runProcess = async (process) => {
-  executing.value = true
+  executeLoading.value = true
   try {
     const result = await apiPost(`/process/${process.id}/execute`, {
       name: process.name
@@ -305,7 +374,7 @@ const runProcess = async (process) => {
   } catch {
     ElMessage.error('执行请求失败')
   } finally {
-    executing.value = false
+    executeLoading.value = false
   }
 }
 
@@ -342,6 +411,9 @@ onMounted(() => {
 
 .config-content { padding: 20px; border-bottom: 1px solid #f0f0f0; }
 .config-actions { display: flex; gap: 12px; margin-top: 20px; }
+.process-bind-list { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+.process-bind-item { display: flex; gap: 8px; align-items: center; }
+.process-bind-item .el-select { flex: 1; }
 
 .process-list-section { flex: 1; overflow-y: auto; padding: 16px 20px; }
 .section-header { margin-bottom: 12px; }

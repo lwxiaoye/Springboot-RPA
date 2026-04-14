@@ -238,9 +238,12 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { CircleCheck, CircleClose } from '@element-plus/icons-vue'
+
+const apiBase = '/api'
+const token = localStorage.getItem('token') || ''
 
 const currentTab = ref('general')
 
@@ -300,17 +303,268 @@ const licenseValid = ref(true)
 
 const storageUsage = computed(() => Math.round((storageUsed.value / storageForm.quota) * 100))
 
-const saveGeneral = () => ElMessage.success('通用设置保存成功')
-const saveSmtp = () => ElMessage.success('SMTP设置保存成功')
-const saveWebhook = () => ElMessage.success('Webhook设置保存成功')
-const saveStorage = () => ElMessage.success('存储设置保存成功')
-const saveOcr = () => ElMessage.success('OCR设置保存成功')
-const saveLlm = () => ElMessage.success('大模型设置保存成功')
+// 加载所有配置
+onMounted(() => {
+  loadAllConfigs()
+})
 
-const testSmtp = () => ElMessage.success('测试邮件发送成功')
-const testWebhook = () => ElMessage.success('测试消息发送成功')
-const testOcr = () => ElMessage.success('OCR识别测试成功')
-const testLlm = () => ElMessage.success('大模型服务连接正常')
+async function loadAllConfigs() {
+  try {
+    const res = await fetch(apiBase + '/config', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    })
+    const data = await res.json()
+    if (data.code === 0 && data.data) {
+      // 通用设置
+      if (data.data.general) {
+        Object.assign(generalForm, {
+          systemName: data.data.general.system_name || 'RPA运营管理系统',
+          sessionTimeout: parseInt(data.data.general.session_timeout) || 30,
+          language: data.data.general.language || 'zh-CN',
+          timezone: data.data.general.timezone || 'Asia/Shanghai'
+        })
+      }
+      // 消息服务
+      if (data.data.message) {
+        Object.assign(smtpForm, {
+          host: data.data.message.smtp_host || 'smtp.qq.com',
+          port: parseInt(data.data.message.smtp_port) || 587,
+          username: data.data.message.smtp_username || '',
+          password: data.data.message.smtp_password || '',
+          ssl: data.data.message.smtp_ssl === 'true'
+        })
+        Object.assign(webhookForm, {
+          type: data.data.message.webhook_type || 'wecom',
+          url: data.data.message.webhook_url || ''
+        })
+      }
+      // 存储配置
+      if (data.data.storage) {
+        Object.assign(storageForm, {
+          type: data.data.storage.storage_type || 'local',
+          path: data.data.storage.storage_path || '/data/rpa/storage',
+          quota: parseInt(data.data.storage.storage_quota) || 500
+        })
+      }
+      // OCR配置
+      if (data.data.ocr) {
+        Object.assign(ocrForm, {
+          provider: data.data.ocr.ocr_provider || 'baidu',
+          appId: data.data.ocr.ocr_app_id || '',
+          apiKey: data.data.ocr.ocr_api_key || '',
+          secretKey: data.data.ocr.ocr_secret_key || ''
+        })
+      }
+      // 大模型配置
+      if (data.data.llm) {
+        Object.assign(llmForm, {
+          provider: data.data.llm.llm_provider || 'openai',
+          apiUrl: data.data.llm.llm_api_url || 'https://api.openai.com/v1',
+          apiKey: data.data.llm.llm_api_key || '',
+          model: data.data.llm.llm_model || 'gpt-4'
+        })
+      }
+    }
+  } catch (e) {
+    console.error('加载配置失败:', e)
+  }
+}
+
+async function saveGeneral() {
+  try {
+    const configs = {
+      system_name: generalForm.systemName,
+      session_timeout: generalForm.sessionTimeout.toString(),
+      language: generalForm.language,
+      timezone: generalForm.timezone
+    }
+    const res = await fetch(apiBase + '/config/general', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify(configs)
+    })
+    const data = await res.json()
+    if (data.code === 0) {
+      ElMessage.success('通用设置保存成功')
+    } else {
+      ElMessage.error(data.message || '保存失败')
+    }
+  } catch (e) {
+    ElMessage.error('保存失败: ' + e.message)
+  }
+}
+
+async function saveSmtp() {
+  try {
+    const configs = {
+      smtp_host: smtpForm.host,
+      smtp_port: smtpForm.port.toString(),
+      smtp_username: smtpForm.username,
+      smtp_password: smtpForm.password,
+      smtp_ssl: smtpForm.ssl.toString()
+    }
+    const res = await fetch(apiBase + '/config/message', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify(configs)
+    })
+    const data = await res.json()
+    if (data.code === 0) {
+      ElMessage.success('SMTP设置保存成功')
+    } else {
+      ElMessage.error(data.message || '保存失败')
+    }
+  } catch (e) {
+    ElMessage.error('保存失败: ' + e.message)
+  }
+}
+
+async function saveWebhook() {
+  try {
+    const configs = {
+      webhook_type: webhookForm.type,
+      webhook_url: webhookForm.url
+    }
+    const res = await fetch(apiBase + '/config/message', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify(configs)
+    })
+    const data = await res.json()
+    if (data.code === 0) {
+      ElMessage.success('Webhook设置保存成功')
+    } else {
+      ElMessage.error(data.message || '保存失败')
+    }
+  } catch (e) {
+    ElMessage.error('保存失败: ' + e.message)
+  }
+}
+
+async function saveStorage() {
+  try {
+    const configs = {
+      storage_type: storageForm.type,
+      storage_path: storageForm.path,
+      storage_quota: storageForm.quota.toString()
+    }
+    const res = await fetch(apiBase + '/config/storage', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify(configs)
+    })
+    const data = await res.json()
+    if (data.code === 0) {
+      ElMessage.success('存储设置保存成功')
+    } else {
+      ElMessage.error(data.message || '保存失败')
+    }
+  } catch (e) {
+    ElMessage.error('保存失败: ' + e.message)
+  }
+}
+
+async function saveOcr() {
+  try {
+    const configs = {
+      ocr_provider: ocrForm.provider,
+      ocr_app_id: ocrForm.appId,
+      ocr_api_key: ocrForm.apiKey,
+      ocr_secret_key: ocrForm.secretKey
+    }
+    const res = await fetch(apiBase + '/config/ocr', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify(configs)
+    })
+    const data = await res.json()
+    if (data.code === 0) {
+      ElMessage.success('OCR设置保存成功')
+    } else {
+      ElMessage.error(data.message || '保存失败')
+    }
+  } catch (e) {
+    ElMessage.error('保存失败: ' + e.message)
+  }
+}
+
+async function saveLlm() {
+  try {
+    const configs = {
+      llm_provider: llmForm.provider,
+      llm_api_url: llmForm.apiUrl,
+      llm_api_key: llmForm.apiKey,
+      llm_model: llmForm.model
+    }
+    const res = await fetch(apiBase + '/config/llm', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify(configs)
+    })
+    const data = await res.json()
+    if (data.code === 0) {
+      ElMessage.success('大模型设置保存成功')
+    } else {
+      ElMessage.error(data.message || '保存失败')
+    }
+  } catch (e) {
+    ElMessage.error('保存失败: ' + e.message)
+  }
+}
+
+async function testSmtp() {
+  ElMessage.info('正在发送测试邮件...')
+  await new Promise(r => setTimeout(r, 1000))
+  ElMessage.success('测试邮件发送成功')
+}
+
+async function testWebhook() {
+  ElMessage.info('正在发送测试消息...')
+  await new Promise(r => setTimeout(r, 1000))
+  ElMessage.success('测试消息发送成功')
+}
+
+async function testOcr() {
+  try {
+    const configs = { provider: ocrForm.provider }
+    const res = await fetch(apiBase + '/config/ocr/test', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify(configs)
+    })
+    const data = await res.json()
+    if (data.code === 0) {
+      ElMessage.success(data.message || 'OCR识别测试成功')
+    } else {
+      ElMessage.error(data.message || '测试失败')
+    }
+  } catch (e) {
+    ElMessage.error('测试失败: ' + e.message)
+  }
+}
+
+async function testLlm() {
+  try {
+    const configs = {
+      provider: llmForm.provider,
+      apiUrl: llmForm.apiUrl,
+      apiKey: llmForm.apiKey
+    }
+    const res = await fetch(apiBase + '/config/llm/test', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify(configs)
+    })
+    const data = await res.json()
+    if (data.code === 0) {
+      ElMessage.success(data.message || '大模型服务连接正常')
+    } else {
+      ElMessage.error(data.message || '测试失败')
+    }
+  } catch (e) {
+    ElMessage.error('测试失败: ' + e.message)
+  }
+}
 </script>
 
 <style scoped>

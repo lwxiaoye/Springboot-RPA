@@ -64,7 +64,54 @@ public class RpaProcess {
 
     /** 创建时间 */
     private LocalDateTime createTime = LocalDateTime.now();
-    
+
     /** 更新时间 */
     private LocalDateTime updateTime = LocalDateTime.now();
+
+    // ==================== 流程-机器人关联 ====================
+
+    /** 选择的机器人ID列表（JSON格式数组，流程可调用多个机器人） */
+    @Column(name = "selected_robot_ids", length = 1000)
+    private String selectedRobotIds;
+
+    /** 选择的机器人名称列表（JSON格式数组） */
+    @Column(name = "selected_robot_names", length = 1000)
+    private String selectedRobotNames;
+
+    /** 最后一次执行的机器人ID */
+    @Column(name = "last_robot_id")
+    private Long lastRobotId;
+
+    /** 最后一次执行的机器人名称 */
+    @Column(name = "last_robot_name", length = 200)
+    private String lastRobotName;
+
+    /** 最后一次执行的返回结果 */
+    @Column(name = "last_execution_result", columnDefinition = "TEXT")
+    private String lastExecutionResult;
+
+    /** 最后执行时间 */
+    private LocalDateTime lastExecutionTime;
+
+    // ==================== 流程扩展字段 ====================
+
+    /** 需要的机器人分类（DATA_COLLECT-数据采集，DATA_PARSE-数据解析，DATA_PROCESS-数据加工，GENERAL-通用执行） */
+    @Column(name = "required_category", length = 50)
+    private String requiredCategory;
+
+    /** 关联的队列ID */
+    @Column(name = "queue_id")
+    private Long queueId;
+
+    /** 关联的队列名称 */
+    @Column(name = "queue_name", length = 200)
+    private String queueName;
+
+    /** 超时时间（分钟） */
+    @Column(name = "timeout_minutes")
+    private Integer timeoutMinutes = 60;
+
+    /** 重��次数 */
+    @Column(name = "retry_count")
+    private Integer retryCount = 0;
 }

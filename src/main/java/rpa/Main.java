@@ -2,6 +2,7 @@ package rpa;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
  * RPA系统主入口
@@ -30,13 +31,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * @see SpringBootApplication
  */
 @SpringBootApplication
+@EnableScheduling
 public class Main {
-    
-    /**
-     * 应用启动入口
-     *
-     * @param args 命令行参数
-     */
+
     public static void main(String[] args) {
         SpringApplication.run(Main.class, args);
     }
