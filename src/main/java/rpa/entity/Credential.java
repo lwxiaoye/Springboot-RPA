@@ -72,6 +72,9 @@ public class Credential {
     @Column(length = 20)
     private String status = "active";
 
+    /** 过期时间 */
+    private LocalDateTime expireTime;
+
     /** 创建时间 */
     private LocalDateTime createTime = LocalDateTime.now();
 

@@ -13,8 +13,10 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/audit")
-@CrossOrigin
+@CrossOrigin(origins = "*")
 public class AuditLogController {
+
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(AuditLogController.class);
 
     @Autowired
     private AuditLogService auditLogService;
@@ -28,6 +30,7 @@ public class AuditLogController {
                                     @RequestParam(required = false) String riskLevel,
                                     @RequestParam(required = false) String startTime,
                                     @RequestParam(required = false) String endTime) {
+        log.info("审计日志查询请求: userId={}, module={}, riskLevel={}", userId, module, riskLevel);
         List<AuditLog> list;
 
         if (userId != null) {
@@ -42,6 +45,7 @@ public class AuditLogController {
             list = auditLogRepository.findAll();
         }
 
+        log.info("审计日志查询结果: {} 条记录", list.size());
         return success(list);
     }
 

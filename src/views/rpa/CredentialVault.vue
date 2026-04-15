@@ -53,15 +53,15 @@
       <el-table-column prop="description" label="描述" min-width="150" show-overflow-tooltip />
       <el-table-column prop="expireTime" label="过期时间" min-width="120">
         <template #default="{ row }">
-          <span :class="isExpiring(row.expireTime) ? 'text-warning' : ''">
-            {{ row.expireTime || '永不过期' }}
+          <span :class="getExpireClass(row.expireTime)">
+            {{ getExpireText(row.expireTime) }}
           </span>
         </template>
       </el-table-column>
       <el-table-column prop="status" label="状态" width="80" align="center">
         <template #default="{ row }">
-          <el-tag :type="row.status === 'active' ? 'success' : 'info'" size="small">
-            {{ row.status === 'active' ? '启用' : '禁用' }}
+          <el-tag :type="getStatusTagType(row)" size="small">
+            {{ getStatusText(row) }}
           </el-tag>
         </template>
       </el-table-column>
@@ -141,13 +141,10 @@
         </template>
 
         <el-form-item label="过期时间">
-          <el-date-picker v-model="credentialForm.expireTime" type="date" placeholder="选择过期时间" style="width: 100%;" />
+          <el-date-picker v-model="credentialForm.expireTime" type="date" placeholder="选择过期时间，为空则永不过期" style="width: 100%;" />
         </el-form-item>
         <el-form-item label="描述">
           <el-input v-model="credentialForm.description" type="textarea" :rows="2" placeholder="请输入描述" />
-        </el-form-item>
-        <el-form-item label="状态">
-          <el-switch v-model="credentialForm.status" active-value="active" inactive-value="inactive" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -163,8 +160,8 @@
         <div class="detail-item"><label>类型：</label><span>{{ getTypeText(currentCredential.type) }}</span></div>
         <div class="detail-item"><label>用户名：</label><span>{{ currentCredential.username || '-' }}</span></div>
         <div class="detail-item full"><label>密码/密钥：</label><span class="masked">{{ currentCredential.type === 'password' ? '••••••••' : '••••••••' }}</span></div>
-        <div class="detail-item"><label>过期时间：</label><span :class="isExpiring(currentCredential.expireTime) ? 'text-warning' : ''">{{ currentCredential.expireTime || '永不过期' }}</span></div>
-        <div class="detail-item"><label>状态：</label><el-tag :type="currentCredential.status === 'active' ? 'success' : 'info'" size="small">{{ currentCredential.status === 'active' ? '启用' : '禁用' }}</el-tag></div>
+        <div class="detail-item"><label>过期时间：</label><span :class="getExpireClass(currentCredential.expireTime)">{{ getExpireText(currentCredential.expireTime) }}</span></div>
+        <div class="detail-item"><label>状态：</label><el-tag :type="getStatusTagType(currentCredential)" size="small">{{ getStatusText(currentCredential) }}</el-tag></div>
         <div class="detail-item"><label>创建时间：</label><span>{{ currentCredential.createTime }}</span></div>
         <div class="detail-item"><label>最后使用：</label><span>{{ currentCredential.lastUsed || '从未使用' }}</span></div>
         <div class="detail-item full"><label>描述：</label><span>{{ currentCredential.description || '-' }}</span></div>
@@ -181,6 +178,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Search, Plus } from '@element-plus/icons-vue'
+import { apiGet, apiPost, apiPut, apiDelete } from '../../utils/api.js'
 
 function getAuthHeaders() {
   const token = localStorage.getItem('token')
@@ -264,6 +262,49 @@ const isExpiring = (expireTime) => {
   return diff <= 7 && diff > 0
 }
 
+// 根据过期时间判断显示状态
+const getStatusText = (credential) => {
+  const expireTime = credential.expireTime
+  if (!expireTime) return '启用'
+  const expire = new Date(expireTime)
+  const now = new Date()
+  const diff = (expire - now) / (1000 * 60 * 60 * 24)
+  if (diff < 0) return '已过期'
+  if (diff <= 7) return '即将过期'
+  return credential.status === 'inactive' ? '已禁用' : '启用'
+}
+
+const getStatusTagType = (credential) => {
+  const expireTime = credential.expireTime
+  if (!expireTime) return credential.status === 'inactive' ? 'info' : 'success'
+  const expire = new Date(expireTime)
+  const now = new Date()
+  const diff = (expire - now) / (1000 * 60 * 60 * 24)
+  if (diff < 0) return 'danger'
+  if (diff <= 7) return 'warning'
+  return credential.status === 'inactive' ? 'info' : 'success'
+}
+
+const getExpireText = (expireTime) => {
+  if (!expireTime) return '永不过期'
+  const expire = new Date(expireTime)
+  const now = new Date()
+  const diff = (expire - now) / (1000 * 60 * 60 * 24)
+  if (diff < 0) return '已过期'
+  if (diff <= 7) return `${Math.ceil(diff)}天后过期`
+  return expireTime
+}
+
+const getExpireClass = (expireTime) => {
+  if (!expireTime) return ''
+  const expire = new Date(expireTime)
+  const now = new Date()
+  const diff = (expire - now) / (1000 * 60 * 60 * 24)
+  if (diff < 0) return 'text-danger'
+  if (diff <= 7) return 'text-warning'
+  return ''
+}
+
 const loadCredentials = async () => {
   loading.value = true
   try {
@@ -273,9 +314,30 @@ const loadCredentials = async () => {
     } else {
       credentials.value = []
     }
+    // 重新计算统计数据
+    const now = new Date()
+    let expiringCount = 0
+    let activeCount = 0
+    let usedTodayCount = 0
+    for (const c of credentials.value) {
+      const expireTime = c.expireTime ? new Date(c.expireTime) : null
+      if (expireTime) {
+        const diff = (expireTime - now) / (1000 * 60 * 60 * 24)
+        if (diff < 0) {
+          // 已过期，不计入active
+        } else if (diff <= 7) {
+          expiringCount++
+          activeCount++
+        } else {
+          activeCount++
+        }
+      } else {
+        activeCount++
+      }
+    }
     stats.total = credentials.value.length
-    stats.expiring = credentials.value.filter(c => isExpiring(c.expireTime)).length
-    stats.active = credentials.value.filter(c => c.status === 'active').length
+    stats.expiring = expiringCount
+    stats.active = activeCount
     stats.usedToday = credentials.value.reduce((sum, c) => sum + (c.useCount || 0), 0)
   } catch (e) {
     console.error('加载凭据失败:', e)
@@ -317,19 +379,23 @@ const submitCredential = async () => {
       submitLoading.value = true
       try {
         if (isEdit.value) {
-          const index = credentials.value.findIndex(c => c.id === currentCredential.value.id)
-          if (index !== -1) {
-            credentials.value[index] = { ...credentials.value[index], ...credentialForm }
+          // 调用后端更新API
+          const result = await apiPut(`/credential/${currentCredential.value.id}`, credentialForm)
+          if (result.code === 0) {
+            ElMessage.success('凭据更新成功')
+          } else {
+            ElMessage.error(result.message || '更新失败')
+            return
           }
-          ElMessage.success('凭据更新成功')
         } else {
-          credentials.value.push({
-            id: Date.now(),
-            ...credentialForm,
-            lastUsed: '从未使用',
-            createTime: new Date().toLocaleString()
-          })
-          ElMessage.success('凭据添加成功')
+          // 调用后端创建API
+          const result = await apiPost('/credential/create', credentialForm)
+          if (result.code === 0) {
+            ElMessage.success('凭据添加成功')
+          } else {
+            ElMessage.error(result.message || '创建失败')
+            return
+          }
         }
         dialogVisible.value = false
         await loadCredentials()
@@ -343,11 +409,16 @@ const submitCredential = async () => {
 }
 
 const deleteCredential = async (credential) => {
-  const index = credentials.value.findIndex(c => c.id === credential.id)
-  if (index !== -1) {
-    credentials.value.splice(index, 1)
-    await loadCredentials()
-    ElMessage.success('凭据删除成功')
+  try {
+    const result = await apiDelete(`/credential/${credential.id}`)
+    if (result.code === 0) {
+      await loadCredentials()
+      ElMessage.success('凭据删除成功')
+    } else {
+      ElMessage.error(result.message || '删除失败')
+    }
+  } catch (e) {
+    ElMessage.error('删除失败')
   }
 }
 

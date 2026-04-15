@@ -107,6 +107,11 @@ public class CredentialService {
         if (credential.getType() != null) {
             existing.setType(credential.getType());
         }
+        if (credential.getName() != null) {
+            existing.setName(credential.getName());
+        }
+        // 处理过期时间
+        existing.setExpireTime(credential.getExpireTime());
 
         // 重新加密凭据值
         if (credential.getSecretValue() != null) {
@@ -156,7 +161,7 @@ public class CredentialService {
      * 获取凭据（不解密）- 用于列表展示
      */
     public List<Credential> listCredentials() {
-        return credentialRepository.findByStatusOrderByCreateTimeDesc("active");
+        return credentialRepository.findAll();
     }
 
     /**
@@ -225,6 +230,7 @@ public class CredentialService {
         decrypted.setDescription(credential.getDescription());
         decrypted.setTags(credential.getTags());
         decrypted.setStatus(credential.getStatus());
+        decrypted.setExpireTime(credential.getExpireTime());
         decrypted.setCreateTime(credential.getCreateTime());
         decrypted.setUpdateTime(credential.getUpdateTime());
         decrypted.setUseCount(credential.getUseCount());

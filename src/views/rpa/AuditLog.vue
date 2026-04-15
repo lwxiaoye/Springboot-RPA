@@ -149,6 +149,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Search, Download } from '@element-plus/icons-vue'
+import { apiGet } from '../../utils/api.js'
 
 const loading = ref(false)
 const searchKeyword = ref('')
@@ -227,28 +228,33 @@ const getRiskText = (risk) => {
 const loadLogs = async () => {
   loading.value = true
   try {
-    // 模拟数据 - 生成更多测试数据
-    logs.value = []
-    for (let i = 1; i <= 25; i++) {
-      logs.value.push({
-        id: i,
-        time: `2026-03-30 ${(14 + Math.floor(i / 4)).toString().padStart(2, '0')}:${(i * 5 % 60).toString().padStart(2, '0')}:00`,
-        user: ['admin', 'zhangsan', 'lisi'][i % 3],
-        role: ['超级管理员', '普通用户', '运维人员'][i % 3],
-        ip: `192.168.1.${100 + i}`,
-        type: ['login', 'create', 'update', 'delete', 'export'][i % 5],
-        module: ['user', 'robot', 'process', 'task', 'log', 'system'][i % 6],
-        content: `操作内容 ${i}`,
-        risk: ['low', 'medium', 'high'][i % 3],
-        result: 'success'
-      })
+    const result = await apiGet('/audit')
+    if (result.code === 0) {
+      logs.value = (result.data || []).map(log => ({
+        id: log.id,
+        time: log.createTime,
+        user: log.userName || '-',
+        role: '',
+        ip: log.ip || '-',
+        type: log.action || '-',
+        module: log.module || '-',
+        content: log.description || '-',
+        risk: log.riskLevel || 'low',
+        result: log.status || 'success',
+        oldValue: log.requestParams,
+        newValue: log.responseResult,
+        detail: log
+      }))
+    } else {
+      logs.value = []
     }
-    // 不需要在这里设置 pagination.total，filteredLogs 会计算
-    stats.total = 1256
-    stats.today = logs.value.length
+    stats.total = logs.value.length
+    const today = new Date().toISOString().split('T')[0]
+    stats.today = logs.value.filter(l => l.time && l.time.startsWith(today)).length
     stats.highRisk = logs.value.filter(l => l.risk === 'high').length
     stats.logins = logs.value.filter(l => l.type === 'login').length
   } catch (e) {
+    console.error('加载审计日志失败:', e)
     logs.value = []
   } finally {
     loading.value = false
