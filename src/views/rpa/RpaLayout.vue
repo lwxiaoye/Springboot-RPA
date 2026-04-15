@@ -1,13 +1,16 @@
 <template>
   <div class="rpa-layout">
     <!-- 顶部导航栏 -->
-    <header class="top-header">
+    <header class="dashboard-header">
+      <!-- Logo区域 -->
       <div class="header-left">
         <div class="logo-area" @click="goToDashboard">
           <div class="logo-icon">RPA</div>
           <div class="logo-text">RPA运营管理系统</div>
         </div>
       </div>
+
+      <!-- 导航菜单 -->
       <div class="header-center">
         <el-menu
           :default-active="activeTopMenu"
@@ -17,11 +20,11 @@
           @select="handleTopMenuSelect"
         >
           <el-menu-item index="dashboard">
-            <el-icon><DataLine /></el-icon>
+            <el-icon><Odometer /></el-icon>
             <span>首页</span>
           </el-menu-item>
           <el-menu-item index="rpa">
-            <el-icon><Monitor /></el-icon>
+            <el-icon><VideoCamera /></el-icon>
             <span>RPA运营管理</span>
           </el-menu-item>
           <el-menu-item index="system">
@@ -30,27 +33,39 @@
           </el-menu-item>
         </el-menu>
       </div>
+
+      <!-- 右侧工具栏 -->
       <div class="header-right">
-        <!-- 通知图标 -->
-        <el-badge :value="unreadCount" :hidden="unreadCount === 0" class="notification-badge">
-          <el-icon class="notification-icon" @click="goToNotifications"><Bell /></el-icon>
+        <el-badge :value="unreadCount" :hidden="unreadCount === 0" class="tool-badge">
+          <el-button class="tool-btn" @click="goToNotifications">
+            <el-icon><Bell /></el-icon>
+          </el-button>
         </el-badge>
-        <div class="user-info">
-          <el-dropdown>
-            <span class="user-dropdown">
-              <el-icon><User /></el-icon>
-              {{ currentUser.realName || currentUser.username }}
-              <el-icon class="el-icon--right"><ArrowDown /></el-icon>
-            </span>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item @click="goToProfile">个人信息</el-dropdown-item>
-                <el-dropdown-item divided>设置</el-dropdown-item>
-                <el-dropdown-item divided @click="handleLogout">退出登录</el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
-        </div>
+
+        <el-dropdown trigger="click">
+          <div class="user-avatar">
+            <el-avatar :size="36" class="avatar-circle">
+              {{ userInitial }}
+            </el-avatar>
+            <div class="user-meta">
+              <div class="user-name">{{ userName }}</div>
+              <div class="user-role">{{ userRole }}</div>
+            </div>
+            <el-icon class="dropdown-arrow"><ArrowDown /></el-icon>
+          </div>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item @click="goToProfile">
+                <el-icon><User /></el-icon>
+                个人信息
+              </el-dropdown-item>
+              <el-dropdown-item divided @click="handleLogout">
+                <el-icon><SwitchButton /></el-icon>
+                退出登录
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
       </div>
     </header>
 
@@ -275,7 +290,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
@@ -305,7 +320,9 @@ import {
   View,
   Unlock,
   VideoPlay,
-  ChatLineSquare
+  ChatLineSquare,
+  Odometer,
+  SwitchButton
 } from '@element-plus/icons-vue'
 
 const router = useRouter()
@@ -323,6 +340,13 @@ const currentUser = ref({
   realName: '系统管理员',
   email: 'admin@rpa.com',
   role: 1
+})
+
+const userName = computed(() => currentUser.value.realName || currentUser.value.username)
+const userRole = computed(() => currentUser.value.role === 1 ? '管理员' : '普通用户')
+const userInitial = computed(() => {
+  const name = userName.value
+  return name ? name.charAt(0).toUpperCase() : 'U'
 })
 
 // 顶部菜单选择
@@ -456,8 +480,8 @@ onMounted(() => {
   background: var(--bg-primary, #f5f7fa);
 }
 
-/* 顶部导航栏 - 浅色主题 */
-.top-header {
+/* 顶部导航栏 */
+.dashboard-header {
   height: 64px;
   background: var(--bg-secondary, #ffffff);
   border-bottom: 1px solid var(--border-color, #e5e7eb);
@@ -468,12 +492,15 @@ onMounted(() => {
   position: sticky;
   top: 0;
   z-index: 100;
-  backdrop-filter: blur(10px);
   box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.05));
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .header-left {
   flex-shrink: 0;
+  width: 280px;
+  min-width: 280px;
 }
 
 .logo-area {
@@ -499,18 +526,21 @@ onMounted(() => {
   color: white;
   font-weight: 700;
   font-size: 14px;
+  flex-shrink: 0;
 }
 
 .logo-text {
   color: var(--text-primary, #1f2937);
   font-weight: 600;
   font-size: 18px;
+  white-space: nowrap;
 }
 
 .header-center {
   flex: 1;
   display: flex;
   justify-content: center;
+  min-width: 0;
 }
 
 .top-menu {
@@ -519,14 +549,15 @@ onMounted(() => {
 }
 
 .top-menu .el-menu-item {
-  padding: 0 24px;
+  padding: 0 24px 0 14px;
+  margin-left: 10px;
   font-size: 15px;
   font-weight: 500;
   color: var(--text-secondary, #6b7280);
-  transition: all 0.2s ease;
-  border-bottom: 2px solid transparent;
   height: 64px;
   line-height: 64px;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s ease;
 }
 
 .top-menu .el-menu-item:hover {
@@ -540,49 +571,79 @@ onMounted(() => {
   background-color: transparent;
 }
 
+.top-menu .el-menu-item .el-icon {
+  margin-right: 6px;
+  font-size: 18px;
+}
+
 .header-right {
   flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 16px;
+  min-width: auto;
 }
 
-.notification-badge {
+.tool-badge {
   cursor: pointer;
 }
 
-.notification-icon {
-  font-size: 20px;
+.tool-btn {
+  border: none;
+  background: transparent;
   color: var(--text-secondary, #6b7280);
-  cursor: pointer;
-  transition: color 0.2s;
   padding: 8px;
   border-radius: 50%;
+  transition: all 0.2s;
 }
 
-.notification-icon:hover {
+.tool-btn:hover {
+  background: var(--bg-tertiary, #f9fafb);
   color: var(--primary, #409eff);
-  background-color: rgba(64, 158, 255, 0.05);
 }
 
-.user-info {
-  color: var(--text-primary, #1f2937);
-}
-
-.user-dropdown {
+.user-avatar {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   cursor: pointer;
-  color: var(--text-primary, #1f2937);
-  font-size: 14px;
-  transition: opacity 0.2s;
   padding: 6px 12px 6px 6px;
   border-radius: 24px;
+  transition: all 0.2s;
 }
 
-.user-dropdown:hover {
-  background-color: rgba(64, 158, 255, 0.05);
+.user-avatar:hover {
+  background: var(--bg-tertiary, #f9fafb);
+}
+
+.avatar-circle {
+  border: 2px solid var(--border-color, #e5e7eb);
+  flex-shrink: 0;
+}
+
+.user-meta {
+  display: flex;
+  flex-direction: column;
+  white-space: nowrap;
+}
+
+.user-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary, #1f2937);
+  line-height: 1.2;
+}
+
+.user-role {
+  font-size: 12px;
+  color: var(--text-tertiary, #9ca3af);
+  line-height: 1.2;
+}
+
+.dropdown-arrow {
+  font-size: 12px;
+  color: var(--text-tertiary, #9ca3af);
+  flex-shrink: 0;
 }
 
 /* 主内容区域 */
@@ -590,9 +651,10 @@ onMounted(() => {
   display: flex;
   flex: 1;
   overflow: hidden;
+  width: 100%;
 }
 
-/* 侧边栏 - 浅色主题 */
+/* 侧边栏 */
 .sidebar {
   width: 240px;
   background: #ffffff;

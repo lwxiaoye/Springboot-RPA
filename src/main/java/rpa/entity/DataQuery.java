@@ -23,37 +23,63 @@ public class DataQuery {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /** 查询任务名称 */
+    /**
+     * 查询任务名称
+     */
     @Column(nullable = false)
     private String name;
 
-    /** 查询来源表名 */
+    /**
+     * 查询来源表名
+     */
     private String sourceTable;
 
-    /** 查询条件（WHERE子句，JSON格式） */
+    /**
+     * 查询条件（WHERE子句，JSON格式）
+     */
     @Column(columnDefinition = "TEXT")
     private String queryCondition;
 
-    /** 查询列定义（逗号分隔） */
+    /**
+     * 查询列定义（逗号分隔）
+     */
     @Column(columnDefinition = "TEXT")
     private String queryColumns;
 
-    /** 查询结果数据（JSON格式） */
+    /**
+     * 查询结果数据（JSON格式）
+     */
     @Column(columnDefinition = "TEXT")
     private String resultData;
 
-    /** 结果条数 */
+    /**
+     * 结果条数
+     */
     private Integer resultCount = 0;
 
-    /** 状态（0-禁用，1-启用） */
+    /**
+     * 状态（0-禁用，1-启用）
+     */
     private Integer status = 0;
 
-    /** 最后查询时间戳 */
+    /**
+     * 最后查询时间戳
+     */
     private Long lastQueryTime;
 
-    /** 创建时间 */
+    /**
+     * 创建时间
+     */
     private LocalDateTime createTime = LocalDateTime.now();
-    
-    /** 更新时间 */
+
+    /**
+     * 更新时间
+     */
     private LocalDateTime updateTime = LocalDateTime.now();
+
+    /** 更新时自动设置更新时间 */
+    @PreUpdate
+    protected void onUpdate() {
+        this.updateTime = LocalDateTime.now();
+    }
 }

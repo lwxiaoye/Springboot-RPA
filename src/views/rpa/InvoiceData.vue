@@ -111,10 +111,15 @@
           </span>
         </div>
       </template>
-      
+
       <el-table :data="tableData" stripe border :max-height="600" v-loading="loading">
         <el-table-column type="index" width="60" label="#" align="center" />
-        <el-table-column prop="invoiceType" label="类型" width="80" align="center">
+        <el-table-column prop="invoiceNo" label="发票号码" width="140" align="center">
+          <template #default="{ row }">
+            <span class="invoice-no">{{ row.invoiceNo }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="invoiceType" label="发票类型" width="100" align="center">
           <template #default="{ row }">
             <el-tag :type="row.invoiceType === '销项' ? 'success' : 'warning'" size="small">
               {{ row.invoiceType }}
@@ -128,12 +133,13 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="invoiceDate" label="日期" width="120" align="center" />
-        <el-table-column prop="invoiceNo" label="发票号码" width="140" align="center">
+        <el-table-column prop="companyName" label="企业名称" min-width="180" show-overflow-tooltip />
+        <el-table-column prop="creditCode" label="统一社会信用代码" width="200" align="center">
           <template #default="{ row }">
-            <span class="invoice-no">{{ row.invoiceNo }}</span>
+            <span class="code">{{ row.creditCode }}</span>
           </template>
         </el-table-column>
+        <el-table-column prop="invoiceDate" label="开票日期" width="120" align="center" />
         <el-table-column prop="taxExclusiveAmount" label="不含税金额" width="140" align="right">
           <template #default="{ row }">
             <span class="amount">¥ {{ formatNumber(row.taxExclusiveAmount) }}</span>
@@ -171,9 +177,11 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
-  Document, Refresh, Delete, List, Money, Coin, 
+  Document, Refresh, Delete, List, Money, Coin,
   TrendCharts, OfficeBuilding
 } from '@element-plus/icons-vue'
+
+import { apiGet, apiPost, apiDelete } from '../../utils/api.js'
 
 const loading = ref(false)
 const collecting = ref(false)
@@ -221,7 +229,7 @@ const loadData = async () => {
         stats.taxExclusiveTotal = tableData.value.reduce((sum, item) => sum + (item.taxExclusiveAmount || 0), 0)
         stats.taxTotal = tableData.value.reduce((sum, item) => sum + (item.taxAmount || 0), 0)
         stats.amountTotal = tableData.value.reduce((sum, item) => sum + (item.totalAmount || 0), 0)
-        
+
         // 从第一条数据获取企业信息
         const first = tableData.value[0]
         companyInfo.value = {
@@ -268,7 +276,7 @@ const handleClear = async () => {
       cancelButtonText: '取消',
       type: 'warning'
     })
-    
+
     const result = await apiDelete('/invoice/clear')
     if (result.code === 0) {
       ElMessage.success('数据已清空')
@@ -283,6 +291,55 @@ const handleClear = async () => {
     }
   } catch {
     // 用户取消
+  }
+}
+
+// 导出数据为CSV
+const exportData = async () => {
+  try {
+    const exportData = tableData.value
+    if (exportData.length === 0) {
+      ElMessage.warning('没有可导出的数据')
+      return
+    }
+
+    // 构建CSV内容
+    const headers = ['序号', '发票号码', '发票类型', '状态', '企业名称', '统一社会信用代码', '开票日期', '不含税金额', '税额', '价税合计', '采集时间']
+    const rows = exportData.map((item, index) => [
+      index + 1,
+      item.invoiceNo || '-',
+      item.invoiceType || '-',
+      item.invoiceStatus || '-',
+      item.companyName || '-',
+      item.creditCode || '-',
+      formatDate(item.invoiceDate) || '-',
+      formatNumber(item.taxExclusiveAmount),
+      formatNumber(item.taxAmount),
+      formatNumber(item.totalAmount),
+      formatDate(item.collectTime)
+    ])
+
+    // 转CSV
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+    ].join('\n')
+
+    // 下载文件
+    const BOM = '\uFEFF'
+    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `企业发票数据_${new Date().toISOString().split('T')[0]}.csv`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+
+    ElMessage.success(`已导出 ${exportData.length} 条记录`)
+  } catch {
+    ElMessage.error('导出失败')
   }
 }
 
@@ -440,6 +497,12 @@ onMounted(() => {
 }
 
 .amount.total {
+  color: #409eff;
+  font-weight: 600;
+}
+
+.code {
+  font-family: monospace;
   color: #409eff;
   font-weight: 600;
 }

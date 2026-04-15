@@ -182,6 +182,11 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Search, Plus } from '@element-plus/icons-vue'
 
+function getAuthHeaders() {
+  const token = localStorage.getItem('token')
+  return token ? { 'Authorization': `Bearer ${token}` } : {}
+}
+
 const loading = ref(false)
 const submitLoading = ref(false)
 const searchKeyword = ref('')
@@ -262,19 +267,18 @@ const isExpiring = (expireTime) => {
 const loadCredentials = async () => {
   loading.value = true
   try {
-    credentials.value = [
-      { id: 1, name: '东方财富网账号', type: 'password', username: 'rpa_user01', description: '用于股票数据采集', expireTime: '2026-06-30', status: 'active', lastUsed: '2026-03-30 10:30:00', createTime: '2026-01-01' },
-      { id: 2, name: 'OpenAI API', type: 'apiKey', keyName: 'GPT-4 Key', apiKey: 'sk-xxxx', description: '用于智能对话功能', expireTime: '2026-04-15', status: 'active', lastUsed: '2026-03-30 09:15:00', createTime: '2026-02-15' },
-      { id: 3, name: '数据库连接', type: 'password', username: 'db_admin', description: 'MySQL 数据库连接凭据', expireTime: '', status: 'active', lastUsed: '2026-03-30 14:00:00', createTime: '2026-01-10' },
-      { id: 4, name: 'SSH 服务器密钥', type: 'sshKey', privateKey: '-----BEGIN RSA PRIVATE KEY-----', description: '连接远程服务器', expireTime: '2026-12-31', status: 'active', lastUsed: '2026-03-29 22:00:00', createTime: '2026-01-15' },
-      { id: 5, name: '企业微信机器人', type: 'apiKey', keyName: 'Webhook URL', apiKey: 'https://qyapi.weixin.qq.com', description: '发送通知消息', expireTime: '', status: 'active', lastUsed: '2026-03-30 14:25:00', createTime: '2026-01-20' }
-    ]
-    // 不需要在这里设置 pagination.total，filteredCredentials 会计算
+    const result = await apiGet('/credential')
+    if (result.code === 0) {
+      credentials.value = result.data || []
+    } else {
+      credentials.value = []
+    }
     stats.total = credentials.value.length
     stats.expiring = credentials.value.filter(c => isExpiring(c.expireTime)).length
     stats.active = credentials.value.filter(c => c.status === 'active').length
-    stats.usedToday = 12
+    stats.usedToday = credentials.value.reduce((sum, c) => sum + (c.useCount || 0), 0)
   } catch (e) {
+    console.error('加载凭据失败:', e)
     credentials.value = []
   } finally {
     loading.value = false
@@ -369,32 +373,232 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.credential-page { max-width: 1400px; margin: 0 auto; }
-.page-header { margin-bottom: 24px; }
-.page-header h2 { font-size: 20px; font-weight: 600; color: #1a1a1a; }
-.page-desc { font-size: 13px; color: #8c8c8c; margin-top: 4px; }
+.credential-page {
+  max-width: 1400px;
+  margin: 0 auto;
+}
 
-.stats-row { display: flex; gap: 16px; margin-bottom: 20px; }
-.stat-box { flex: 1; background: white; padding: 20px; border-radius: 12px; text-align: center; }
-.stat-box .stat-num { display: block; font-size: 28px; font-weight: bold; color: #1e3a4a; }
-.stat-box .stat-label { font-size: 13px; color: #8c8c8c; }
-.stat-box.warning { border-left: 4px solid #e6a23c; }
-.stat-box.success { border-left: 4px solid #67c23a; }
-.stat-box.info { border-left: 4px solid #409eff; }
+/* 页面头部 */
+.page-header {
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
+}
 
-.toolbar { display: flex; gap: 12px; margin-bottom: 20px; align-items: center; }
-.search-box { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #fff; border: 1px solid #d9d9d9; border-radius: 8px; flex: 1; max-width: 320px; }
-.search-box input { border: none; outline: none; flex: 1; background: transparent; }
+.page-header h2 {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary, #1f2937);
+  margin: 0 0 8px 0;
+  letter-spacing: -0.5px;
+}
 
-.pagination-wrapper { margin-top: 20px; display: flex; justify-content: flex-end; background: #fff; padding: 12px 20px; border-radius: 12px; }
+.page-desc {
+  font-size: 14px;
+  color: var(--text-secondary, #6b7280);
+  margin: 0;
+}
 
-.detail-content { padding: 8px 0; }
-.detail-item { display: flex; margin-bottom: 12px; }
-.detail-item label { width: 90px; color: #8c8c8c; }
-.detail-item span { color: #262626; font-weight: 500; }
-.detail-item.full { flex-direction: column; }
-.detail-item.full label { margin-bottom: 4px; }
-.masked { letter-spacing: 2px; }
+/* 统计卡片 */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  margin-bottom: 24px;
+}
 
-.text-warning { color: #e6a23c; }
+.stat-box {
+  background: var(--bg-secondary, #ffffff);
+  padding: 24px;
+  border-radius: 16px;
+  text-align: center;
+  border: 1px solid var(--border-color, #e5e7eb);
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.05));
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.stat-box:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md, 0 4px 12px rgba(0, 0, 0, 0.1));
+}
+
+.stat-box .stat-num {
+  display: block;
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--primary, #409eff);
+  line-height: 1;
+  margin-bottom: 8px;
+  background: linear-gradient(135deg, var(--primary, #409eff) 0%, var(--primary-light, #66b1ff) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.stat-box.warning .stat-num {
+  background: linear-gradient(135deg, #e6a23c 0%, #ebb563 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.stat-box.success .stat-num {
+  background: linear-gradient(135deg, #67c23a 0%, #85ce61 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.stat-box.info .stat-num {
+  background: linear-gradient(135deg, #409eff 0%, #66b1ff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.stat-box .stat-label {
+  font-size: 14px;
+  color: var(--text-secondary, #6b7280);
+  font-weight: 500;
+}
+
+.stat-box.warning {
+  border-left: 4px solid #e6a23c;
+}
+
+.stat-box.success {
+  border-left: 4px solid #67c23a;
+}
+
+.stat-box.info {
+  border-left: 4px solid #409eff;
+}
+
+/* 工具栏 */
+.toolbar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 16px 20px;
+  background: var(--bg-secondary, #ffffff);
+  border-radius: 12px;
+  border: 1px solid var(--border-color, #e5e7eb);
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--bg-tertiary, #f9fafb);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 10px;
+  flex: 1;
+  max-width: 320px;
+  transition: all 0.2s;
+}
+
+.search-box:focus-within {
+  border-color: var(--primary, #409eff);
+  box-shadow: 0 0 0 3px rgba(64, 158, 255, 0.1);
+}
+
+.search-box input {
+  border: none;
+  outline: none;
+  flex: 1;
+  background: transparent;
+  font-size: 14px;
+  color: var(--text-primary, #1f2937);
+}
+
+.search-box input::placeholder {
+  color: var(--text-tertiary, #9ca3af);
+}
+
+/* 表格 */
+:deep(.el-table) {
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border-color, #e5e7eb);
+}
+
+:deep(.el-table th) {
+  background: var(--bg-tertiary, #f9fafb) !important;
+  font-weight: 600;
+  color: var(--text-primary, #1f2937);
+}
+
+:deep(.el-table td) {
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
+}
+
+:deep(.el-table__row:hover > td) {
+  background: var(--bg-primary, #f5f7fa) !important;
+}
+
+.text-warning {
+  color: var(--warning, #e6a23c);
+  font-weight: 600;
+}
+
+/* 分页 */
+.pagination-wrapper {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+  background: var(--bg-secondary, #ffffff);
+  padding: 16px 20px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color, #e5e7eb);
+}
+
+/* 详情弹窗 */
+.detail-content {
+  padding: 0 16px;
+}
+
+.detail-item {
+  display: flex;
+  margin-bottom: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
+}
+
+.detail-item:last-child {
+  border-bottom: none;
+}
+
+.detail-item.full {
+  flex-direction: column;
+}
+
+.detail-item.full label {
+  margin-bottom: 12px;
+}
+
+.detail-item label {
+  width: 100px;
+  color: var(--text-secondary, #6b7280);
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.detail-item span {
+  color: var(--text-primary, #1f2937);
+  font-weight: 600;
+}
+
+.masked {
+  letter-spacing: 2px;
+  color: var(--text-tertiary, #9ca3af);
+  font-weight: 400;
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .stats-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
 </style>

@@ -1,7 +1,8 @@
 <template>
   <div class="system-layout">
-    <!-- 顶部导航栏 - 统一风格 -->
-    <header class="top-header">
+    <!-- 顶部导航栏 -->
+    <header class="dashboard-header">
+      <!-- Logo区域 -->
       <div class="header-left">
         <div class="logo-area">
           <div class="logo-icon">RPA</div>
@@ -9,6 +10,7 @@
         </div>
       </div>
 
+      <!-- 导航菜单 -->
       <div class="header-center">
         <el-menu
           :default-active="activeTopMenu"
@@ -32,15 +34,14 @@
         </el-menu>
       </div>
 
+      <!-- 右侧工具栏 -->
       <div class="header-right">
-        <!-- 通知 -->
         <el-badge :value="unreadCount" :hidden="unreadCount === 0" class="tool-badge">
           <el-button class="tool-btn" @click="goToNotifications">
             <el-icon><Bell /></el-icon>
           </el-button>
         </el-badge>
 
-        <!-- 用户信息 -->
         <el-dropdown trigger="click">
           <div class="user-avatar">
             <el-avatar :size="36" class="avatar-circle">
@@ -286,8 +287,8 @@ onMounted(() => {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
 }
 
-/* ===== 顶部导航栏 - 浅色主题 ===== */
-.top-header {
+/* ===== 顶部导航栏 ===== */
+.dashboard-header {
   height: 64px;
   background: var(--bg-secondary, #ffffff);
   border-bottom: 1px solid var(--border-color, #e5e7eb);
@@ -298,12 +299,15 @@ onMounted(() => {
   position: sticky;
   top: 0;
   z-index: 100;
-  backdrop-filter: blur(10px);
   box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.05));
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .header-left {
   flex-shrink: 0;
+  width: 280px;
+  min-width: 280px;
 }
 
 .logo-area {
@@ -329,18 +333,21 @@ onMounted(() => {
   color: white;
   font-weight: 700;
   font-size: 14px;
+  flex-shrink: 0;
 }
 
 .logo-text {
   color: var(--text-primary, #1f2937);
   font-weight: 600;
   font-size: 18px;
+  white-space: nowrap;
 }
 
 .header-center {
   flex: 1;
   display: flex;
   justify-content: center;
+  min-width: 0;
 }
 
 .top-menu {
@@ -349,7 +356,8 @@ onMounted(() => {
 }
 
 .top-menu .el-menu-item {
-  padding: 0 24px;
+  padding: 0 24px 0 14px;
+  margin-left: 10px;
   font-size: 15px;
   font-weight: 500;
   color: var(--text-secondary, #6b7280);
@@ -380,6 +388,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 16px;
+  min-width: auto;
 }
 
 .tool-badge {
@@ -416,11 +425,13 @@ onMounted(() => {
 
 .avatar-circle {
   border: 2px solid var(--border-color, #e5e7eb);
+  flex-shrink: 0;
 }
 
 .user-meta {
   display: flex;
   flex-direction: column;
+  white-space: nowrap;
 }
 
 .user-name {
@@ -439,6 +450,7 @@ onMounted(() => {
 .dropdown-arrow {
   font-size: 12px;
   color: var(--text-tertiary, #9ca3af);
+  flex-shrink: 0;
 }
 
 /* ===== 主内容区域 ===== */
@@ -446,6 +458,7 @@ onMounted(() => {
   display: flex;
   flex: 1;
   overflow: hidden;
+  width: 100%;
 }
 
 /* ===== 侧边栏 ===== */

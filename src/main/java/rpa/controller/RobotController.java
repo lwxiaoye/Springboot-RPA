@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.*;
 import rpa.entity.Robot;
 import rpa.service.RobotService;
 import rpa.service.RobotCategoryService;
+import rpa.service.AuditLogService;
 import rpa.entity.RobotCategory;
 import java.util.HashMap;
 import java.util.List;
@@ -18,6 +19,7 @@ public class RobotController {
 
     private final RobotService service;
     private final RobotCategoryService categoryService;
+    private final AuditLogService auditLogService;
 
     @GetMapping
     public Map<String, Object> list() {
@@ -97,6 +99,10 @@ public class RobotController {
             String status = (String) request.get("status");
 
             Robot robot = service.create(name, robotCategory, capabilities, ip, hostname, port, description, boundProcessId, boundProcessName, robotCode, status);
+
+            // 记录审计日志
+            auditLogService.logRobotCreate(robot.getId(), robot.getName(), robotCode);
+
             response.put("code", 0);
             response.put("message", "创建成功");
             response.put("data", robot);
@@ -142,6 +148,14 @@ public class RobotController {
             String status = (String) request.get("status");
 
             Robot robot = service.update(id, name, robotCategory, capabilities, ip, hostname, port, description, boundProcessId, boundProcessName, robotCode, status);
+
+            // 记录审计日志
+            Map<String, Object> changes = new HashMap<>();
+            if (name != null) changes.put("name", name);
+            if (robotCategory != null) changes.put("robotCategory", robotCategory);
+            if (boundProcessId != null) changes.put("boundProcessId", boundProcessId);
+            auditLogService.logRobotUpdate(robot.getId(), robot.getName(), changes);
+
             response.put("code", 0);
             response.put("message", "更新成功");
             response.put("data", robot);
@@ -156,6 +170,11 @@ public class RobotController {
     public Map<String, Object> delete(@PathVariable Long id) {
         Map<String, Object> response = new HashMap<>();
         try {
+            // 获取机器人信息用于审计日志
+            service.findById(id).ifPresent(robot -> {
+                auditLogService.logRobotDelete(robot.getId(), robot.getName());
+            });
+
             service.delete(id);
             response.put("code", 0);
             response.put("message", "删除成功");

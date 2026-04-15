@@ -69,7 +69,13 @@ public class User {
     
     /** 更新时间 */
     private LocalDateTime updateTime = LocalDateTime.now();
-    
+
     /** 密码最后修改时间 */
-    private LocalDateTime passwordChangeTime = LocalDateTime.now();
+    private LocalDateTime passwordChangeTime;
+
+    /** 更新时自动设置更新时间 */
+    @PreUpdate
+    protected void onUpdate() {
+        this.updateTime = LocalDateTime.now();
+    }
 }

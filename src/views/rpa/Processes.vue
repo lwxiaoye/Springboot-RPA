@@ -99,6 +99,17 @@
               <el-radio label="active">已发布</el-radio>
             </el-radio-group>
           </el-form-item>
+          <el-form-item label="执行凭据">
+            <el-select v-model="processForm.credentialId" placeholder="选择执行时使用的凭据（可选）" clearable filterable style="width: 100%">
+              <el-option v-for="cred in credentials" :key="cred.id" :label="cred.name" :value="cred.id">
+                <div class="credential-option">
+                  <span>{{ cred.name }}</span>
+                  <el-tag size="small" type="info">{{ getCredentialTypeText(cred.type) }}</el-tag>
+                </div>
+              </el-option>
+            </el-select>
+            <div class="form-tip">选择执行此流程时需要使用的凭据（如数据库密码、API密钥等）</div>
+          </el-form-item>
         </el-form>
       </div>
 
@@ -327,6 +338,7 @@ const router = useRouter()
 
 const robots = ref([])
 const robotCategories = ref([])
+const credentials = ref([])
 
 const loading = ref(false)
 const submitLoading = ref(false)
@@ -361,7 +373,8 @@ const processForm = reactive({
   code: '',
   version: '1.0.0',
   description: '',
-  status: 'draft'
+  status: 'draft',
+  credentialId: null
 })
 
 const formRules = {
@@ -747,6 +760,32 @@ const loadRobotCategories = async () => {
   }
 }
 
+// 加载凭据列表
+const loadCredentials = async () => {
+  try {
+    const result = await apiGet('/credential/list')
+    if (result.code === 0) {
+      credentials.value = result.data || []
+    }
+  } catch {
+    credentials.value = []
+  }
+}
+
+// 获取凭据类型文本
+const getCredentialTypeText = (type) => {
+  const typeMap = {
+    'DATABASE': '数据库',
+    'API_KEY': 'API密钥',
+    'SYSTEM_ACCOUNT': '系统账号',
+    'SSH_KEY': 'SSH密钥',
+    'CERTIFICATE': '证书',
+    'RPA_CREDENTIAL': 'RPA凭据',
+    'OTHER': '其他'
+  }
+  return typeMap[type] || type || '其他'
+}
+
 // 根据分类过滤机器人
 const getFilteredRobots = (category) => {
   if (!category) return []
@@ -829,18 +868,111 @@ const closeDesigner = () => {
 const handleSizeChange = (size) => { pagination.size = size; pagination.page = 1 }
 const handleCurrentChange = (page) => { pagination.page = page }
 
-onMounted(() => { loadProcesses() })
+onMounted(() => { loadProcesses(); loadCredentials() })
 </script>
 
 <style scoped>
-.processes-page { max-width: 1400px; margin: 0 auto; }
-.page-header { margin-bottom: 24px; }
-.page-header h2 { font-size: 20px; font-weight: 600; color: #1a1a1a; }
-.page-desc { font-size: 13px; color: #8c8c8c; margin-top: 4px; }
-.toolbar { display: flex; gap: 12px; margin-bottom: 20px; align-items: center; }
-.search-box { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #fff; border: 1px solid #d9d9d9; border-radius: 8px; flex: 1; max-width: 320px; }
-.search-box input { border: none; outline: none; flex: 1; background: transparent; }
-.pagination-wrapper { margin-top: 20px; display: flex; justify-content: flex-end; background: #fff; padding: 12px 20px; border-radius: 12px; }
+.processes-page {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* 页面头部 */
+.page-header {
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
+}
+
+.page-header h2 {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary, #1f2937);
+  margin: 0 0 8px 0;
+  letter-spacing: -0.5px;
+}
+
+.page-desc {
+  font-size: 14px;
+  color: var(--text-secondary, #6b7280);
+  margin: 0;
+}
+
+/* 工具栏 */
+.toolbar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 16px 20px;
+  background: var(--bg-secondary, #ffffff);
+  border-radius: 12px;
+  border: 1px solid var(--border-color, #e5e7eb);
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--bg-tertiary, #f9fafb);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 10px;
+  flex: 1;
+  max-width: 320px;
+  transition: all 0.2s;
+}
+
+.search-box:focus-within {
+  border-color: var(--primary, #409eff);
+  box-shadow: 0 0 0 3px rgba(64, 158, 255, 0.1);
+}
+
+.search-box input {
+  border: none;
+  outline: none;
+  flex: 1;
+  background: transparent;
+  font-size: 14px;
+  color: var(--text-primary, #1f2937);
+}
+
+.search-box input::placeholder {
+  color: var(--text-tertiary, #9ca3af);
+}
+
+/* 表格 */
+:deep(.el-table) {
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border-color, #e5e7eb);
+}
+
+:deep(.el-table th) {
+  background: var(--bg-tertiary, #f9fafb) !important;
+  font-weight: 600;
+  color: var(--text-primary, #1f2937);
+}
+
+:deep(.el-table td) {
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
+}
+
+:deep(.el-table__row:hover > td) {
+  background: var(--bg-primary, #f5f7fa) !important;
+}
+
+/* 分页 */
+.pagination-wrapper {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+  background: var(--bg-secondary, #ffffff);
+  padding: 16px 20px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color, #e5e7eb);
+}
 .detail-content { padding: 8px 0; }
 .detail-item { display: flex; margin-bottom: 12px; }
 .detail-item label { width: 80px; color: #8c8c8c; }
@@ -1268,11 +1400,17 @@ onMounted(() => { loadProcesses() })
   box-shadow: 0 0 0 2px #667eea inset;
 }
 
-.robot-option {
+.credential-option {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.form-tip {
+  font-size: 12px;
+  color: #909399;
+  margin-top: 4px;
 }
 
 .robot-name {
@@ -1794,11 +1932,17 @@ onMounted(() => { loadProcesses() })
   box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2) inset;
 }
 
-.robot-option {
+.credential-option {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.form-tip {
+  font-size: 12px;
+  color: #909399;
+  margin-top: 4px;
 }
 
 .robot-name {

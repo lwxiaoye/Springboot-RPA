@@ -71,7 +71,7 @@ public class SecurityConfig {
                 .antMatchers("/api/robot/**", "/api/process/**", "/api/task/**",
                     "/api/log/**", "/api/notification/**", "/api/user/**",
                     "/api/dataCollect/**", "/api/dataParse/**", "/api/dataProcess/**", "/api/dataQuery/**",
-                    "/api/invoice/**", "/api/enterprise/**", "/api/ai/**").permitAll()
+                    "/api/invoice/**", "/api/enterprise/**", "/api/ai/**", "/credential/**").permitAll()
                 .antMatchers("/api/**").authenticated()
                 .anyRequest().permitAll()
             .and()

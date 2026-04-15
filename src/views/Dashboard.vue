@@ -1,73 +1,71 @@
 <template>
   <div class="dashboard-pro">
-    <!-- 顶部导航 - 浅色主题 -->
+    <!-- 顶部导航 -->
     <header class="dashboard-header">
-      <div class="header-inner">
-        <!-- Logo -->
-        <div class="logo-section">
-          <div class="logo-mark">RPA</div>
-          <div class="logo-title">运营管理系统</div>
+      <!-- Logo区域 -->
+      <div class="header-left">
+        <div class="logo-area">
+          <div class="logo-icon">RPA</div>
+          <div class="logo-text">RPA运营管理系统</div>
         </div>
+      </div>
 
-        <!-- 主导航 -->
-        <nav class="main-nav">
-          <el-menu
-            :default-active="activeTopMenu"
-            mode="horizontal"
-            :ellipsis="false"
-            @select="handleTopMenuSelect"
-            class="nav-menu"
-          >
-            <el-menu-item index="dashboard">
-              <el-icon><Odometer /></el-icon>
-              <span>首页</span>
-            </el-menu-item>
-            <el-menu-item index="rpa">
-              <el-icon><VideoCamera /></el-icon>
-              <span>RPA运营管理</span>
-            </el-menu-item>
-            <el-menu-item index="system">
-              <el-icon><Setting /></el-icon>
-              <span>系统管理</span>
-            </el-menu-item>
-          </el-menu>
-        </nav>
+      <!-- 导航菜单 -->
+      <div class="header-center">
+        <el-menu
+          :default-active="activeTopMenu"
+          mode="horizontal"
+          class="top-menu"
+          :ellipsis="false"
+          @select="handleTopMenuSelect"
+        >
+          <el-menu-item index="dashboard">
+            <el-icon><Odometer /></el-icon>
+            <span>首页</span>
+          </el-menu-item>
+          <el-menu-item index="rpa">
+            <el-icon><VideoCamera /></el-icon>
+            <span>RPA运营管理</span>
+          </el-menu-item>
+          <el-menu-item index="system">
+            <el-icon><Setting /></el-icon>
+            <span>系统管理</span>
+          </el-menu-item>
+        </el-menu>
+      </div>
 
-        <!-- 右侧工具栏 -->
-        <div class="header-tools">
-          <!-- 通知 -->
-          <el-badge :value="unreadCount" :hidden="unreadCount === 0" class="tool-badge">
-            <el-button class="tool-btn" @click="goToNotifications">
-              <el-icon><Bell /></el-icon>
-            </el-button>
-          </el-badge>
+      <!-- 右侧工具栏 -->
+      <div class="header-right">
+        <el-badge :value="unreadCount" :hidden="unreadCount === 0" class="tool-badge">
+          <el-button class="tool-btn" @click="goToNotifications">
+            <el-icon><Bell /></el-icon>
+          </el-button>
+        </el-badge>
 
-          <!-- 用户信息 -->
-          <el-dropdown trigger="click">
-            <div class="user-avatar">
-              <el-avatar :size="36" :src="userAvatar" class="avatar-circle">
-                {{ userInitial }}
-              </el-avatar>
-              <div class="user-meta">
-                <div class="user-name">{{ userName }}</div>
-                <div class="user-role">{{ userRole }}</div>
-              </div>
-              <el-icon class="dropdown-arrow"><ArrowDown /></el-icon>
+        <el-dropdown trigger="click">
+          <div class="user-avatar">
+            <el-avatar :size="36" :src="userAvatar" class="avatar-circle">
+              {{ userInitial }}
+            </el-avatar>
+            <div class="user-meta">
+              <div class="user-name">{{ userName }}</div>
+              <div class="user-role">{{ userRole }}</div>
             </div>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item @click="goToProfile">
-                  <el-icon><User /></el-icon>
-                  个人信息
-                </el-dropdown-item>
-                <el-dropdown-item divided @click="handleLogout">
-                  <el-icon><SwitchButton /></el-icon>
-                  退出登录
-                </el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
-        </div>
+            <el-icon class="dropdown-arrow"><ArrowDown /></el-icon>
+          </div>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item @click="goToProfile">
+                <el-icon><User /></el-icon>
+                个人信息
+              </el-dropdown-item>
+              <el-dropdown-item divided @click="handleLogout">
+                <el-icon><SwitchButton /></el-icon>
+                退出登录
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
       </div>
     </header>
 
@@ -694,34 +692,36 @@ onMounted(() => {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
 }
 
-/* ===== Header - 浅色主题 ===== */
+/* ===== Header ===== */
 .dashboard-header {
-  background: var(--bg-secondary);
-  border-bottom: 1px solid var(--border-color);
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  backdrop-filter: blur(10px);
-  box-shadow: var(--shadow-sm);
-}
-
-.header-inner {
-  max-width: 1440px;
-  margin: 0 auto;
   height: 64px;
+  background: var(--bg-secondary, #ffffff);
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 24px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.05));
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.logo-section {
+.header-left {
+  flex-shrink: 0;
+  width: 280px;
+  min-width: 280px;
+}
+
+.logo-area {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-.logo-mark {
+.logo-icon {
   width: 40px;
   height: 40px;
   background: linear-gradient(135deg, #409eff 0%, #66b1ff 100%);
@@ -732,56 +732,62 @@ onMounted(() => {
   color: white;
   font-weight: 700;
   font-size: 14px;
+  flex-shrink: 0;
 }
 
-.logo-title {
-  font-size: 18px;
+.logo-text {
+  color: var(--text-primary, #1f2937);
   font-weight: 600;
-  color: var(--text-primary);
+  font-size: 18px;
+  white-space: nowrap;
 }
 
-.main-nav {
+.header-center {
   flex: 1;
   display: flex;
   justify-content: center;
+  min-width: 0;
 }
 
-.nav-menu {
+.top-menu {
+  background-color: transparent;
   border-bottom: none;
-  background: transparent;
 }
 
-.nav-menu .el-menu-item {
-  padding: 0 24px;
+.top-menu .el-menu-item {
+  padding: 0 24px 0 14px;
+  margin-left: 10px;
   font-size: 15px;
   font-weight: 500;
-  color: var(--text-secondary);
+  color: var(--text-secondary, #6b7280);
   height: 64px;
   line-height: 64px;
-  transition: all 0.2s ease;
   border-bottom: 2px solid transparent;
+  transition: all 0.2s ease;
 }
 
-.nav-menu .el-menu-item:hover {
-  color: var(--primary);
-  background: rgba(64, 158, 255, 0.05);
+.top-menu .el-menu-item:hover {
+  color: var(--primary, #409eff);
+  background-color: rgba(64, 158, 255, 0.05);
 }
 
-.nav-menu .el-menu-item.is-active {
-  color: var(--primary);
-  border-bottom-color: var(--primary);
-  background: transparent;
+.top-menu .el-menu-item.is-active {
+  color: var(--primary, #409eff);
+  border-bottom-color: var(--primary, #409eff);
+  background-color: transparent;
 }
 
-.nav-menu .el-menu-item .el-icon {
+.top-menu .el-menu-item .el-icon {
   margin-right: 6px;
   font-size: 18px;
 }
 
-.header-tools {
+.header-right {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 16px;
+  min-width: auto;
 }
 
 .tool-badge {
@@ -791,15 +797,15 @@ onMounted(() => {
 .tool-btn {
   border: none;
   background: transparent;
-  color: var(--text-secondary);
+  color: var(--text-secondary, #6b7280);
   padding: 8px;
   border-radius: 50%;
   transition: all 0.2s;
 }
 
 .tool-btn:hover {
-  background: var(--bg-tertiary);
-  color: var(--primary);
+  background: var(--bg-tertiary, #f9fafb);
+  color: var(--primary, #409eff);
 }
 
 .user-avatar {
@@ -813,47 +819,51 @@ onMounted(() => {
 }
 
 .user-avatar:hover {
-  background: var(--bg-tertiary);
+  background: var(--bg-tertiary, #f9fafb);
 }
 
 .avatar-circle {
-  border: 2px solid var(--border-color);
+  border: 2px solid var(--border-color, #e5e7eb);
+  flex-shrink: 0;
 }
 
 .user-meta {
   display: flex;
   flex-direction: column;
+  white-space: nowrap;
 }
 
 .user-name {
   font-size: 14px;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--text-primary, #1f2937);
   line-height: 1.2;
 }
 
 .user-role {
   font-size: 12px;
-  color: var(--text-tertiary);
+  color: var(--text-tertiary, #9ca3af);
   line-height: 1.2;
 }
 
 .dropdown-arrow {
   font-size: 12px;
-  color: var(--text-tertiary);
+  color: var(--text-tertiary, #9ca3af);
+  flex-shrink: 0;
 }
 
 /* ===== Main Content ===== */
 .dashboard-main {
   padding: 24px;
-  max-width: 1440px;
-  margin: 0 auto;
+  width: 100%;
 }
 
 .content-wrapper {
   display: flex;
   flex-direction: column;
   gap: 24px;
+  max-width: 1440px;
+  margin: 0 auto;
 }
 
 /* ===== Page Header ===== */

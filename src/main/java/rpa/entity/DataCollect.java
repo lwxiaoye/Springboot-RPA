@@ -68,13 +68,19 @@ public class DataCollect {
 
     /** 创建者ID */
     private Long creatorId;
-    
+
     /** 创建者名称 */
     private String creatorName;
 
     /** 创建时间 */
     private LocalDateTime createTime = LocalDateTime.now();
-    
+
     /** 更新时间 */
     private LocalDateTime updateTime = LocalDateTime.now();
+
+    /** 更新时自动设置更新时间 */
+    @PreUpdate
+    protected void onUpdate() {
+        this.updateTime = LocalDateTime.now();
+    }
 }

@@ -64,6 +64,6 @@ public class Resource {
     /** 更新时自动设置更新时间 */
     @PreUpdate
     protected void onUpdate() {
-        updateTime = LocalDateTime.now();
+        this.updateTime = LocalDateTime.now();
     }
 }

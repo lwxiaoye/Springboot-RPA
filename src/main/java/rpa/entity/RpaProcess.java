@@ -109,9 +109,10 @@ public class RpaProcess {
 
     /** 超时时间（分钟） */
     @Column(name = "timeout_minutes")
-    private Integer timeoutMinutes = 60;
+    private Integer timeoutMin;
 
-    /** 重��次数 */
-    @Column(name = "retry_count")
-    private Integer retryCount = 0;
-}
+    // ==================== 凭据关联 ====================
+
+    /** 关联的凭据ID（用于任务执行时获取凭据） */
+    @Column(name = "credential_id")
+    private Long credentialId;}

@@ -97,7 +97,6 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { Search, Download } from '@element-plus/icons-vue'
-
 import { apiGet } from '../../utils/api.js'
 
 const loading = ref(false)
@@ -110,15 +109,11 @@ const currentLog = ref({})
 
 const pagination = reactive({ page: 1, size: 10, total: 0 })
 
-// 从信息中解析采集数据数量
 const parseDataCount = (log) => {
-  // 如果有直接的 dataCount 字段，优先使用
   if (log.dataCount !== undefined && log.dataCount !== null) {
     return log.dataCount
   }
-  // 从 message 中解析
   if (log.message) {
-    // 匹配 "采集数据: 123 条" 或 "处理数据: 123 条"
     const match = log.message.match(/采集数据[:：]\s*(\d+)|处理数据[:：]\s*(\d+)/)
     if (match) {
       return parseInt(match[1] || match[2])
@@ -127,51 +122,31 @@ const parseDataCount = (log) => {
   return 0
 }
 
-// 根据采集数据判断显示状态
 const getDisplayStatus = (log) => {
   const dataCount = parseDataCount(log)
-  // 如果信息中有"条"数据，视为正常
   if (dataCount > 0) {
     return '正常'
   }
-  // 如果执行完成但没有数据，视为异常
   if (log.status === 'completed' || log.status === 'running') {
     if (log.message && (log.message.includes('完成') || log.message.includes('结束'))) {
       return '异常'
     }
   }
-  // 其他情况使用原始状态
   return log.status
-}
-
-const getStatusText = (s) => {
-  const map = {
-    success: '成功',
-    failed: '失败',
-    running: '进行中',
-    completed: '正常',
-    completed_with_errors: '部分成功',
-    abnormal: '异常',
-    pending: '待执行',
-    cancelled: '已取消',
-    正常: '正常',
-    异常: '异常'
-  }
-  return map[s] || s || '-'
 }
 
 const getStatusType = (s) => {
   const map = {
     success: 'success',
-    completed: 'success',
-    正常: 'success',
     failed: 'danger',
-    abnormal: 'danger',
-    异常: 'danger',
     running: 'warning',
-    pending: 'info',
+    completed: 'success',
     completed_with_errors: 'warning',
-    cancelled: 'info'
+    abnormal: 'danger',
+    pending: 'info',
+    cancelled: 'info',
+    正常: 'success',
+    异常: 'danger'
   }
   return map[s] || 'info'
 }
@@ -194,12 +169,10 @@ const filteredLogs = computed(() => {
       return time >= start && time <= end
     })
   }
-  // 更新总数
   pagination.total = list.length
   return list
 })
 
-// 分页后的数据
 const paginatedLogs = computed(() => {
   const start = (pagination.page - 1) * pagination.size
   const end = start + pagination.size
@@ -212,7 +185,6 @@ const loadLogs = async () => {
     const result = await apiGet('/log')
     if (result.code === 0) {
       logs.value = result.data || []
-      // 不需要在这里设置 pagination.total，filteredLogs 会计算
     }
   } catch {
     logs.value = []
@@ -229,7 +201,6 @@ const viewDetail = (log) => {
 const handleSizeChange = (size) => { pagination.size = size; pagination.page = 1 }
 const handleCurrentChange = (page) => { pagination.page = page }
 
-// 导出数据为Excel
 const exportData = async () => {
   try {
     const exportLogs = filteredLogs.value
@@ -238,7 +209,6 @@ const exportData = async () => {
       return
     }
 
-    // 构建CSV内容
     const headers = ['序号', '任务名称', '操作', '状态', '采集数据', '信息', '开始时间', '结束时间', '耗时']
     const rows = exportLogs.map((log, index) => [
       index + 1,
@@ -252,13 +222,11 @@ const exportData = async () => {
       log.duration || '-'
     ])
 
-    // 转CSV
     const csvContent = [
       headers.join(','),
       ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
     ].join('\n')
 
-    // 下载文件
     const BOM = '\uFEFF'
     const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8' })
     const url = URL.createObjectURL(blob)
@@ -280,21 +248,157 @@ onMounted(() => { loadLogs() })
 </script>
 
 <style scoped>
-.logs-page { max-width: 1400px; margin: 0 auto; }
-.page-header { margin-bottom: 24px; }
-.page-header h2 { font-size: 20px; font-weight: 600; color: #1a1a1a; }
-.page-desc { font-size: 13px; color: #8c8c8c; margin-top: 4px; }
-.toolbar { display: flex; gap: 12px; margin-bottom: 20px; align-items: center; flex-wrap: wrap; }
-.search-box { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #fff; border: 1px solid #d9d9d9; border-radius: 8px; flex: 1; max-width: 320px; }
-.search-box input { border: none; outline: none; flex: 1; background: transparent; }
-.pagination-wrapper { margin-top: 20px; display: flex; justify-content: flex-end; background: #fff; padding: 12px 20px; border-radius: 12px; }
-.detail-content { padding: 8px 0; }
-.detail-item { display: flex; margin-bottom: 12px; }
-.detail-item label { width: 80px; color: #8c8c8c; }
-.detail-item span { color: #262626; font-weight: 500; }
-.detail-item.full { flex-direction: column; }
-.detail-item.full label { margin-bottom: 8px; }
-.log-message { background: #f5f7fa; padding: 12px; border-radius: 8px; font-size: 13px; line-height: 1.5; margin: 0; white-space: pre-wrap; word-break: break-all; }
-.data-count-success { color: #67c23a; font-weight: 600; }
-.data-count-zero { color: #f56c6c; }
+.logs-page {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.page-header {
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
+}
+
+.page-header h2 {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary, #1f2937);
+  margin: 0 0 8px 0;
+  letter-spacing: -0.5px;
+}
+
+.page-desc {
+  font-size: 14px;
+  color: var(--text-secondary, #6b7280);
+  margin: 0;
+}
+
+.toolbar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 16px 20px;
+  background: var(--bg-secondary, #ffffff);
+  border-radius: 12px;
+  border: 1px solid var(--border-color, #e5e7eb);
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--bg-tertiary, #f9fafb);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 10px;
+  flex: 1;
+  max-width: 320px;
+  transition: all 0.2s;
+}
+
+.search-box:focus-within {
+  border-color: var(--primary, #409eff);
+  box-shadow: 0 0 0 3px rgba(64, 158, 255, 0.1);
+}
+
+.search-box input {
+  border: none;
+  outline: none;
+  flex: 1;
+  background: transparent;
+  font-size: 14px;
+  color: var(--text-primary, #1f2937);
+}
+
+.search-box input::placeholder {
+  color: var(--text-tertiary, #9ca3af);
+}
+
+:deep(.el-table) {
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border-color, #e5e7eb);
+}
+
+:deep(.el-table th) {
+  background: var(--bg-tertiary, #f9fafb) !important;
+  font-weight: 600;
+  color: var(--text-primary, #1f2937);
+}
+
+:deep(.el-table td) {
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
+}
+
+:deep(.el-table__row:hover > td) {
+  background: var(--bg-primary, #f5f7fa) !important;
+}
+
+.data-count-success {
+  color: var(--success, #67c23a);
+  font-weight: 700;
+}
+
+.data-count-zero {
+  color: var(--danger, #f56c6c);
+  font-weight: 700;
+}
+
+.pagination-wrapper {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+  background: var(--bg-secondary, #ffffff);
+  padding: 16px 20px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color, #e5e7eb);
+}
+
+.detail-content {
+  padding: 0 16px;
+}
+
+.detail-item {
+  display: flex;
+  margin-bottom: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
+}
+
+.detail-item:last-child {
+  border-bottom: none;
+}
+
+.detail-item.full {
+  flex-direction: column;
+}
+
+.detail-item.full label {
+  margin-bottom: 8px;
+}
+
+.detail-item label {
+  width: 100px;
+  color: var(--text-secondary, #6b7280);
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.detail-item span {
+  color: var(--text-primary, #1f2937);
+  font-weight: 600;
+}
+
+.log-message {
+  background: var(--bg-tertiary, #f9fafb);
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--text-primary, #1f2937);
+  white-space: pre-wrap;
+  word-break: break-all;
+  margin: 8px 0 0 0;
+}
 </style>

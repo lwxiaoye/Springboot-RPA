@@ -375,61 +375,117 @@ onMounted(() => { fetchRoleList(); fetchPermissionTree() })
   margin: 0 auto;
 }
 
-.content-header {
-  margin-bottom: 20px;
-  background: white;
-  padding: 16px 24px;
-  border-radius: 12px;
-}
-
-.content-header h2 {
-  margin: 0 0 8px 0;
-  font-size: 20px;
-  font-weight: 500;
-}
-
+/* 页面头部 */
 .section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
-  background: white;
-  padding: 16px 24px;
-  border-radius: 12px;
-  border: 1px solid #e4e7ed;
+  margin-bottom: 24px;
+  padding: 20px 24px;
+  background: var(--bg-secondary, #ffffff);
+  border-radius: var(--radius-lg, 16px);
+  border: 1px solid var(--border-color, #e5e7eb);
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.05));
 }
 
 .section-title {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #1f2937;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary, #1f2937);
   margin: 0;
+  letter-spacing: -0.5px;
 }
 
+/* 搜索表单 */
 .search-form {
-  background: white;
+  background: var(--bg-secondary, #ffffff);
   padding: 20px 24px;
-  border-radius: 12px;
-  margin-bottom: 20px;
-  border: 1px solid #e4e7ed;
+  border-radius: var(--radius-lg, 16px);
+  margin-bottom: 24px;
+  border: 1px solid var(--border-color, #e5e7eb);
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.05));
 }
 
-.pagination-container {
-  margin-top: 20px;
-  display: flex;
-  justify-content: flex-end;
-  background: white;
-  padding: 12px 20px;
-  border-radius: 12px;
-  border: 1px solid #e4e7ed;
+.search-form :deep(.el-form-item) {
+  margin-bottom: 0;
+  margin-right: 16px;
 }
 
+.search-form :deep(.el-input__wrapper) {
+  border-radius: var(--radius-md, 12px);
+  box-shadow: 0 0 0 1px var(--border-color, #e5e7eb) inset;
+  transition: all 0.2s;
+}
+
+.search-form :deep(.el-input__wrapper:hover) {
+  border-color: var(--primary, #409eff);
+}
+
+.search-form :deep(.el-input__wrapper.is-focus) {
+  box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2) inset;
+}
+
+/* 表格 */
 :deep(.el-table) {
-  border-radius: 12px;
+  border-radius: var(--radius-lg, 16px);
   overflow: hidden;
+  border: 1px solid var(--border-color, #e5e7eb);
 }
 
 :deep(.el-table th) {
-  background-color: #fafafa;
+  background: var(--bg-tertiary, #f9fafb) !important;
+  font-weight: 600;
+  color: var(--text-primary, #1f2937);
+}
+
+:deep(.el-table td) {
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
+}
+
+:deep(.el-table__row:hover > td) {
+  background: var(--bg-primary, #f5f7fa) !important;
+}
+
+/* 分页 */
+.pagination-container {
+  margin-top: 24px;
+  display: flex;
+  justify-content: flex-end;
+  background: var(--bg-secondary, #ffffff);
+  padding: 16px 20px;
+  border-radius: var(--radius-lg, 16px);
+  border: 1px solid var(--border-color, #e5e7eb);
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.05));
+}
+
+/* 弹窗 */
+:deep(.el-dialog) {
+  border-radius: var(--radius-lg, 16px);
+  overflow: hidden;
+}
+
+:deep(.el-dialog__header) {
+  padding: 20px 24px;
+  background: var(--bg-tertiary, #f9fafb);
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
+}
+
+:deep(.el-dialog__title) {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary, #1f2937);
+}
+
+:deep(.el-dialog__body) {
+  padding: 24px;
+}
+
+/* 输入框 */
+:deep(.el-input__wrapper) {
+  border-radius: 10px;
+}
+
+:deep(.el-input__wrapper:hover) {
+  box-shadow: 0 0 0 1px var(--primary, #409eff) inset;
 }
 </style>
