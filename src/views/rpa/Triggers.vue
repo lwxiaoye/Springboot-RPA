@@ -104,10 +104,11 @@
         </template>
       </el-table-column>
       <el-table-column prop="lastTriggerTime" label="最后触发" min-width="150" />
-      <el-table-column label="操作" width="200" fixed="right" align="center">
+      <el-table-column label="操作" width="240" fixed="right" align="center">
         <template #default="{ row }">
           <el-button link type="success" @click="triggerNow(row)" :loading="triggeringId === row.id">触发</el-button>
-      <el-button link type="primary" @click="viewDetail(row)">详情</el-button>
+          <el-button link type="primary" @click="editTrigger(row)">编辑</el-button>
+          <el-button link type="info" @click="viewDetail(row)">详情</el-button>
           <el-button link type="warning" @click="toggleStatus(row)">
             {{ row.status === 'active' ? '暂停' : '启用' }}
           </el-button>
@@ -457,6 +458,7 @@ const loadQueues = async () => {
 
 const showCreateModal = () => {
   isEdit.value = false
+  currentTrigger.value = {}
   Object.assign(triggerForm, {
     name: '',
     code: '',
@@ -477,6 +479,37 @@ const showCreateModal = () => {
     maxConcurrent: 1
   })
   scheduleMode.value = 'cron'
+  dialogVisible.value = true
+}
+
+const editTrigger = (trigger) => {
+  isEdit.value = true
+  currentTrigger.value = { ...trigger }
+  
+  // 填充表单数据
+  Object.assign(triggerForm, {
+    name: trigger.name || '',
+    code: trigger.code || '',
+    description: trigger.description || '',
+    triggerType: trigger.triggerType || 'schedule',
+    processId: trigger.processId || null,
+    queueId: trigger.queueId || null,
+    cron: trigger.cron || '',
+    scheduleTimeObj: trigger.scheduleTime || null,
+    scheduleTime: trigger.scheduleTime || '',
+    scheduleType: trigger.scheduleType || 'day',
+    watchPath: trigger.watchPath || '',
+    filePattern: trigger.filePattern || '',
+    watchSubdirs: trigger.watchSubdirs || false,
+    apiKey: trigger.apiKey || '',
+    webhookUrl: trigger.webhookUrl || '',
+    httpMethod: trigger.httpMethod || 'POST',
+    autoStart: trigger.autoStart !== false,
+    maxConcurrent: trigger.maxConcurrent || 1
+  })
+  
+  // 根据是否有cron表达式设置定时模式
+  scheduleMode.value = trigger.cron ? 'cron' : 'simple'
   dialogVisible.value = true
 }
 

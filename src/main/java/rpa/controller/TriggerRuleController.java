@@ -150,6 +150,9 @@ public class TriggerRuleController {
     public Map<String, Object> update(@PathVariable Long id, @RequestBody Map<String, Object> request) {
         Map<String, Object> response = new HashMap<>();
         try {
+            TriggerRule oldTrigger = service.findById(id)
+                .orElseThrow(() -> new RuntimeException("触发器不存在"));
+            
             TriggerRule trigger = service.update(id, request);
             response.put("code", 0);
             response.put("message", "更新成功");
