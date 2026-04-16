@@ -233,7 +233,74 @@
           <div class="section-title">描述</div>
           <div class="detail-desc">{{ currentQueue.description }}</div>
         </div>
+
+        <div class="detail-section">
+          <div class="section-title">排队中的任务 ({{ pendingTasks.length }})</div>
+          <el-table :data="pendingTasks" size="small" border stripe max-height="200" v-loading="taskLoading">
+            <el-table-column prop="id" label="任务ID" width="80" align="center" />
+            <el-table-column prop="name" label="任务名称" min-width="150" show-overflow-tooltip />
+            <el-table-column prop="processName" label="关联流程" min-width="120" show-overflow-tooltip />
+            <el-table-column label="状态" width="90" align="center">
+              <template #default="{ row }">
+                <el-tag type="warning" size="small">排队中</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="createTime" label="创建时间" width="160">
+              <template #default="{ row }">
+                {{ formatDateTime(row.createTime) }}
+              </template>
+            </el-table-column>
+          </el-table>
+          <el-empty v-if="!taskLoading && pendingTasks.length === 0" description="暂无排队任务" :image-size="60" />
+        </div>
+
+        <div class="detail-section">
+          <div class="section-title">执行中的任务 ({{ runningTasks.length }})</div>
+          <el-table :data="runningTasks" size="small" border stripe max-height="200" v-loading="taskLoading">
+            <el-table-column prop="id" label="任务ID" width="80" align="center" />
+            <el-table-column prop="name" label="任务名称" min-width="150" show-overflow-tooltip />
+            <el-table-column prop="processName" label="关联流程" min-width="120" show-overflow-tooltip />
+            <el-table-column prop="robotName" label="执行机器人" width="120" show-overflow-tooltip />
+            <el-table-column label="状态" width="90" align="center">
+              <template #default="{ row }">
+                <el-tag type="primary" size="small">执行中</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="startTime" label="开始时间" width="160">
+              <template #default="{ row }">
+                {{ formatDateTime(row.startTime) }}
+              </template>
+            </el-table-column>
+          </el-table>
+          <el-empty v-if="!taskLoading && runningTasks.length === 0" description="暂无执行中任务" :image-size="60" />
+        </div>
+
+        <div class="detail-section">
+          <div class="section-title">最近完成记录 ({{ completedTasks.length }})</div>
+          <el-table :data="completedTasks" size="small" border stripe max-height="200" v-loading="taskLoading">
+            <el-table-column prop="id" label="任务ID" width="80" align="center" />
+            <el-table-column prop="name" label="任务名称" min-width="150" show-overflow-tooltip />
+            <el-table-column prop="processName" label="关联流程" min-width="120" show-overflow-tooltip />
+            <el-table-column label="结果" width="90" align="center">
+              <template #default="{ row }">
+                <el-tag :type="row.status === 'completed' ? 'success' : 'danger'" size="small">
+                  {{ row.status === 'completed' ? '成功' : '失败' }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="endTime" label="完成时间" width="160">
+              <template #default="{ row }">
+                {{ formatDateTime(row.endTime) }}
+              </template>
+            </el-table-column>
+          </el-table>
+          <el-empty v-if="!taskLoading && completedTasks.length === 0" description="暂无完成记录" :image-size="60" />
+        </div>
       </div>
+      <template #footer>
+        <el-button @click="detailVisible = false">关闭</el-button>
+        <el-button type="primary" @click="refreshTasks">刷新任务</el-button>
+      </template>
     </el-dialog>
   </div>
 </template>
@@ -251,6 +318,10 @@ const detailVisible = ref(false)
 const isEdit = ref(false)
 const currentQueue = ref({})
 const formRef = ref(null)
+const taskLoading = ref(false)
+const pendingTasks = ref([])
+const runningTasks = ref([])
+const completedTasks = ref([])
 
 const queues = ref([])
 const categoryList = ref([
@@ -379,6 +450,44 @@ const showCreateModal = () => {
 const viewDetail = (queue) => {
   currentQueue.value = queue
   detailVisible.value = true
+  loadQueueTasks(queue.id)
+}
+
+// 加载队列任务列表
+const loadQueueTasks = async (queueId) => {
+  taskLoading.value = true
+  try {
+    const result = await apiGet(`/task/queue/${queueId}`)
+    if (result.code === 0) {
+      const tasks = result.data || []
+      // 按状态分类
+      pendingTasks.value = tasks.filter(t => t.status === 'pending')
+      runningTasks.value = tasks.filter(t => t.status === 'running' || t.status === 'assigned')
+      completedTasks.value = tasks.filter(t => t.status === 'completed' || t.status === 'failed').slice(0, 20) // 只显示最近20条
+    }
+  } catch {
+    pendingTasks.value = []
+    runningTasks.value = []
+    completedTasks.value = []
+  } finally {
+    taskLoading.value = false
+  }
+}
+
+// 刷新任务列表
+const refreshTasks = () => {
+  if (currentQueue.value.id) {
+    loadQueueTasks(currentQueue.value.id)
+  }
+}
+
+// 格式化时间
+const formatDateTime = (dateTime) => {
+  if (!dateTime) return '-'
+  if (typeof dateTime === 'string' && dateTime.includes('T')) {
+    return dateTime.replace('T', ' ')
+  }
+  return dateTime
 }
 
 const toggleStatus = async (queue) => {

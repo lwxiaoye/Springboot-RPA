@@ -55,6 +55,23 @@ public class TaskController {
         return response;
     }
 
+    /**
+     * 根据队列查询任务列表
+     */
+    @GetMapping("/queue/{queueId}")
+    public Map<String, Object> getByQueue(@PathVariable Long queueId) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            List<Task> tasks = taskService.findByQueueId(queueId);
+            response.put("code", 0);
+            response.put("data", tasks);
+        } catch (Exception e) {
+            response.put("code", -1);
+            response.put("message", e.getMessage());
+        }
+        return response;
+    }
+
     @GetMapping("/{id}")
     public Map<String, Object> getById(@PathVariable Long id) {
         Map<String, Object> response = new HashMap<>();

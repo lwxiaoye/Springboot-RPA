@@ -49,6 +49,13 @@ public class TaskService {
     }
 
     /**
+     * 根据队列查询任务
+     */
+    public List<Task> findByQueueId(Long queueId) {
+        return repository.findByQueueId(queueId);
+    }
+
+    /**
      * 根据ID查询任务
      */
     public Optional<Task> findById(Long id) {

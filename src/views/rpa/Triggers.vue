@@ -103,7 +103,11 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column prop="lastTriggerTime" label="最后触发" min-width="150" />
+      <el-table-column prop="lastTriggerTime" label="最后触发" min-width="150">
+        <template #default="{ row }">
+          {{ formatDateTime(row.lastTriggerTime) }}
+        </template>
+      </el-table-column>
       <el-table-column label="操作" width="240" fixed="right" align="center">
         <template #default="{ row }">
           <el-button link type="success" @click="triggerNow(row)" :loading="triggeringId === row.id">触发</el-button>
@@ -293,9 +297,9 @@
         <div class="detail-section">
           <div class="section-title">最近执行</div>
           <div class="detail-grid">
-            <div class="detail-item"><label>最后触发：</label><span>{{ currentTrigger.lastTriggerTime || '-' }}</span></div>
-            <div class="detail-item"><label>最后成功：</label><span>{{ currentTrigger.lastSuccessTime || '-' }}</span></div>
-        <div class="detail-item"><label>最后失败：</label><span>{{ currentTrigger.lastFailedTime || '-' }}</span></div>
+            <div class="detail-item"><label>最后触发：</label><span>{{ formatDateTime(currentTrigger.lastTriggerTime) }}</span></div>
+            <div class="detail-item"><label>最后成功：</label><span>{{ formatDateTime(currentTrigger.lastSuccessTime) }}</span></div>
+        <div class="detail-item"><label>最后失败：</label><span>{{ formatDateTime(currentTrigger.lastFailedTime) }}</span></div>
           </div>
         </div>
       </div>
@@ -417,6 +421,15 @@ const getStatusText = (s) => {
 const getStatusTag = (s) => {
   const map = { active: 'success', paused: 'warning', disabled: 'danger' }
   return map[s] || 'info'
+}
+
+const formatDateTime = (dateTime) => {
+  if (!dateTime) return '-'
+  // 处理 ISO 8601 格式 (2026-04-15T18:25:41)
+  if (typeof dateTime === 'string' && dateTime.includes('T')) {
+    return dateTime.replace('T', ' ')
+  }
+  return dateTime
 }
 
 const loadTriggers = async () => {
