@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 import rpa.entity.Task;
 import rpa.service.TaskService;
 import rpa.service.ExecutionLogService;
+import rpa.service.AuditLogService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -36,6 +37,7 @@ public class TaskController {
 
     private final TaskService taskService;
     private final ExecutionLogService executionLogService;
+    private final AuditLogService auditLogService;
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     @GetMapping
@@ -116,6 +118,11 @@ public class TaskController {
             response.put("message", "创建成功");
             response.put("data", task);
             
+            // 审计日志
+            auditLogService.log("TASK", "TASK_CREATE", "Task", task.getId(), name,
+                "创建任务: " + name + " (分类: " + category + ")", "medium", "success",
+                Map.of("priority", priority, "processIds", processIds, "assigneeId", assigneeId));
+
             executionLogService.create(task.getId(), null, null, 
                     "任务创建", "pending", "任务已创建等待分配");
         } catch (Exception e) {
@@ -217,9 +224,16 @@ public class TaskController {
     public Map<String, Object> delete(@PathVariable Long id) {
         Map<String, Object> response = new HashMap<>();
         try {
+            // 先获取任务信息用于审计日志
+            String taskName = taskService.findById(id).map(Task::getName).orElse("未知任务");
+
             taskService.delete(id);
             response.put("code", 0);
             response.put("message", "删除成功");
+
+            // 审计日志
+            auditLogService.log("TASK", "TASK_DELETE", "Task", id, taskName,
+                "删除任务: " + taskName, "high", "success", null);
         } catch (Exception e) {
             response.put("code", -1);
             response.put("message", e.getMessage());

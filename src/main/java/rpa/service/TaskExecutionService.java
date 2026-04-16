@@ -79,52 +79,147 @@ public class TaskExecutionService {
     private void executeTaskWithCredential(Task task) {
         Long taskId = task.getId();
         String taskName = task.getName();
+        java.util.List<Long> processIds = getAllProcessIds(task);
 
-        log.info("开始执行任务: id={}, name={}", taskId, taskName);
+        log.info("开始执行任务: id={}, name={}, 流程数量={}", taskId, taskName, processIds.size());
         task.setStartTime(LocalDateTime.now());
         task.setStatus("running");
         taskRepository.save(task);
 
         TaskContext context = null;
+        StringBuilder allResults = new StringBuilder();
+        boolean hasFailure = false;
+        String lastError = null;
 
         try {
             // 1. 获取任务关联的凭据（如果有）
             context = prepareTaskContext(task);
             taskContextCache.put(taskId, context);
 
-            // 2. 获取关联的流程/机器人代码
-            String robotCode = getRobotCode(task);
+            // 2. 按顺序执行每个流程
+            int successCount = 0;
+            int failCount = 0;
 
-            // 3. 执行机器人代码（使用凭据）
-            ExecutionResult result = executeRobotCode(robotCode, context);
+            for (int i = 0; i < processIds.size(); i++) {
+                Long processId = processIds.get(i);
+                String processName = getProcessName(processId);
 
-            // 4. 更新任务状态
-            if (result.isSuccess()) {
-                task.setStatus("completed");
-                task.setResultData(result.getResultData());
-                task.setErrorMessage(null);
-                auditLogService.logTaskExecute(taskId, taskName, true, null);
-            } else {
+                log.info("执行流程 {}/{}: id={}, name={}", i + 1, processIds.size(), processId, processName);
+                allResults.append("=== 流程 ").append(i + 1).append("/").append(processIds.size())
+                          .append(": ").append(processName).append(" ===\n");
+
+                try {
+                    RpaProcess process = processRepository.findById(processId).orElse(null);
+                    if (process == null) {
+                        allResults.append("[错误] 流程不存在\n");
+                        failCount++;
+                        hasFailure = true;
+                        lastError = "流程不存在: " + processId;
+                        continue;
+                    }
+
+                    // 执行单个流程
+                    ExecutionResult result = executeSingleProcess(process, context);
+                    allResults.append(result.getResultData()).append("\n");
+
+                    if (result.isSuccess()) {
+                        successCount++;
+                        auditLogService.log("TASK", "TASK_PROCESS_SUCCESS", "Task", taskId, taskName,
+                            "任务执行流程成功: " + processName, "low", "success",
+                            java.util.Map.of("processId", processId, "processName", processName));
+                    } else {
+                        failCount++;
+                        hasFailure = true;
+                        lastError = result.getErrorMessage();
+                        allResults.append("[失败] ").append(result.getErrorMessage()).append("\n");
+                        auditLogService.log("TASK", "TASK_PROCESS_FAILED", "Task", taskId, taskName,
+                            "任务执行流程失败: " + processName, "medium", "failed",
+                            java.util.Map.of("processId", processId, "processName", processName, "error", result.getErrorMessage()));
+                    }
+
+                } catch (Exception e) {
+                    failCount++;
+                    hasFailure = true;
+                    lastError = e.getMessage();
+                    allResults.append("[异常] ").append(e.getMessage()).append("\n");
+                    log.error("流程执行异常: processId={}, error={}", processId, e.getMessage(), e);
+                    auditLogService.log("TASK", "TASK_PROCESS_ERROR", "Task", taskId, taskName,
+                        "任务执行流程异常: " + processName, "high", "failed",
+                        java.util.Map.of("processId", processId, "processName", processName, "error", e.getMessage()));
+                }
+
+                allResults.append("\n");
+            }
+
+            // 3. 更新任务状态
+            allResults.append("=== 执行汇总 ===\n");
+            allResults.append("总流程数: ").append(processIds.size()).append("\n");
+            allResults.append("成功: ").append(successCount).append("\n");
+            allResults.append("失败: ").append(failCount).append("\n");
+
+            if (hasFailure) {
                 task.setStatus("failed");
-                task.setErrorMessage(result.getErrorMessage());
-                auditLogService.logTaskExecute(taskId, taskName, false, result.getErrorMessage());
+                task.setResultData(allResults.toString());
+                task.setErrorMessage(lastError);
+                auditLogService.logTaskExecute(taskId, taskName, false, "部分流程失败: " + lastError);
+            } else {
+                task.setStatus("completed");
+                task.setResultData(allResults.toString());
+                task.setErrorMessage(null);
+                auditLogService.logTaskExecute(taskId, taskName, true, "全部流程执行成功");
             }
 
         } catch (Exception e) {
             log.error("任务执行失败: id={}, error={}", taskId, e.getMessage(), e);
             task.setStatus("failed");
             task.setErrorMessage(e.getMessage());
+            allResults.append("[任务异常] ").append(e.getMessage());
+            task.setResultData(allResults.toString());
             auditLogService.logTaskExecute(taskId, taskName, false, e.getMessage());
 
         } finally {
-            // 5. 清理任务上下文
+            // 清理任务上下文
             taskContextCache.remove(taskId);
             if (context != null) {
-                context.clear(); // 清理敏感数据
+                context.clear();
             }
             task.setEndTime(LocalDateTime.now());
             task.setUpdateTime(LocalDateTime.now());
             taskRepository.save(task);
+        }
+    }
+
+    /**
+     * 执行单个流程
+     */
+    private ExecutionResult executeSingleProcess(RpaProcess process, TaskContext context) {
+        String robotCode = process.getCode();
+
+        if (robotCode == null || robotCode.isEmpty()) {
+            return ExecutionResult.fail("机器人代码为空");
+        }
+
+        try {
+            log.info("开始执行机器人代码, 上下文包含凭据: username={}, hasPassword={}",
+                    context.getUsername(), context.getPassword() != null);
+
+            // 模拟执行结果
+            StringBuilder result = new StringBuilder();
+            result.append("流程: ").append(process.getName()).append("\n");
+            result.append("执行完成\n");
+
+            if (context.getUsername() != null) {
+                result.append("- 用户名: ").append(context.getUsername()).append("\n");
+            }
+            if (context.getUrl() != null) {
+                result.append("- 目标URL: ").append(context.getUrl()).append("\n");
+            }
+            result.append("- 执行时间: ").append(LocalDateTime.now()).append("\n");
+
+            return ExecutionResult.success(result.toString());
+
+        } catch (Exception e) {
+            return ExecutionResult.fail("执行失败: " + e.getMessage());
         }
     }
 
@@ -198,7 +293,9 @@ public class TaskExecutionService {
     }
 
     /**
-     * 获取机器人代码
+     * 获取机器人代码（支持多流程）
+     * 如果有多个流程，返回第一个流程的代码
+     * 如果需要执行多个流程，应该调用 executeMultipleProcesses
      */
     private String getRobotCode(Task task) {
         if (task.getProcessId() != null) {
@@ -225,40 +322,45 @@ public class TaskExecutionService {
     }
 
     /**
-     * 执行机器人代码
+     * 获取所有关联的流程ID列表
      */
-    private ExecutionResult executeRobotCode(String robotCode, TaskContext context) {
-        if (robotCode == null || robotCode.isEmpty()) {
-            return ExecutionResult.fail("机器人代码为空");
+    private java.util.List<Long> getAllProcessIds(Task task) {
+        java.util.List<Long> processIds = new java.util.ArrayList<>();
+
+        // 添加单个流程ID
+        if (task.getProcessId() != null) {
+            processIds.add(task.getProcessId());
         }
 
-        try {
-            log.info("开始执行机器人代码, 上下文包含凭据: username={}, hasPassword={}",
-                    context.getUsername(), context.getPassword() != null);
-
-            // TODO: 调用实际的机器人执行器
-            // 这里可以调用 RobotCodeExecutor 或其他执行服务
-
-            // 模拟执行结果
-            StringBuilder result = new StringBuilder();
-            result.append("// 执行完成\n");
-            result.append("// 任务上下文信息:\n");
-
-            if (context.getUsername() != null) {
-                result.append("// - 用户名: ").append(context.getUsername()).append("\n");
+        // 添加多个流程ID
+        if (task.getProcessIds() != null && !task.getProcessIds().isEmpty()) {
+            try {
+                String ids = task.getProcessIds().replace("[", "").replace("]", "").trim();
+                if (!ids.isEmpty()) {
+                    for (String idStr : ids.split(",")) {
+                        idStr = idStr.trim();
+                        if (!idStr.isEmpty()) {
+                            processIds.add(Long.parseLong(idStr));
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("解析processIds失败: {}", task.getProcessIds());
             }
-            if (context.getUrl() != null) {
-                result.append("// - 目标URL: ").append(context.getUrl()).append("\n");
-            }
-
-            result.append("// - 执行时间: ").append(LocalDateTime.now()).append("\n");
-
-            return ExecutionResult.success(result.toString());
-
-        } catch (Exception e) {
-            return ExecutionResult.fail("执行失败: " + e.getMessage());
         }
+
+        return processIds;
     }
+
+    /**
+     * 获取流程名称
+     */
+    private String getProcessName(Long processId) {
+        return processRepository.findById(processId)
+                .map(RpaProcess::getName)
+                .orElse("未知流程");
+    }
+
 
     /**
      * 任务上下文

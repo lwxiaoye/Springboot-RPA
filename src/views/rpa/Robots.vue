@@ -456,60 +456,96 @@
         <!-- 代码配置区块 -->
         <div class="form-section code-section">
           <div class="section-header">
-            <el-icon><Monitor /></el-icon>
-            <span>代码配置</span>
+            <el-icon><MagicStick /></el-icon>
+            <span>AI代码生成</span>
           </div>
-          <el-form label-position="top">
-            <el-form-item label="代码模板">
-              <div class="template-selector">
-                <el-select
-                  v-model="editForm.selectedTemplate"
-                  placeholder="选择代码模板快速生成"
-                  size="default"
-                  style="width: 100%"
-                  @change="onEditTemplateChange"
-                >
-                  <el-option label="不使用模板" value="" />
-                  <el-option label="【采集】网页采集模板" value="collect" />
-                  <el-option label="【解析】HTML表格解析模板" value="parse" />
-                  <el-option label="【加工】数据清洗转换模板" value="process" />
-                  <el-option label="【落库】数据库存储模板" value="store" />
-                </el-select>
+
+          <!-- AI生成与模板整合面板 -->
+          <div class="ai-template-panel">
+            <div class="ai-generator-area">
+              <div class="area-header">
+                <span class="area-title">
+                  <el-icon><MagicStick /></el-icon>
+                  AI智能生成
+                </span>
               </div>
-            </el-form-item>
-            <el-form-item label="机器人代码">
-              <div class="code-editor-wrapper">
-                <div class="code-toolbar">
-                  <div class="toolbar-left">
-                    <el-icon><Edit /></el-icon>
-                    <span class="toolbar-label">代码编辑器</span>
-                  </div>
-                  <div class="toolbar-actions">
-                    <el-button
-                      type="primary"
-                      plain
-                      size="small"
-                      @click="goToAiGeneratorForEdit"
-                    >
+              <div class="area-content">
+                <p class="area-desc">描述您的需求，AI自动生成机器人代码</p>
+                <div class="ai-input-group">
+                  <el-input
+                    v-model="editForm.aiPrompt"
+                    type="textarea"
+                    :rows="3"
+                    placeholder="例如：采集某网站发票信息，包含发票号码、金额、日期等字段..."
+                  />
+                  <div class="ai-buttons">
+                    <el-button type="primary" @click="generateCodeWithAIForEdit" :loading="generatingCode">
                       <el-icon><MagicStick /></el-icon>
-                      AI生成
+                      AI生成代码
                     </el-button>
                   </div>
                 </div>
-                <el-input
-                  v-model="editForm.robotCode"
-                  type="textarea"
-                  :rows="8"
-                  placeholder="请输入机器人执行代码，或使用上方模板生成..."
-                  class="code-textarea"
-                />
               </div>
-              <div class="code-hint">
-                <el-icon><InfoFilled /></el-icon>
-                <span>支持命令: @collect URL | @parse | @process clean,transform | @store table_name | @log message</span>
+            </div>
+
+            <div class="template-area">
+              <div class="area-header">
+                <span class="area-title">
+                  <el-icon><Document /></el-icon>
+                  快速模板
+                </span>
               </div>
-            </el-form-item>
-          </el-form>
+              <div class="template-grid">
+                <div
+                  v-for="tpl in codeTemplates"
+                  :key="tpl.code"
+                  class="template-card"
+                  :class="{ active: editForm.selectedTemplate === tpl.code }"
+                  @click="selectTemplateForEdit(tpl)"
+                >
+                  <div class="template-icon">
+                    <el-icon><component :is="tpl.icon" /></el-icon>
+                  </div>
+                  <div class="template-info">
+                    <div class="template-name">{{ tpl.name }}</div>
+                    <div class="template-desc">{{ tpl.description }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 代码编辑器 -->
+          <div class="code-editor-wrapper">
+            <div class="code-toolbar">
+              <div class="toolbar-left">
+                <el-icon><Edit /></el-icon>
+                <span class="toolbar-label">代码编辑器</span>
+              </div>
+              <div class="toolbar-actions">
+                <el-button
+                  type="primary"
+                  plain
+                  size="small"
+                  @click="goToAiGeneratorForEdit"
+                >
+                  <el-icon><MagicStick /></el-icon>
+                  AI代码助手
+                </el-button>
+                <el-button type="default" plain size="small" @click="copyCodeForEdit">
+                  <el-icon><CopyDocument /></el-icon>
+                  复制
+                </el-button>
+              </div>
+            </div>
+            <el-input
+              v-model="editForm.robotCode"
+              type="textarea"
+              :rows="10"
+              placeholder="在此编辑机器人代码..."
+              class="code-textarea"
+            />
+          </div>
         </div>
 
         <!-- 附加信息区块 -->
@@ -726,7 +762,7 @@ const generateCodeWithAI = async () => {
 @log ${categoryNames[createForm.robotCategory] || '任务'}执行完成`
 
     createForm.robotCode = mockCode
-    ElMessage.warning('使用本地模板生成（请配置DeepSeek API）')
+    ElMessage.warning('使用本地模板生成（请配置智谱AI API）')
   } finally {
     generatingCode.value = false
   }

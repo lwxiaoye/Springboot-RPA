@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import rpa.entity.RpaProcess;
 import rpa.service.RpaProcessService;
+import rpa.service.AuditLogService;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +28,7 @@ import java.util.Map;
 public class RpaProcessController {
 
     private final RpaProcessService service;
+    private final AuditLogService auditLogService;
 
     @GetMapping
     public Map<String, Object> list(@RequestParam(required = false) Long creatorId) {
@@ -78,6 +80,11 @@ public class RpaProcessController {
             response.put("code", 0);
             response.put("message", "创建成功");
             response.put("data", process);
+
+            // 审计日志
+            auditLogService.log("PROCESS", "PROCESS_CREATE", "RpaProcess", process.getId(), name,
+                "创建流程: " + name, "medium", "success",
+                Map.of("version", version, "status", status));
         } catch (Exception e) {
             response.put("code", -1);
             response.put("message", e.getMessage());
@@ -100,6 +107,11 @@ public class RpaProcessController {
             response.put("code", 0);
             response.put("message", "更新成功");
             response.put("data", process);
+
+            // 审计日志
+            auditLogService.log("PROCESS", "PROCESS_UPDATE", "RpaProcess", id, name,
+                "更新流程: " + name, "medium", "success",
+                Map.of("version", version, "status", status));
         } catch (Exception e) {
             response.put("code", -1);
             response.put("message", e.getMessage());
@@ -111,9 +123,16 @@ public class RpaProcessController {
     public Map<String, Object> delete(@PathVariable Long id) {
         Map<String, Object> response = new HashMap<>();
         try {
+            // 先获取流程信息用于审计日志
+            String processName = service.findById(id).map(RpaProcess::getName).orElse("未知流程");
+
             service.delete(id);
             response.put("code", 0);
             response.put("message", "删除成功");
+
+            // 审计日志
+            auditLogService.log("PROCESS", "PROCESS_DELETE", "RpaProcess", id, processName,
+                "删除流程: " + processName, "high", "success", null);
         } catch (Exception e) {
             response.put("code", -1);
             response.put("message", e.getMessage());
