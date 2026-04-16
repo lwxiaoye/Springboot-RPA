@@ -92,16 +92,20 @@
           </div>
         </div>
 
-        <!-- 已创建的流程 -->
+        <!-- 已创建的流程（显示当前任务绑定的流程） -->
         <div class="process-list-section">
           <div class="section-header">
-            <h4>已创建的流程</h4>
+            <h4>{{ isEditTask ? '已绑定的流程' : '流程列表' }}</h4>
           </div>
-          <div class="process-list">
-            <div v-for="process in processes" :key="process.id" class="process-item">
+          <div class="process-list" v-if="isEditTask && selectedTask">
+            <div v-for="process in boundProcesses" :key="process.id" class="process-item bound">
               <div class="process-info">
-                <span class="process-name">{{ process.name }}</span>
+                <div class="process-name-row">
+                  <span class="process-name">{{ process.name }}</span>
+                  <el-tag size="small" type="success">已绑定</el-tag>
+                </div>
                 <span class="process-desc">{{ process.description || '暂无描述' }}</span>
+                <span class="process-meta">编码: {{ process.code }} | 版本: {{ process.version }}</span>
               </div>
               <div class="process-ops">
                 <el-button link type="primary" size="small" @click="runProcess(process)">
@@ -109,7 +113,12 @@
                 </el-button>
               </div>
             </div>
-            <el-empty v-if="processes.length === 0" description="暂无流程" />
+            <el-empty v-if="boundProcesses.length === 0" description="该任务未绑定任何流程" />
+          </div>
+          <div class="process-list" v-else>
+            <div class="tip-text">
+              {{ taskForm.processIds.some(pid => pid) ? '已在下方选择器中选择流程' : '请先在左侧选择任务或创建新任务' }}
+            </div>
           </div>
         </div>
       </div>
@@ -199,6 +208,28 @@ const filteredTasks = computed(() => {
 // 是否有有效的流程绑定
 const hasValidProcessIds = computed(() => {
   return taskForm.processIds.some(pid => pid) || selectedTask.value?.processId
+})
+
+// 获取当前任务/选择器绑定的流程详情
+const boundProcesses = computed(() => {
+  // 获取所有有效的流程ID
+  const boundIds = selectedTask.value?.processIds
+    ? ((() => {
+        try {
+          const parsed = JSON.parse(selectedTask.value.processIds)
+          return Array.isArray(parsed) ? parsed : [selectedTask.value.processId]
+        } catch {
+          return selectedTask.value.processId ? [selectedTask.value.processId] : []
+        }
+      })())
+    : taskForm.processIds.filter(pid => pid)
+
+  if (!boundIds || boundIds.length === 0) return []
+
+  // 查找对应的流程详情
+  return boundIds
+    .map(id => processes.value.find(p => String(p.id) === String(id)))
+    .filter(p => p != null)
 })
 
 const getStatusText = (s) => {
@@ -490,10 +521,15 @@ onMounted(() => {
 .process-list { display: flex; flex-direction: column; gap: 10px; }
 .process-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; background: #fafafa; border-radius: 8px; }
 .process-item:hover { background: #f0f0f0; }
+.process-item.bound { background: #f0f7ff; border: 1px solid #d9ecff; }
+.process-item.bound:hover { background: #e6f0ff; }
 .process-info { display: flex; flex-direction: column; gap: 2px; }
 .process-name { font-weight: 500; color: #262626; }
+.process-name-row { display: flex; align-items: center; gap: 8px; }
 .process-desc { font-size: 12px; color: #8c8c8c; }
+.process-meta { font-size: 11px; color: #999; }
 .process-ops { display: flex; gap: 8px; }
+.tip-text { color: #999; font-size: 13px; text-align: center; padding: 20px; }
 
 .log-list { flex: 1; overflow-y: auto; padding: 12px; }
 .log-item { padding: 12px 14px; background: #fafafa; border-radius: 8px; margin-bottom: 10px; }

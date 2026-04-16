@@ -719,7 +719,7 @@ const selectTemplate = (tpl) => {
   ElMessage.success(`已选择【${tpl.name}】模板`)
 }
 
-// 使用DeepSeek API生成代码
+// 使用智谱AI API生成代码
 const generatingCode = ref(false)
 const generateCodeWithAI = async () => {
   if (!createForm.aiPrompt.trim()) {
@@ -735,14 +735,34 @@ const generateCodeWithAI = async () => {
       category: createForm.robotCategory
     })
 
-    if (response.code === 0 || response.data) {
-      createForm.robotCode = response.data?.code || response.data
+    if (response.code === 0 && response.data?.code) {
+      createForm.robotCode = response.data.code
       ElMessage.success('代码生成成功')
     } else {
-      throw new Error(response.message || '生成失败')
+      // API返回错误，使用备用代码
+      const categoryNames = {
+        'DATA_COLLECT': '数据采集',
+        'DATA_PARSE': '数据解析',
+        'DATA_PROCESS': '数据加工',
+        'GENERAL': '通用执行'
+      }
+
+      const mockCode = `// AI生成的RPA机器人
+// 分类: ${categoryNames[createForm.robotCategory] || '通用'}
+// 描述: ${createForm.aiPrompt}
+
+@collect http://example.com/data
+@table_selector table.data-list tbody tr
+@columns 列1,列2,列3
+@process clean,transform
+@store report_data
+@log ${categoryNames[createForm.robotCategory] || '任务'}执行完成`
+
+      createForm.robotCode = mockCode
+      ElMessage.warning(response.message || '使用本地模板生成，请确保已在集成中心配置智谱AI')
     }
   } catch (error) {
-    // 本地模拟生成（当API不可用时）
+    // 网络错误等
     const categoryNames = {
       'DATA_COLLECT': '数据采集',
       'DATA_PARSE': '数据解析',
@@ -762,7 +782,7 @@ const generateCodeWithAI = async () => {
 @log ${categoryNames[createForm.robotCategory] || '任务'}执行完成`
 
     createForm.robotCode = mockCode
-    ElMessage.warning('使用本地模板生成（请配置智谱AI API）')
+    ElMessage.warning('AI服务不可用，使用本地模板生成')
   } finally {
     generatingCode.value = false
   }
