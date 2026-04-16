@@ -103,11 +103,16 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column prop="lastTriggerTime" label="最后触发" min-width="150" />
-      <el-table-column label="操作" width="200" fixed="right" align="center">
+      <el-table-column prop="lastTriggerTime" label="最后触发" min-width="150">
+        <template #default="{ row }">
+          {{ formatDateTime(row.lastTriggerTime) }}
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" width="240" fixed="right" align="center">
         <template #default="{ row }">
           <el-button link type="success" @click="triggerNow(row)" :loading="triggeringId === row.id">触发</el-button>
-      <el-button link type="primary" @click="viewDetail(row)">详情</el-button>
+          <el-button link type="primary" @click="editTrigger(row)">编辑</el-button>
+          <el-button link type="info" @click="viewDetail(row)">详情</el-button>
           <el-button link type="warning" @click="toggleStatus(row)">
             {{ row.status === 'active' ? '暂停' : '启用' }}
           </el-button>
@@ -292,9 +297,9 @@
         <div class="detail-section">
           <div class="section-title">最近执行</div>
           <div class="detail-grid">
-            <div class="detail-item"><label>最后触发：</label><span>{{ currentTrigger.lastTriggerTime || '-' }}</span></div>
-            <div class="detail-item"><label>最后成功：</label><span>{{ currentTrigger.lastSuccessTime || '-' }}</span></div>
-        <div class="detail-item"><label>最后失败：</label><span>{{ currentTrigger.lastFailedTime || '-' }}</span></div>
+            <div class="detail-item"><label>最后触发：</label><span>{{ formatDateTime(currentTrigger.lastTriggerTime) }}</span></div>
+            <div class="detail-item"><label>最后成功：</label><span>{{ formatDateTime(currentTrigger.lastSuccessTime) }}</span></div>
+        <div class="detail-item"><label>最后失败：</label><span>{{ formatDateTime(currentTrigger.lastFailedTime) }}</span></div>
           </div>
         </div>
       </div>
@@ -418,6 +423,15 @@ const getStatusTag = (s) => {
   return map[s] || 'info'
 }
 
+const formatDateTime = (dateTime) => {
+  if (!dateTime) return '-'
+  // 处理 ISO 8601 格式 (2026-04-15T18:25:41)
+  if (typeof dateTime === 'string' && dateTime.includes('T')) {
+    return dateTime.replace('T', ' ')
+  }
+  return dateTime
+}
+
 const loadTriggers = async () => {
   loading.value = true
   try {
@@ -457,6 +471,7 @@ const loadQueues = async () => {
 
 const showCreateModal = () => {
   isEdit.value = false
+  currentTrigger.value = {}
   Object.assign(triggerForm, {
     name: '',
     code: '',
@@ -477,6 +492,37 @@ const showCreateModal = () => {
     maxConcurrent: 1
   })
   scheduleMode.value = 'cron'
+  dialogVisible.value = true
+}
+
+const editTrigger = (trigger) => {
+  isEdit.value = true
+  currentTrigger.value = { ...trigger }
+  
+  // 填充表单数据
+  Object.assign(triggerForm, {
+    name: trigger.name || '',
+    code: trigger.code || '',
+    description: trigger.description || '',
+    triggerType: trigger.triggerType || 'schedule',
+    processId: trigger.processId || null,
+    queueId: trigger.queueId || null,
+    cron: trigger.cron || '',
+    scheduleTimeObj: trigger.scheduleTime || null,
+    scheduleTime: trigger.scheduleTime || '',
+    scheduleType: trigger.scheduleType || 'day',
+    watchPath: trigger.watchPath || '',
+    filePattern: trigger.filePattern || '',
+    watchSubdirs: trigger.watchSubdirs || false,
+    apiKey: trigger.apiKey || '',
+    webhookUrl: trigger.webhookUrl || '',
+    httpMethod: trigger.httpMethod || 'POST',
+    autoStart: trigger.autoStart !== false,
+    maxConcurrent: trigger.maxConcurrent || 1
+  })
+  
+  // 根据是否有cron表达式设置定时模式
+  scheduleMode.value = trigger.cron ? 'cron' : 'simple'
   dialogVisible.value = true
 }
 

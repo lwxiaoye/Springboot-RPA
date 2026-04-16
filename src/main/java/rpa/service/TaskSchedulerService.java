@@ -63,11 +63,38 @@ public class TaskSchedulerService {
     }
 
     /**
+     * 执行已分配的任务
+     */
+    @Scheduled(fixedRate = 30000)
+    public void executeAssignedTasks() {
+        List<Task> assignedTasks = taskRepository.findByStatus("assigned");
+        if (assignedTasks.isEmpty()) {
+            return;
+        }
+
+        log.info("发现 {} 个已分配任务待执行", assignedTasks.size());
+
+        for (Task task : assignedTasks) {
+            try {
+                executeTask(task);
+            } catch (Exception e) {
+                log.error("任务执行失败: taskId={}", task.getId(), e);
+                // 执行失败，标记为失败状态
+                completeTask(task.getId(), "failed", null, e.getMessage());
+            }
+        }
+    }
+
+    /**
      * 调度任务到合适的机器人
+     * 队列管理中的任务无需绑定机器人，直接标记为已分配，等待执行
      */
     public boolean dispatchTask(Task task) {
         if (task.getProcessId() == null && (task.getProcessIds() == null || task.getProcessIds().isEmpty())) {
-            log.warn("任务 {} 未关联流程，无法调度", task.getId());
+            log.warn("任务 {} 未关联流程，无法调度，将标记为失败", task.getId());
+            // 回滚队列计数器
+            rollbackQueueCount(task);
+            completeTask(task.getId(), "failed", null, "任务未关联流程，无法调度");
             return false;
         }
 
@@ -82,38 +109,24 @@ public class TaskSchedulerService {
         }
 
         if (process == null) {
-            log.warn("未找到关联的流程");
+            log.warn("任务 {} 未找到关联的流程，将标记为失败", task.getId());
+            // 回滚队列计数器
+            rollbackQueueCount(task);
+            completeTask(task.getId(), "failed", null, "未找到关联的流程");
             return false;
         }
 
-        String requiredCategory = process.getRequiredCategory();
-
-        List<Robot> availableRobots = findAvailableRobots(requiredCategory, task.getRobotId());
-
-        if (availableRobots.isEmpty()) {
-            log.warn("没有可用的机器人执行任务: {}", task.getName());
-            return false;
-        }
-
-        Robot selectedRobot = availableRobots.get(0);
-
-        task.setRobotId(selectedRobot.getId());
-        task.setRobotName(selectedRobot.getName());
+        // 队列任务不需要绑定机器人，直接标记为已分配
         task.setStatus("assigned");
         taskRepository.save(task);
-
-        selectedRobot.setStatus("busy");
-        selectedRobot.setCurrentTaskCount(selectedRobot.getCurrentTaskCount() + 1);
-        selectedRobot.setLastExecutionTime(java.time.LocalDateTime.now());
-        robotRepository.save(selectedRobot);
 
         executionLogService.create(
             task.getId(),
             task.getProcessId(),
-            selectedRobot.getId(),
+            task.getRobotId(),
             "任务分配",
             "assigned",
-            "任务已分配给机器人: " + selectedRobot.getName()
+            "任务已分配，准备执行流程: " + process.getName()
         );
 
         if (process.getQueueId() != null) {
@@ -121,9 +134,75 @@ public class TaskSchedulerService {
             queueService.decrementPendingCount(process.getQueueId());
         }
 
-        log.info("任务 {} 已分配给机器人 {}", task.getName(), selectedRobot.getName());
+        log.info("任务 {} 已分配，等待执行流程 {}", task.getName(), process.getName());
 
         return true;
+    }
+
+    /**
+     * 回滚队列计数器（当任务调度失败时调用）
+     */
+    private void rollbackQueueCount(Task task) {
+        // 优先使用任务的queueId，其次使用流程的queueId
+        Long queueId = task.getQueueId();
+        if (queueId == null && task.getProcessId() != null) {
+            queueId = processRepository.findById(task.getProcessId())
+                .map(p -> p.getQueueId())
+                .orElse(null);
+        }
+
+        if (queueId != null) {
+            queueService.decrementPendingCount(queueId);
+            log.info("已回滚队列 {} 的pending计数", queueId);
+        }
+    }
+
+    /**
+     * 执行已分配的任务
+     * 直接执行流程，不需要机器人
+     */
+    private void executeTask(Task task) {
+        if (task.getProcessId() == null) {
+            log.warn("任务 {} 未关联流程，无法执行", task.getId());
+            completeTask(task.getId(), "failed", null, "未关联流程");
+            return;
+        }
+
+        // 更新任务状态为 running
+        task.setStatus("running");
+        task.setStartTime(java.time.LocalDateTime.now());
+        taskRepository.save(task);
+
+        executionLogService.create(
+            task.getId(),
+            task.getProcessId(),
+            task.getRobotId(),
+            "开始执行",
+            "running",
+            "任务开始执行流程"
+        );
+
+        try {
+            // 调用流程执行服务
+            Map<String, Object> result = rpaProcessService.execute(task.getProcessId());
+
+            // 判断执行结果
+            Boolean success = (Boolean) result.getOrDefault("success", false);
+            String message = (String) result.getOrDefault("message", "");
+
+            if (success) {
+                completeTask(task.getId(), "completed", 
+                    result.containsKey("data") ? result.get("data").toString() : null, null);
+                log.info("任务 {} 执行成功", task.getName());
+            } else {
+                completeTask(task.getId(), "failed", null, message);
+                log.warn("任务 {} 执行失败: {}", task.getName(), message);
+            }
+
+        } catch (Exception e) {
+            log.error("任务 {} 执行异常", task.getName(), e);
+            completeTask(task.getId(), "failed", null, e.getMessage());
+        }
     }
 
     /**
@@ -181,17 +260,22 @@ public class TaskSchedulerService {
                 });
             }
 
-            if (task.getProcessId() != null) {
-                processRepository.findById(task.getProcessId()).ifPresent(process -> {
-                    if (process.getQueueId() != null) {
-                        queueService.decrementRunningCount(process.getQueueId());
-                        if ("completed".equals(status) || "success".equals(status)) {
-                            queueService.incrementCompletedCount(process.getQueueId());
-                        } else {
-                            queueService.incrementFailedCount(process.getQueueId());
-                        }
-                    }
-                });
+            // 更新队列计数：优先使用任务的queueId，其次使用流程的queueId
+            Long queueId = task.getQueueId();
+            if (queueId == null && task.getProcessId() != null) {
+                // 如果任务没有queueId，尝试从流程获取
+                queueId = processRepository.findById(task.getProcessId())
+                    .map(p -> p.getQueueId())
+                    .orElse(null);
+            }
+
+            if (queueId != null) {
+                queueService.decrementRunningCount(queueId);
+                if ("completed".equals(status) || "success".equals(status)) {
+                    queueService.incrementCompletedCount(queueId);
+                } else {
+                    queueService.incrementFailedCount(queueId);
+                }
             }
 
             executionLogService.create(

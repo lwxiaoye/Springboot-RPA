@@ -3,6 +3,10 @@
     <!-- 工具栏 -->
     <div class="canvas-toolbar">
       <div class="toolbar-left">
+        <el-button size="small" @click="goBack" text>
+          <el-icon><Back /></el-icon> 返回
+        </el-button>
+        <el-divider direction="vertical" />
         <span class="toolbar-title">流程画布</span>
         <el-divider direction="vertical" />
         <el-button size="small" @click="addProcessNode" type="primary">
@@ -375,8 +379,11 @@
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
-import { Plus, Delete, Grid, Close, Search, Monitor, ArrowDown } from '@element-plus/icons-vue'
+import { useRouter } from 'vue-router'
+import { Plus, Delete, Grid, Close, Search, Monitor, ArrowDown, Back } from '@element-plus/icons-vue'
 import { apiGet } from '../../utils/api.js'
+
+const router = useRouter()
 
 const props = defineProps({
   modelValue: {
@@ -394,6 +401,11 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['update:modelValue'])
+
+// 返回流程列表
+const goBack = () => {
+  router.push('/rpa/processes')
+}
 
 // 画布相关
 const canvasContainer = ref(null)

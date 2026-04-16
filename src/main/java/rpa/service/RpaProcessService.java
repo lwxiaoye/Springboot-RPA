@@ -187,20 +187,21 @@ public class RpaProcessService {
             throw new RuntimeException("流程没有设计步骤，请先设计流程");
         }
 
-        // 检查每个步骤是否绑定了机器人
+        // 队列管理中的任务无需绑定机器人，直接运行对应流程
+        // 仅在有机器人绑定时才检查机器人状态
         for (int i = 0; i < finalSteps.size(); i++) {
             final int stepIndex = i;
             Map<String, Object> step = finalSteps.get(i);
             Object robotIdObj = step.get("robotId");
-            if (robotIdObj == null) {
-                throw new RuntimeException("步骤 " + (stepIndex + 1) + " 未绑定机器人");
-            }
-            Long robotId = robotIdObj instanceof Integer ? ((Integer) robotIdObj).longValue() : (Long) robotIdObj;
-            Robot robot = robotRepository.findById(robotId)
-                    .orElseThrow(() -> new RuntimeException("步骤 " + (stepIndex + 1) + " 绑定的机器人不存在"));
+            
+            if (robotIdObj != null) {
+                Long robotId = robotIdObj instanceof Integer ? ((Integer) robotIdObj).longValue() : (Long) robotIdObj;
+                Robot robot = robotRepository.findById(robotId)
+                        .orElseThrow(() -> new RuntimeException("步骤 " + (stepIndex + 1) + " 绑定的机器人不存在"));
 
-            if ("offline".equals(robot.getStatus())) {
-                throw new RuntimeException("机器人 " + robot.getName() + " 处于离线状态，无法执行");
+                if ("offline".equals(robot.getStatus())) {
+                    throw new RuntimeException("机器人 " + robot.getName() + " 处于离线状态，无法执行");
+                }
             }
         }
 
@@ -253,6 +254,7 @@ public class RpaProcessService {
 
     /**
      * 真正执行流程步骤
+     * 支持有机器人和无机器人两种模式
      */
     private void executeSteps(Long processId, String processName, List<Map<String, Object>> steps,
                               Long logId, String executionId, LocalDateTime startTime) {
@@ -272,64 +274,127 @@ public class RpaProcessService {
             String stepType = (String) step.getOrDefault("type", "");
             Object robotIdObj = step.get("robotId");
             Long robotId = robotIdObj instanceof Integer ? ((Integer) robotIdObj).longValue() : (Long) robotIdObj;
-            Robot robot = robotRepository.findById(robotId).orElse(null);
-
+            
             fullLog.append(">>> 开始执行步骤 ").append(i + 1).append(": ").append(stepName).append("\n");
 
-            if (robot == null) {
-                fullLog.append("[错误] 机器人不存在\n");
-                allSuccess = false;
-                continue;
-            }
-
-            fullLog.append("机器人: ").append(robot.getName()).append("\n");
-            fullLog.append("分类: ").append(robot.getRobotCategory()).append("\n");
-
-            // 更新机器人状态为忙碌
-            robot.setStatus("busy");
-            robotRepository.save(robot);
+            // 获取步骤配置
+            Map<String, Object> config = step.get("config") instanceof Map ?
+                    (Map<String, Object>) step.get("config") : new HashMap<>();
+            
+            // 传递流程执行ID到配置中
+            config.put("processId", String.valueOf(processId));
+            config.put("processName", processName);
 
             try {
-                // 获取步骤配置
-                Map<String, Object> config = step.get("config") instanceof Map ?
-                        (Map<String, Object>) step.get("config") : new HashMap<>();
-                
-                // 传递流程执行ID到机器人，用于Redis上下文共享
-                config.put("processId", String.valueOf(processId));
-                config.put("processName", processName);
-
-                // 真正执行机器人的代码
-                Map<String, Object> stepResult = executeRobotCode(robot, step, config);
-
-                Map<String, Object> resultItem = new HashMap<>();
-                resultItem.put("stepIndex", i + 1);
-                resultItem.put("stepName", stepName);
-                resultItem.put("stepType", stepType);
-                resultItem.put("robotId", robotId);
-                resultItem.put("robotName", robot.getName());
-                resultItem.put("status", "success");
-                resultItem.put("result", stepResult);
-                stepResults.add(resultItem);
-
-                fullLog.append("[成功] ");
-                fullLog.append("步骤类型: ").append(getStepTypeName(stepType)).append("\n");
-
-                if (stepResult.containsKey("output")) {
-                    fullLog.append("执行输出: ").append(stepResult.get("output").toString()).append("\n");
-                }
-                if (stepResult.containsKey("dataCount")) {
-                    fullLog.append("处理数据: ").append(stepResult.get("dataCount").toString()).append(" 条\n");
-                }
-                if (stepResult.containsKey("message")) {
-                    fullLog.append("消息: ").append(stepResult.get("message").toString()).append("\n");
-                }
-                // 添加浏览器自动化日志
-                if (stepResult.containsKey("logs")) {
-                    Object logsObj = stepResult.get("logs");
-                    if (logsObj instanceof List) {
-                        for (Object logEntry : (List<?>) logsObj) {
-                            fullLog.append("  > ").append(logEntry.toString()).append("\n");
+                if (robotId != null) {
+                    // 有机器人绑定时，执行机器人代码
+                    Robot robot = robotRepository.findById(robotId).orElse(null);
+                    
+                    if (robot == null) {
+                        fullLog.append("[警告] 机器人不存在，使用默认执行逻辑\n");
+                        Map<String, Object> stepResult = executeStepByType(stepType, config);
+                        
+                        Map<String, Object> resultItem = new HashMap<>();
+                        resultItem.put("stepIndex", i + 1);
+                        resultItem.put("stepName", stepName);
+                        resultItem.put("stepType", stepType);
+                        resultItem.put("status", "success");
+                        resultItem.put("result", stepResult);
+                        stepResults.add(resultItem);
+                        
+                        fullLog.append("[成功] ");
+                        fullLog.append("步骤类型: ").append(getStepTypeName(stepType)).append("\n");
+                        
+                        if (stepResult.containsKey("output")) {
+                            fullLog.append("执行输出: ").append(stepResult.get("output").toString()).append("\n");
                         }
+                        if (stepResult.containsKey("message")) {
+                            fullLog.append("消息: ").append(stepResult.get("message").toString()).append("\n");
+                        }
+                    } else {
+                        // 正常执行机器人代码
+                        fullLog.append("机器人: ").append(robot.getName()).append("\n");
+                        fullLog.append("分类: ").append(robot.getRobotCategory()).append("\n");
+
+                        // 更新机器人状态为忙碌
+                        robot.setStatus("busy");
+                        robotRepository.save(robot);
+
+                        try {
+                            // 真正执行机器人的代码
+                            Map<String, Object> stepResult = executeRobotCode(robot, step, config);
+
+                            Map<String, Object> resultItem = new HashMap<>();
+                            resultItem.put("stepIndex", i + 1);
+                            resultItem.put("stepName", stepName);
+                            resultItem.put("stepType", stepType);
+                            resultItem.put("robotId", robotId);
+                            resultItem.put("robotName", robot.getName());
+                            resultItem.put("status", "success");
+                            resultItem.put("result", stepResult);
+                            stepResults.add(resultItem);
+
+                            fullLog.append("[成功] ");
+                            fullLog.append("步骤类型: ").append(getStepTypeName(stepType)).append("\n");
+
+                            if (stepResult.containsKey("output")) {
+                                fullLog.append("执行输出: ").append(stepResult.get("output").toString()).append("\n");
+                            }
+                            if (stepResult.containsKey("dataCount")) {
+                                fullLog.append("处理数据: ").append(stepResult.get("dataCount").toString()).append(" 条\n");
+                            }
+                            if (stepResult.containsKey("message")) {
+                                fullLog.append("消息: ").append(stepResult.get("message").toString()).append("\n");
+                            }
+                            // 添加浏览器自动化日志
+                            if (stepResult.containsKey("logs")) {
+                                Object logsObj = stepResult.get("logs");
+                                if (logsObj instanceof List) {
+                                    for (Object logEntry : (List<?>) logsObj) {
+                                        fullLog.append("  > ").append(logEntry.toString()).append("\n");
+                                    }
+                                }
+                            }
+                        } catch (Exception e) {
+                            allSuccess = false;
+                            Map<String, Object> resultItem = new HashMap<>();
+                            resultItem.put("stepIndex", i + 1);
+                            resultItem.put("stepName", stepName);
+                            resultItem.put("stepType", stepType);
+                            resultItem.put("robotId", robotId);
+                            resultItem.put("robotName", robot.getName());
+                            resultItem.put("status", "failed");
+                            resultItem.put("error", e.getMessage());
+                            stepResults.add(resultItem);
+
+                            fullLog.append("[失败] ").append(e.getMessage()).append("\n");
+                        }
+
+                        // 将机器人状态恢复为空闲
+                        robot.setStatus("idle");
+                        robotRepository.save(robot);
+                    }
+                } else {
+                    // 队列管理中的任务无需绑定机器人，直接执行流程逻辑
+                    fullLog.append("[队列任务] 直接执行流程逻辑\n");
+                    Map<String, Object> stepResult = executeStepByType(stepType, config);
+                    
+                    Map<String, Object> resultItem = new HashMap<>();
+                    resultItem.put("stepIndex", i + 1);
+                    resultItem.put("stepName", stepName);
+                    resultItem.put("stepType", stepType);
+                    resultItem.put("status", "success");
+                    resultItem.put("result", stepResult);
+                    stepResults.add(resultItem);
+                    
+                    fullLog.append("[成功] ");
+                    fullLog.append("步骤类型: ").append(getStepTypeName(stepType)).append("\n");
+                    
+                    if (stepResult.containsKey("output")) {
+                        fullLog.append("执行输出: ").append(stepResult.get("output").toString()).append("\n");
+                    }
+                    if (stepResult.containsKey("message")) {
+                        fullLog.append("消息: ").append(stepResult.get("message").toString()).append("\n");
                     }
                 }
 
@@ -340,17 +405,12 @@ public class RpaProcessService {
                 resultItem.put("stepName", stepName);
                 resultItem.put("stepType", stepType);
                 resultItem.put("robotId", robotId);
-                resultItem.put("robotName", robot.getName());
                 resultItem.put("status", "failed");
                 resultItem.put("error", e.getMessage());
                 stepResults.add(resultItem);
 
                 fullLog.append("[失败] ").append(e.getMessage()).append("\n");
             }
-
-            // 将机器人状态恢复为空闲
-            robot.setStatus("idle");
-            robotRepository.save(robot);
 
             fullLog.append("\n");
         }
