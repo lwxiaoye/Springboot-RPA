@@ -31,13 +31,13 @@ public interface TriggerRuleRepository extends JpaRepository<TriggerRule, Long> 
 
     List<TriggerRule> findByQueueId(Long queueId);
 
-    @Query("SELECT t FROM TriggerRule t WHERE t.status = 'active' AND t.enabled = true")
+    @Query("SELECT t FROM TriggerRule t WHERE t.status = 'active'")
     List<TriggerRule> findActiveTriggers();
 
-    @Query("SELECT t FROM TriggerRule t WHERE t.triggerType = 'schedule' AND t.status = 'active' AND t.enabled = true")
+    @Query("SELECT t FROM TriggerRule t WHERE t.triggerType = 'schedule' AND t.status = 'active'")
     List<TriggerRule> findActiveScheduleTriggers();
 
-    @Query("SELECT t FROM TriggerRule t WHERE t.triggerType = 'file' AND t.status = 'active' AND t.enabled = true")
+    @Query("SELECT t FROM TriggerRule t WHERE t.triggerType = 'file' AND t.status = 'active'")
     List<TriggerRule> findActiveFileTriggers();
 
     @Modifying(clearAutomatically = true)

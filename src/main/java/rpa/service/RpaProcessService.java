@@ -242,12 +242,14 @@ public class RpaProcessService {
 
         // 返回执行结果
         Map<String, Object> result = new HashMap<>();
+        result.put("success", true);
         result.put("executionId", finalExecutionId);
         result.put("processId", finalProcessId);
         result.put("processName", process.getName());
         result.put("stepsCount", finalSteps.size());
         result.put("startTime", finalStartTime.toString());
         result.put("logId", finalLogId);
+        result.put("message", "流程已提交执行，正在后台运行");
 
         return result;
     }

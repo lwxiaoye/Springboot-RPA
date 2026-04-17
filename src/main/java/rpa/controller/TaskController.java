@@ -135,13 +135,24 @@ public class TaskController {
             response.put("message", "创建成功");
             response.put("data", task);
             
-            // 审计日志
-            auditLogService.log("TASK", "TASK_CREATE", "Task", task.getId(), name,
-                "创建任务: " + name + " (分类: " + category + ")", "medium", "success",
-                Map.of("priority", priority, "processIds", processIds, "assigneeId", assigneeId));
+            // 审计日志（非关键操作，失败不影响主流程）
+            try {
+                // 使用HashMap替代Map.of()，避免null值导致NullPointerException
+                Map<String, Object> logParams = new HashMap<>();
+                logParams.put("priority", priority);
+                logParams.put("processIds", processIds);
+                logParams.put("assigneeId", assigneeId);
+                
+                auditLogService.log("TASK", "TASK_CREATE", "Task", task.getId(), name,
+                    "创建任务: " + name + " (分类: " + category + ")", "medium", "success",
+                    logParams);
 
-            executionLogService.create(task.getId(), null, null, 
-                    "任务创建", "pending", "任务已创建等待分配");
+                executionLogService.create(task.getId(), null, null, 
+                        "任务创建", "pending", "任务已创建等待分配");
+            } catch (Exception logEx) {
+                // 日志记录失败不影响任务创建，仅记录警告
+                System.err.println("警告：任务创建日志记录失败: " + logEx.getMessage());
+            }
         } catch (Exception e) {
             response.put("code", -1);
             response.put("message", e.getMessage());

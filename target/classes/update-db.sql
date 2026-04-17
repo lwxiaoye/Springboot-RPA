@@ -400,3 +400,39 @@ SELECT * FROM (
 WHERE NOT EXISTS (SELECT 1 FROM execution_log WHERE task_name = '数据加工');
 
 SELECT '数据库更新完成！' AS Result;
+
+-- ============================================
+-- 修复触发器enabled字段数据一致性
+-- ============================================
+-- 将status为active或paused的触发器的enabled字段设置为1（true）
+-- 将status为disabled的触发器的enabled字段设置为0（false）
+UPDATE trigger_rule SET enabled = 1 WHERE status IN ('active', 'paused') AND (enabled IS NULL OR enabled = 0);
+UPDATE trigger_rule SET enabled = 0 WHERE status = 'disabled' AND (enabled IS NULL OR enabled = 1);
+
+-- ============================================
+-- 修复触发器max_concurrent字段NULL值
+-- ============================================
+-- 将max_concurrent为NULL的记录设置为默认值1
+UPDATE trigger_rule SET max_concurrent = 1 WHERE max_concurrent IS NULL;
+
+SELECT '触发器数据一致性修复完成！' AS Result;
+
+-- ============================================
+-- 修复队列计数器与任务状态不一致问题
+-- ============================================
+-- 重新计算每个队列的pending和running计数，确保与task表实际状态一致
+UPDATE task_queue tq
+SET 
+    tq.current_pending_count = (
+        SELECT COALESCE(COUNT(*), 0)
+        FROM task t
+        WHERE t.queue_id = tq.id AND t.status = 'pending'
+    ),
+    tq.current_running_count = (
+        SELECT COALESCE(COUNT(*), 0)
+        FROM task t
+        WHERE t.queue_id = tq.id AND t.status IN ('assigned', 'running')
+    )
+WHERE tq.id IN (SELECT DISTINCT queue_id FROM task WHERE queue_id IS NOT NULL);
+
+SELECT '队列计数器数据一致性修复完成！' AS Result;
