@@ -18,11 +18,13 @@ public class AiCodeGenerationRequest {
 
     @Data
     public static class GenerationRequest {
+        private String prompt;
         private String url;
         private String targetTable;
         private String scene;
         private String tableSelector;
         private List<String> columns;
+        private List<String> processSteps;
         private Map<String, String> fieldMapping;
         private boolean autoDetectColumns;
     }

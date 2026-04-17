@@ -763,7 +763,7 @@ const loadRobotCategories = async () => {
 // 加载凭据列表
 const loadCredentials = async () => {
   try {
-    const result = await apiGet('/credential/list')
+    const result = await apiGet('/credential')
     if (result.code === 0) {
       credentials.value = result.data || []
     }

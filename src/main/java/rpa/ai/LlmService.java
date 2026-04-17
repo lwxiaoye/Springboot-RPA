@@ -254,8 +254,13 @@ public class LlmService {
         if (apiUrl.endsWith("/")) {
             apiUrl = apiUrl.substring(0, apiUrl.length() - 1);
         }
-        if (!apiUrl.contains("/v4")) {
-            apiUrl = apiUrl + "/api/paas/v4/chat/completions";
+        // 确保URL以 /chat/completions 结尾
+        if (!apiUrl.contains("/chat/completions")) {
+            if (!apiUrl.contains("/v4")) {
+                apiUrl = apiUrl + "/api/paas/v4/chat/completions";
+            } else {
+                apiUrl = apiUrl + "/chat/completions";
+            }
         }
 
         java.net.HttpURLConnection conn = null;

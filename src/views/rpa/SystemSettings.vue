@@ -545,15 +545,11 @@ async function testOcr() {
 
 async function testLlm() {
   try {
-    const configs = {
-      provider: llmForm.provider,
-      apiUrl: llmForm.apiUrl,
-      apiKey: llmForm.apiKey
-    }
-    const res = await fetch(apiBase + '/config/llm/test', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-      body: JSON.stringify(configs)
+    ElMessage.info('正在测试AI连接...')
+    // 调用后端的AI测试接口
+    const res = await fetch(apiBase + '/ai/test-connection', {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }
     })
     const data = await res.json()
     if (data.code === 0) {

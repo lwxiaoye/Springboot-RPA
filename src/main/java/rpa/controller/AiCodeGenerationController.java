@@ -90,7 +90,7 @@ public class AiCodeGenerationController {
             log.info(">>> AI代码生成: 检测表格列 - URL: {}, 选择器: {}", request.getUrl(), request.getTableSelector());
 
             Map<String, String> detectedColumns = aiCodeService.detectTableColumns(
-                request.getUrl(), 
+                request.getUrl(),
                 request.getTableSelector()
             );
 

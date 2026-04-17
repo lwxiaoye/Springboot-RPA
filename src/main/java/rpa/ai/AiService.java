@@ -8,13 +8,13 @@ import org.springframework.web.multipart.MultipartFile;
 import rpa.service.SystemConfigService;
 
 import javax.imageio.ImageIO;
-import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Matcher;
@@ -279,6 +279,50 @@ public class AiService {
         private Map<String, Object> params; // 额外参数
         private String language = "chi_sim+eng";  // 识别语言
         private Double confidence = 0.9;    // 置信度阈值
+        private String param1;  // 额外参数1（如身份证side）
+    }
+
+    /**
+     * AI识别请求 - 带文件支持
+     */
+    @Data
+    public static class AiRequestWithFile {
+        private AiServiceType serviceType;  // 服务类型
+        private MultipartFile file;          // 上传的文件
+        private String language = "chi_sim+eng";  // 识别语言
+        private String param1;  // 额外参数1（如身份证side）
+        private Map<String, Object> params; // 额外参数
+    }
+
+    /**
+     * 处理带文件上传的请求
+     */
+    public AiResult processFile(MultipartFile file, AiServiceType serviceType, String language, String param1) {
+        try {
+            // 保存临时文件
+            String tempDir = System.getProperty("java.io.tmpdir");
+            String fileName = UUID.randomUUID().toString() + ".png";
+            Path tempPath = Path.of(tempDir, fileName);
+            file.transferTo(tempPath.toFile());
+
+            AiRequest request = new AiRequest();
+            request.setServiceType(serviceType);
+            request.setImagePath(tempPath.toString());
+            request.setLanguage(language);
+            request.setParam1(param1);
+
+            AiResult result = recognize(request);
+
+            // 清理临时文件
+            Files.deleteIfExists(tempPath);
+
+            return result;
+        } catch (Exception e) {
+            AiResult result = new AiResult();
+            result.setSuccess(false);
+            result.setErrorMessage("文件处理失败: " + e.getMessage());
+            return result;
+        }
     }
 
     /**
@@ -295,7 +339,8 @@ public class AiService {
         private long startTime;
         private long endTime;
         private String errorMessage;
-        
+        private List<List<String>> rows;         // 表格行数据
+
         // 身份证专用字段
         private String name;
         private String idNumber;
@@ -306,7 +351,7 @@ public class AiService {
         private String issueAuthority;
         private String validDate;
         private String side;  // front / back
-        
+
         // 发票专用字段
         private String invoiceCode;
         private String invoiceNumber;

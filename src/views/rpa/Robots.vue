@@ -730,7 +730,7 @@ const generateCodeWithAI = async () => {
   generatingCode.value = true
 
   try {
-    const response = await apiPost('/api/ai/generate-robot-code', {
+    const response = await apiPost('/ai/generate-robot-code', {
       prompt: createForm.aiPrompt,
       category: createForm.robotCategory
     })

@@ -1,4 +1,6 @@
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'
+// Vite 开发环境使用相对路径，由 vite.config.js 代理到后端
+// 生产环境也使用相对路径，由 nginx 或代理服务器转发
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 
 function getAuthHeaders() {
   const token = localStorage.getItem('token')

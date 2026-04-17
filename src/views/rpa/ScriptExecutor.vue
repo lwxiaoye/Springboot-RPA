@@ -19,7 +19,7 @@
               </el-select>
             </div>
           </template>
-          
+
           <div class="editor-toolbar">
             <el-button-group>
               <el-button size="small" @click="loadTemplate">加载模板</el-button>
@@ -27,6 +27,9 @@
               <el-button size="small" @click="clearEditor">清空</el-button>
             </el-button-group>
             <el-button-group>
+              <el-button size="small" type="success" @click="showAiDialog">
+                <el-icon><MagicStick /></el-icon> AI生成
+              </el-button>
               <el-button size="small" type="primary" @click="executeScript" :loading="executing">
                 <el-icon><VideoPlay /></el-icon> 执行
               </el-button>
@@ -185,13 +188,70 @@
         </div>
       </div>
     </el-dialog>
+
+    <!-- AI生成对话框 -->
+    <el-dialog v-model="aiDialogVisible" title="AI生成脚本" width="600px" :close-on-click-modal="false">
+      <el-alert
+        v-if="!aiConfigured"
+        type="warning"
+        :closable="false"
+        style="margin-bottom: 15px"
+      >
+        AI未配置，请在系统设置中配置LLM服务
+      </el-alert>
+
+      <el-form :model="aiForm" label-width="100px">
+        <el-form-item label="脚本类型">
+          <el-select v-model="aiForm.scriptType" style="width: 100%">
+            <el-option label="Python" value="python" />
+            <el-option label="JavaScript" value="javascript" />
+            <el-option label="Shell" value="shell" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="需求描述">
+          <el-input
+            v-model="aiForm.prompt"
+            type="textarea"
+            :rows="4"
+            placeholder="用自然语言描述你想要的脚本功能，例如：读取当前目录下所有CSV文件，合并成一个文件，并统计每列的总和"
+          />
+        </el-form-item>
+      </el-form>
+
+      <template #footer>
+        <el-button @click="aiDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="generateByAi" :loading="aiGenerating" :disabled="!aiConfigured">
+          <el-icon v-if="!aiGenerating"><MagicStick /></el-icon>
+          AI生成代码
+        </el-button>
+      </template>
+    </el-dialog>
+
+    <!-- AI生成结果预览对话框 -->
+    <el-dialog v-model="aiPreviewVisible" title="AI生成结果" width="800px">
+      <div v-if="aiGeneratedCode" class="ai-preview">
+        <el-alert type="success" :closable="false" style="margin-bottom: 15px">
+          AI生成成功！生成的代码已填充到编辑器中。
+        </el-alert>
+        <pre class="generated-code-preview">{{ aiGeneratedCode }}</pre>
+      </div>
+      <div v-else class="ai-preview">
+        <el-alert type="warning" :closable="false">
+          未生成代码，请重试。
+        </el-alert>
+      </div>
+      <template #footer>
+        <el-button @click="aiPreviewVisible = false">关闭</el-button>
+        <el-button type="primary" @click="applyAiCode">应用代码</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive } from 'vue'
 import { ElMessage } from 'element-plus'
-import { VideoPlay, VideoPause, Delete } from '@element-plus/icons-vue'
+import { VideoPlay, VideoPause, Delete, MagicStick } from '@element-plus/icons-vue'
 
 const apiBase = '/api'
 const token = localStorage.getItem('token') || ''
@@ -205,6 +265,92 @@ const timeout = ref(60000)
 const variables = reactive({})
 const newVarKey = ref('')
 const templateDialogVisible = ref(false)
+
+// AI生成相关
+const aiDialogVisible = ref(false)
+const aiPreviewVisible = ref(false)
+const aiGenerating = ref(false)
+const aiGeneratedCode = ref('')
+const aiConfigured = ref(false)
+
+const aiForm = reactive({
+  scriptType: 'python',
+  prompt: ''
+})
+
+// 检查AI配置状态
+const checkAiConfig = async () => {
+  try {
+    const res = await fetch(apiBase + '/script-ai/status', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    })
+    const data = await res.json()
+    if (data.code === 0 && data.data) {
+      aiConfigured.value = data.data.configured
+    }
+  } catch (e) {
+    aiConfigured.value = false
+  }
+}
+
+const showAiDialog = () => {
+  checkAiConfig()
+  aiDialogVisible.value = true
+}
+
+const generateByAi = async () => {
+  if (!aiForm.prompt.trim()) {
+    ElMessage.warning('请输入需求描述')
+    return
+  }
+
+  aiGenerating.value = true
+  try {
+    const res = await fetch(apiBase + '/script-ai/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({
+        prompt: aiForm.prompt,
+        scriptType: aiForm.scriptType
+      })
+    })
+    const data = await res.json()
+
+    if (data.code === 0 && data.data) {
+      aiGeneratedCode.value = data.data.code || ''
+      aiDialogVisible.value = false
+
+      if (aiGeneratedCode.value) {
+        aiPreviewVisible.value = true
+      } else {
+        ElMessage.warning('AI未返回有效代码')
+      }
+    } else {
+      ElMessage.error(data.message || 'AI生成失败')
+    }
+  } catch (e) {
+    console.error('AI生成失败:', e)
+    ElMessage.error('AI生成失败: ' + (e.message || '请检查网络连接'))
+  } finally {
+    aiGenerating.value = false
+  }
+}
+
+const applyAiCode = () => {
+  if (aiGeneratedCode.value) {
+    scriptCode.value = aiGeneratedCode.value
+    // 根据选择的脚本类型设置
+    if (aiForm.scriptType === 'python') {
+      scriptType.value = 'python'
+    } else if (aiForm.scriptType === 'javascript') {
+      scriptType.value = 'javascript'
+    } else {
+      scriptType.value = 'shell'
+    }
+    aiPreviewVisible.value = false
+    ElMessage.success('代码已应用到编辑器')
+  }
+}
 
 const templates = [
   { key: 'python_data_process', name: '数据处理', desc: 'JSON数据处理模板', icon: '🐍', type: 'python', code: '# 数据处理示例\nimport json\n\n# 获取输入\ndata = json.loads("${inputData}")\n\n# 处理数据\nresult = [item for item in data]\n\n# 输出结果\nprint(json.dumps(result, ensure_ascii=False))' },
@@ -513,5 +659,22 @@ const removeVariable = (key) => {
 
 .security-list li {
   margin-bottom: 8px;
+}
+
+.ai-preview {
+  padding: 10px 0;
+}
+
+.generated-code-preview {
+  background: #1e1e1e;
+  color: #d4d4d4;
+  padding: 15px;
+  border-radius: 8px;
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 13px;
+  max-height: 400px;
+  overflow: auto;
+  white-space: pre-wrap;
+  margin: 0;
 }
 </style>

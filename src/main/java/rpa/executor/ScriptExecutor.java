@@ -74,6 +74,7 @@ public class ScriptExecutor {
 
     private ScriptResult executePython(ScriptRequest request) throws Exception {
         ScriptResult result = new ScriptResult();
+        result.setStartTime(new Date());
         File tempScript = createTempScript(request.getCode(), "py");
         
         try {
@@ -99,6 +100,7 @@ public class ScriptExecutor {
 
     private ScriptResult executeJavaScript(ScriptRequest request) throws Exception {
         ScriptResult result = new ScriptResult();
+        result.setStartTime(new Date());
         File tempScript = createTempScript(request.getCode(), "js");
         
         try {
@@ -124,6 +126,7 @@ public class ScriptExecutor {
 
     private ScriptResult executeShell(ScriptRequest request) throws Exception {
         ScriptResult result = new ScriptResult();
+        result.setStartTime(new Date());
         File tempScript = createTempScript(request.getCode(), "sh");
         tempScript.setExecutable(true);
         

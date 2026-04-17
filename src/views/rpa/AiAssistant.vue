@@ -375,7 +375,7 @@ async function saveToLibrary() {
   if (!generatedFlow.value) return
 
   try {
-    const response = await axios.post('/api/process/save-from-ai', {
+    const response = await axios.post('/api/process', {
       name: generatedFlow.value.name,
       description: generatedFlow.value.description,
       config: JSON.stringify(generatedFlow.value)

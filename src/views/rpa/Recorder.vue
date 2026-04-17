@@ -378,7 +378,7 @@ function startDurationTimer() {
 // 加载流程列表
 async function loadProcesses() {
   try {
-    const response = await axios.get('/api/process/list')
+    const response = await axios.get('/api/process')
     if (response.data.success) {
       processes.value = response.data.data
     }

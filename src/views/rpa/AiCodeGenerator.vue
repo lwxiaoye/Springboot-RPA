@@ -442,7 +442,7 @@ const optimizePrompt = async () => {
   optimizingPrompt.value = true
 
   try {
-    const response = await apiPost('/api/ai-code/optimize-prompt', {
+    const response = await apiPost('/ai/optimize-prompt', {
       prompt: userPrompt.value,
       category: configForm.robotCategory
     })
@@ -477,7 +477,7 @@ const generateCode = async () => {
     const table = configForm.targetTable === 'custom' ? configForm.customTable : configForm.targetTable
     const promptText = optimizedPrompt.value || userPrompt.value
 
-    const response = await apiPost('/api/ai/generate-robot-code', {
+    const response = await apiPost('/ai/generate-robot-code', {
       url: configForm.url,
       scene: configForm.scene,
       tableSelector: configForm.tableSelector,
