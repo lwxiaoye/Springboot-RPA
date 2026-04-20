@@ -50,6 +50,11 @@ scraper:
   redis-key-prefix: "rpa:scraper:"
   lock-timeout: 300
 
+  jackson:
+    time-zone: Asia/Shanghai
+    date-format: yyyy-MM-dd HH:mm:ss
+    serialization:
+      write-dates-as-timestamps: false
 # DeepSeek AI配置
 deepseek:
   api-url: https://api.deepseek.com/v1/chat/completions

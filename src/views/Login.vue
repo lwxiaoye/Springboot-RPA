@@ -140,7 +140,6 @@ const router = useRouter()
 
 // 后端接口地址
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'
-
 // 响应式数据
 const loading = ref(false)
 const rememberMe = ref(false)
@@ -191,7 +190,7 @@ const handlePasswordLogin = async () => {
     loading.value = true
 
     try {
-      const response = await fetch(`${API_BASE_URL}/user/login`, {
+      const response = await fetch(`/api/user/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
