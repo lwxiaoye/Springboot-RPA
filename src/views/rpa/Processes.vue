@@ -36,11 +36,10 @@
       </el-table-column>
       <el-table-column prop="creatorName" label="创建人" width="100" align="center" />
       <el-table-column prop="createTime" label="创建时间" min-width="160" />
-      <el-table-column label="操作" width="280" fixed="right" align="center">
+      <el-table-column label="操作" width="260" fixed="right" align="center">
         <template #default="{ row }">
           <el-button link type="primary" @click="viewDetail(row)">详情</el-button>
           <el-button link type="success" @click="handleExecute(row)">执行</el-button>
-          <el-button link type="primary" @click="editProcess(row)">编辑</el-button>
           <el-button link type="primary" @click="openDesigner(row)">设计</el-button>
           <el-popconfirm title="确认删除该流程吗？" @confirm="deleteProcess(row)">
             <template #reference>
@@ -817,9 +816,9 @@ const stepTypeMap = {
   parse: { label: '数据解析', tag: 'success' },
   process: { label: '数据加工', tag: 'warning' },
   query: { label: '数据查询', tag: 'info' },
-  transform: { label: '数据转换', tag: '' },
+  transform: { label: '数据转换', tag: 'warning' },
   output: { label: '数据输出', tag: 'danger' },
-  validate: { label: '数据校验', tag: '' },
+  validate: { label: '数据校验', tag: 'success' },
   default: { label: '通用步骤', tag: 'info' }
 }
 
@@ -942,25 +941,54 @@ onMounted(() => { loadProcesses(); loadCredentials() })
   color: var(--text-tertiary, #9ca3af);
 }
 
-/* 表格 */
+/* 表格 - 使用全局统一样式 */
 :deep(.el-table) {
   border-radius: 12px;
   overflow: hidden;
-  border: 1px solid var(--border-color, #e5e7eb);
+  border: 1px solid var(--border-color, #e4e7ed);
+  width: 100%;
 }
 
-:deep(.el-table th) {
-  background: var(--bg-tertiary, #f9fafb) !important;
+:deep(.el-table th.el-table__cell) {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
   font-weight: 600;
-  color: var(--text-primary, #1f2937);
+  color: #374151;
+  font-size: 13px;
+  padding: 12px 16px !important;
+  border-bottom: 2px solid #e4e7ed !important;
 }
 
-:deep(.el-table td) {
-  border-bottom: 1px solid var(--border-color, #e5e7eb);
+:deep(.el-table td.el-table__cell) {
+  padding: 12px 16px !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+  vertical-align: middle;
 }
 
-:deep(.el-table__row:hover > td) {
-  background: var(--bg-primary, #f5f7fa) !important;
+/* 表格行 Hover 动效 - 不使用position:relative避免影响布局 */
+:deep(.el-table__body tr) {
+  transition: all 0.2s ease;
+}
+
+/* 左侧边框指示器 - 使用td的::before */
+:deep(.el-table__body tr:hover > td:first-child) {
+  box-shadow: inset 4px 0 0 #409eff;
+}
+
+:deep(.el-table__body tr:hover > td) {
+  background: linear-gradient(135deg, rgba(64, 158, 255, 0.03) 0%, rgba(64, 158, 255, 0.08) 100%) !important;
+}
+
+/* 操作按钮容器 */
+:deep(.el-table .cell) {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-wrap: nowrap;
+}
+
+:deep(.el-table .cell .el-button) {
+  padding: 4px 6px;
+  font-size: 12px;
 }
 
 /* 分页 */

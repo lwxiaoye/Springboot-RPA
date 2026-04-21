@@ -241,7 +241,7 @@ const handlePasswordLogin = async () => {
         loginFailCount.value = 0
       
         // 跳转到仪表盘页面
-        router.push('/dashboard')
+        router.push('/')
       } else {
         // 登录失败
         loginFailCount.value++
@@ -390,8 +390,8 @@ const checkLoginStatus = () => {
   const token = localStorage.getItem('token')
   const userInfo = localStorage.getItem('userInfo')
   if (token && userInfo) {
-    // 已登录，跳转到仪表盘页面
-    router.push('/dashboard')
+    // 已登录，跳转到首页页面
+    router.push('/')
   }
 }
 

@@ -68,10 +68,13 @@ public class SecurityConfig {
                 .antMatchers("/api/user/login", "/api/user/register", "/login",
                     "/api/user/send-reset-code", "/api/user/reset-password-by-code",
                     "/api/user/avatar/**").permitAll()
+                // WebSocket 端点（注意：WebSocket 不走 Security Filter Chain，需要单独配置）
+                .antMatchers("/ws/**").permitAll()
                 .antMatchers("/api/robot/**", "/api/process/**", "/api/task/**",
                     "/api/log/**", "/api/notification/**", "/api/user/**",
                     "/api/dataCollect/**", "/api/dataParse/**", "/api/dataProcess/**", "/api/dataQuery/**",
-                    "/api/invoice/**", "/api/enterprise/**", "/api/ai/**", "/credential/**").permitAll()
+                    "/api/invoice/**", "/api/enterprise/**", "/api/ai/**", "/credential/**",
+                    "/api/monitor/**").permitAll()
                 .antMatchers("/api/**").authenticated()
                 .anyRequest().permitAll()
             .and()

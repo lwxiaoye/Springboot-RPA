@@ -23,6 +23,10 @@
             <el-icon><Odometer /></el-icon>
             <span>首页</span>
           </el-menu-item>
+          <el-menu-item index="monitor">
+            <el-icon><DataLine /></el-icon>
+            <span>实时监控</span>
+          </el-menu-item>
           <el-menu-item index="rpa">
             <el-icon><VideoCamera /></el-icon>
             <span>RPA运营管理</span>
@@ -182,9 +186,11 @@ const router = useRouter()
 const route = useRoute()
 
 const sidebarCollapsed = ref(false)
-const activeTopMenu = ref('system')
 const activeLeftMenu = ref('/system/profile')
 const unreadCount = ref(0)
+
+// 设置当前激活的顶部菜单
+const activeTopMenu = ref('system')
 
 const currentUser = ref({
   id: 1,
@@ -204,14 +210,15 @@ watch(
   (newPath) => {
     if (newPath.startsWith('/dashboard')) {
       activeTopMenu.value = 'dashboard'
-      activeLeftMenu.value = '/dashboard'
+    } else if (newPath.startsWith('/rpa/monitor')) {
+      activeTopMenu.value = 'monitor'
     } else if (newPath.startsWith('/rpa')) {
       activeTopMenu.value = 'rpa'
-      activeLeftMenu.value = newPath
     } else if (newPath.startsWith('/system')) {
       activeTopMenu.value = 'system'
-      activeLeftMenu.value = newPath
     }
+    // 更新左侧菜单
+    activeLeftMenu.value = newPath
   },
   { immediate: true }
 )
@@ -220,10 +227,12 @@ const handleTopMenuSelect = (index) => {
   activeTopMenu.value = index
   if (index === 'dashboard') {
     router.push('/dashboard')
+  } else if (index === 'monitor') {
+    router.push('/rpa/monitor')
   } else if (index === 'rpa') {
     router.push('/rpa/tasks')
   } else if (index === 'system') {
-    router.push('/system/profile')
+    // 保持在当前页面，不跳转
   }
 }
 

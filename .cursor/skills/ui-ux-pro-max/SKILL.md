@@ -214,3 +214,43 @@ PRE-DELIVERY CHECKLIST:
 - 避免在表格中使用emoji
 - 避免不一致的圆角和间距
 - 避免纯黑色背景（#000）导致对比度问题
+
+## 表格Hover动效规范
+
+### 基础表格样式
+
+```css
+.el-table {
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.el-table__body tr {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 推荐Hover效果：左侧边框 + 背景渐变 */
+.el-table__body tr:hover > td:first-child {
+  box-shadow: inset 4px 0 0 var(--primary, #409eff);
+}
+
+.el-table__body tr:hover > td {
+  background: linear-gradient(135deg, rgba(64, 158, 255, 0.03) 0%, rgba(64, 158, 255, 0.08) 100%);
+}
+```
+
+### 详细设计系统规范
+
+详见 [OPTIMIZATIONS.md](OPTIMIZATIONS.md)，包含：
+
+| 模块 | 内容 |
+|-----|------|
+| 表格Hover动效 | 6种动效类型、单元格Hover、操作按钮动效 |
+| 色彩系统 | 10级色阶、主色/功能色/中性色/边框色 |
+| 间距系统 | 4px基础单位、紧凑/标准/宽松间距 |
+| 圆角系统 | sm/md/lg/xl/2xl/3xl/full 7级圆角 |
+| 阴影系统 | 5级Elevation + 功能色阴影 + 聚焦环 |
+| 字体系统 | 字号/字重/行高/字间距规范 |
+| 动效系统 | 时长/缓动函数/关键帧动画 |
+| Z-Index层级 | 10级层级定义 |
+| 断点系统 | 5级响应式断点 + 容器宽度 |

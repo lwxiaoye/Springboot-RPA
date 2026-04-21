@@ -86,7 +86,7 @@
           <span :class="row.ttl < 10 ? 'text-danger' : ''">{{ row.ttl }}s</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="180" fixed="right" align="center">
+      <el-table-column label="操作" width="220" fixed="right" align="center">
         <template #default="{ row }">
           <el-button link type="primary" @click="renewLock(row)" :disabled="row.status !== 'ACQUIRED'">续期</el-button>
           <el-button link type="danger" @click="releaseLock(row)" :disabled="row.status !== 'ACQUIRED'">释放</el-button>
@@ -334,8 +334,8 @@ const viewLockDetail = async (row) => {
 }
 
 const getTypeTag = (type) => {
-  const tags = { TASK: '', RESOURCE: 'warning', CLUSTER: 'danger' }
-  return tags[type] || ''
+  const tags = { TASK: 'primary', RESOURCE: 'warning', CLUSTER: 'danger' }
+  return tags[type] || 'info'
 }
 
 const getTypeText = (type) => {

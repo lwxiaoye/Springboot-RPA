@@ -21,6 +21,7 @@ import java.time.LocalDateTime;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.stream.Collectors;
 
 /**
  * RPA流程服务类
@@ -857,6 +858,45 @@ public class RpaProcessService {
             return task.cancel(true);
         }
         return false;
+    }
+
+    // ========== WebSocket 统计方法 ==========
+
+    /**
+     * 统计待执行任务数量
+     */
+    public long countPendingTasks() {
+        // 从执行日志中统计 pending 状态的任务
+        return executionLogRepository.findAll().stream()
+                .filter(log -> "running".equals(log.getStatus()) || "pending".equals(log.getStatus()))
+                .count();
+    }
+
+    /**
+     * 统计运行中任务数量
+     */
+    public long countRunningTasks() {
+        return executionLogRepository.findAll().stream()
+                .filter(log -> "running".equals(log.getStatus()))
+                .count();
+    }
+
+    /**
+     * 统计已完成任务数量
+     */
+    public long countCompletedTasks() {
+        return executionLogRepository.findAll().stream()
+                .filter(log -> "completed".equals(log.getStatus()))
+                .count();
+    }
+
+    /**
+     * 统计失败任务数量
+     */
+    public long countFailedTasks() {
+        return executionLogRepository.findAll().stream()
+                .filter(log -> "failed".equals(log.getStatus()))
+                .count();
     }
 
     /**

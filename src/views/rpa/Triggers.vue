@@ -5,6 +5,28 @@
       <p class="page-desc">配置定时、文件、API、Webhook触发规则，自动化执行流程</p>
     </div>
 
+    <!-- 视图切换 -->
+    <div class="view-tabs">
+      <el-radio-group v-model="currentView" size="default">
+        <el-radio-button value="list">
+          <el-icon><List /></el-icon>
+          列表视图
+        </el-radio-button>
+        <el-radio-button value="calendar">
+          <el-icon><Calendar /></el-icon>
+          日历视图
+        </el-radio-button>
+      </el-radio-group>
+    </div>
+
+    <!-- 日历视图 -->
+    <div v-if="currentView === 'calendar'" class="calendar-view">
+      <ScheduleCalendar @refresh="loadTriggers" />
+    </div>
+
+    <!-- 列表视图 -->
+    <div v-if="currentView === 'list'" class="list-view">
+
     <div class="stats-row">
       <div class="stat-card">
         <div class="stat-icon primary"><el-icon><Timer /></el-icon></div>
@@ -108,7 +130,7 @@
           {{ formatDateTime(row.lastTriggerTime) }}
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="240" fixed="right" align="center">
+      <el-table-column label="操作" width="260" fixed="right" align="center">
         <template #default="{ row }">
           <el-button link type="success" @click="triggerNow(row)" :loading="triggeringId === row.id">触发</el-button>
           <el-button link type="primary" @click="editTrigger(row)">编辑</el-button>
@@ -135,6 +157,7 @@
         @size-change="handleSizeChange"
         @current-change="handleCurrentChange"
       />
+    </div>
     </div>
 
     <!-- 新建/编辑触发器弹窗 -->
@@ -310,8 +333,11 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Search, Plus, Timer, CircleCheck, Clock, TrendCharts, Document, CircleClose } from '@element-plus/icons-vue'
+import { Search, Plus, Timer, CircleCheck, Clock, TrendCharts, Document, CircleClose, List, Calendar } from '@element-plus/icons-vue'
 import { apiGet, apiPost, apiPut, apiDelete } from '../../utils/api.js'
+import ScheduleCalendar from './components/ScheduleCalendar.vue'
+
+const currentView = ref('list')
 
 const loading = ref(false)
 const submitLoading = ref(false)
@@ -636,7 +662,27 @@ onMounted(() => {
   margin: 0 auto;
 }
 
-/* 页面头部 */
+/* 视图切换 */
+.view-tabs {
+  margin-bottom: 20px;
+}
+
+.view-tabs :deep(.el-radio-button__inner) {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.calendar-view {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.list-view {
+}
+
 .page-header {
   margin-bottom: 24px;
   padding-bottom: 20px;
@@ -764,25 +810,54 @@ onMounted(() => {
   color: var(--text-tertiary, #9ca3af);
 }
 
-/* 表格 */
+/* 表格 - 使用全局统一样式 */
 :deep(.el-table) {
   border-radius: 12px;
   overflow: hidden;
-  border: 1px solid var(--border-color, #e5e7eb);
+  border: 1px solid var(--border-color, #e4e7ed);
+  width: 100%;
 }
 
-:deep(.el-table th) {
-  background: var(--bg-tertiary, #f9fafb) !important;
+:deep(.el-table th.el-table__cell) {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
   font-weight: 600;
-  color: var(--text-primary, #1f2937);
+  color: #374151;
+  font-size: 13px;
+  padding: 12px 16px !important;
+  border-bottom: 2px solid #e4e7ed !important;
 }
 
-:deep(.el-table td) {
-  border-bottom: 1px solid var(--border-color, #e5e7eb);
+:deep(.el-table td.el-table__cell) {
+  padding: 12px 16px !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+  vertical-align: middle;
 }
 
-:deep(.el-table__row:hover > td) {
-  background: var(--bg-primary, #f5f7fa) !important;
+/* 表格行 Hover 动效 */
+:deep(.el-table__body tr) {
+  transition: all 0.2s ease;
+}
+
+/* 左侧边框指示器 */
+:deep(.el-table__body tr:hover > td:first-child) {
+  box-shadow: inset 4px 0 0 #409eff;
+}
+
+:deep(.el-table__body tr:hover > td) {
+  background: linear-gradient(135deg, rgba(64, 158, 255, 0.03) 0%, rgba(64, 158, 255, 0.08) 100%) !important;
+}
+
+/* 操作按钮单元格 */
+:deep(.el-table .cell) {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-wrap: nowrap;
+}
+
+:deep(.el-table .cell .el-button) {
+  padding: 4px 6px;
+  font-size: 12px;
 }
 
 .code-text {

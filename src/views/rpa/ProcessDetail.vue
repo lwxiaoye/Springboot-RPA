@@ -575,9 +575,9 @@ const stepTypeMap = {
   parse: { label: '数据解析', tag: 'success' },
   process: { label: '数据加工', tag: 'warning' },
   query: { label: '数据查询', tag: 'info' },
-  transform: { label: '数据转换', tag: '' },
+  transform: { label: '数据转换', tag: 'warning' },
   output: { label: '数据输出', tag: 'danger' },
-  validate: { label: '数据校验', tag: '' },
+  validate: { label: '数据校验', tag: 'success' },
   default: { label: '通用步骤', tag: 'info' }
 }
 

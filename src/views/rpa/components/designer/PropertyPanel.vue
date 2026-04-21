@@ -468,7 +468,7 @@ const getCategoryType = (category) => {
     database: 'warning',
     ai: 'danger',
     logic: 'warning',
-    script: '',
+    script: 'warning',
     communication: 'info'
   }
   return map[category] || 'info'
