@@ -181,11 +181,31 @@
             <el-time-picker v-model="triggerForm.scheduleTimeObj" format="HH:mm" value-format="HH:mm" placeholder="选择时间" style="width: 100%" />
           </el-form-item>
           <el-form-item v-if="scheduleMode === 'simple'" label="执行周期">
-            <el-select v-model="triggerForm.scheduleType" style="width: 100%">
+            <el-select v-model="triggerForm.scheduleType" style="width: 100%" @change="onScheduleTypeChange">
               <el-option value="day" label="每天" />
               <el-option value="week" label="每周" />
               <el-option value="month" label="每月" />
             </el-select>
+          </el-form-item>
+          <!-- 每周：选择星期几 -->
+          <el-form-item v-if="scheduleMode === 'simple' && triggerForm.scheduleType === 'week'" label="选择星期">
+            <el-checkbox-group v-model="selectedWeekDays">
+              <el-checkbox label="1">周一</el-checkbox>
+              <el-checkbox label="2">周二</el-checkbox>
+              <el-checkbox label="3">周三</el-checkbox>
+              <el-checkbox label="4">周四</el-checkbox>
+              <el-checkbox label="5">周五</el-checkbox>
+              <el-checkbox label="6">周六</el-checkbox>
+              <el-checkbox label="7">周日</el-checkbox>
+            </el-checkbox-group>
+            <div class="form-tip">可选择多个星期</div>
+          </el-form-item>
+          <!-- 每月：选择日期 -->
+          <el-form-item v-if="scheduleMode === 'simple' && triggerForm.scheduleType === 'month'" label="选择日期">
+            <el-select v-model="selectedMonthDay" placeholder="选择日期" style="width: 100%">
+              <el-option v-for="day in 31" :key="day" :label="day + '日'" :value="String(day)" />
+            </el-select>
+            <div class="form-tip">选择每月的具体日期（1-31）</div>
           </el-form-item>
         </template>
 
@@ -329,6 +349,8 @@ const searchKeyword = ref('')
 const typeFilter = ref('')
 const statusFilter = ref('')
 const scheduleMode = ref('cron')
+const selectedWeekDays = ref([])
+const selectedMonthDay = ref('')
 
 const pagination = reactive({ page: 1, size: 10, total: 0 })
 
@@ -482,6 +504,7 @@ const showCreateModal = () => {
     cron: '',
     scheduleTimeObj: null,
     scheduleType: 'day',
+    scheduleDays: '',
     watchPath: '',
     filePattern: '',
     watchSubdirs: false,
@@ -491,6 +514,8 @@ const showCreateModal = () => {
     autoStart: true,
     maxConcurrent: 1
   })
+  selectedWeekDays.value = []
+  selectedMonthDay.value = ''
   scheduleMode.value = 'cron'
   dialogVisible.value = true
 }
@@ -511,6 +536,7 @@ const editTrigger = (trigger) => {
     scheduleTimeObj: trigger.scheduleTime || null,
     scheduleTime: trigger.scheduleTime || '',
     scheduleType: trigger.scheduleType || 'day',
+    scheduleDays: trigger.scheduleDays || '',
     watchPath: trigger.watchPath || '',
     filePattern: trigger.filePattern || '',
     watchSubdirs: trigger.watchSubdirs || false,
@@ -521,6 +547,20 @@ const editTrigger = (trigger) => {
     maxConcurrent: trigger.maxConcurrent || 1
   })
   
+  // 解析scheduleDays到选择器
+  if (trigger.scheduleDays) {
+    if (trigger.scheduleType === 'week') {
+      // 周的格式："1,2,3" -> ['1','2','3']
+      selectedWeekDays.value = trigger.scheduleDays.split(',').filter(d => d)
+    } else if (trigger.scheduleType === 'month') {
+      // 月的格式："15" -> "15"
+      selectedMonthDay.value = trigger.scheduleDays
+    }
+  } else {
+    selectedWeekDays.value = []
+    selectedMonthDay.value = ''
+  }
+  
   // 根据是否有cron表达式设置定时模式
   scheduleMode.value = trigger.cron ? 'cron' : 'simple'
   dialogVisible.value = true
@@ -529,6 +569,13 @@ const editTrigger = (trigger) => {
 const onTriggerTypeChange = () => {
   triggerForm.cron = ''
   triggerForm.scheduleTimeObj = null
+}
+
+const onScheduleTypeChange = () => {
+  // 切换周期类型时清空相关选择
+  selectedWeekDays.value = []
+  selectedMonthDay.value = ''
+  triggerForm.scheduleDays = ''
 }
 
 const viewDetail = (trigger) => {
@@ -577,11 +624,22 @@ const submitTrigger = async () => {
       const process = processes.value.find(p => p.id === triggerForm.processId)
       const queue = queues.value.find(q => q.id === triggerForm.queueId)
 
+      // 处理scheduleDays字段
+      let scheduleDaysValue = ''
+      if (triggerForm.scheduleType === 'week' && selectedWeekDays.value.length > 0) {
+        // 周：将数组转为逗号分隔的字符串，如 "1,2,3"
+        scheduleDaysValue = selectedWeekDays.value.join(',')
+      } else if (triggerForm.scheduleType === 'month' && selectedMonthDay.value) {
+        // 月：直接使用选中的日期
+        scheduleDaysValue = selectedMonthDay.value
+      }
+
       const data = {
         ...triggerForm,
         processName: process?.name || '',
         queueName: queue?.name || '',
-        scheduleTime: triggerForm.scheduleTimeObj
+        scheduleTime: triggerForm.scheduleTimeObj,
+        scheduleDays: scheduleDaysValue
       }
 
       let result
