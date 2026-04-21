@@ -145,7 +145,7 @@ public class TaskQueueService {
     public boolean canAcceptTask(Long queueId) {
         return repository.findById(queueId).map(queue -> {
             return "active".equals(queue.getStatus())
-                && queue.getEnabled()
+                && Boolean.TRUE.equals(queue.getEnabled())
                 && queue.getCurrentRunningCount() < queue.getMaxConcurrentTasks();
         }).orElse(false);
     }

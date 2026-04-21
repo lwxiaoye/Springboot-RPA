@@ -179,6 +179,8 @@ public class TriggerRuleService {
     public TriggerRule updateStatus(Long id, String status) {
         return repository.findById(id).map(trigger -> {
             trigger.setStatus(status);
+            // 同步更新enabled字段，保持数据一致性
+            trigger.setEnabled("active".equals(status) || "paused".equals(status));
             trigger.setUpdateTime(LocalDateTime.now());
             return repository.save(trigger);
         }).orElseThrow(() -> new RuntimeException("触发器不存在"));
@@ -207,8 +209,9 @@ public class TriggerRuleService {
         TriggerRule trigger = repository.findById(triggerId)
             .orElseThrow(() -> new RuntimeException("触发器不存在"));
 
-        if (!"active".equals(trigger.getStatus()) || !trigger.getEnabled()) {
-            throw new RuntimeException("触发器未启用");
+        // 只检查status字段，enabled字段已废弃
+        if (!"active".equals(trigger.getStatus())) {
+            throw new RuntimeException("触发器未启用（当前状态: " + trigger.getStatus() + "）");
         }
 
         if (trigger.getProcessId() == null) {
@@ -216,8 +219,10 @@ public class TriggerRuleService {
         }
 
         Long currentCount = lastTriggerTime.getOrDefault(triggerId, 0L);
-        if (currentCount >= trigger.getMaxConcurrent()) {
-            throw new RuntimeException("已达到最大并发数");
+        // 使用默认值1处理maxConcurrent为null的情况
+        int maxConcurrent = trigger.getMaxConcurrent() != null ? trigger.getMaxConcurrent() : 1;
+        if (currentCount >= maxConcurrent) {
+            throw new RuntimeException("已达到最大并发数（当前: " + currentCount + ", 最大: " + maxConcurrent + "）");
         }
 
         lastTriggerTime.put(triggerId, currentCount + 1);

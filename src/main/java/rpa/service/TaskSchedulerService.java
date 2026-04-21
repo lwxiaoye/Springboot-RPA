@@ -129,9 +129,18 @@ public class TaskSchedulerService {
             "任务已分配，准备执行流程: " + process.getName()
         );
 
-        if (process.getQueueId() != null) {
-            queueService.incrementRunningCount(process.getQueueId());
-            queueService.decrementPendingCount(process.getQueueId());
+        // 更新队列计数：优先使用任务的queueId，其次使用流程的queueId
+        Long queueId = task.getQueueId();
+        if (queueId == null && task.getProcessId() != null) {
+            queueId = processRepository.findById(task.getProcessId())
+                .map(p -> p.getQueueId())
+                .orElse(null);
+        }
+
+        if (queueId != null) {
+            queueService.incrementRunningCount(queueId);
+            queueService.decrementPendingCount(queueId);
+            log.info("任务 {} 已分配，队列 {} pending-1, running+1", task.getName(), queueId);
         }
 
         log.info("任务 {} 已分配，等待执行流程 {}", task.getName(), process.getName());
