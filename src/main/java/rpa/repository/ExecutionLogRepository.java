@@ -43,6 +43,14 @@ public interface ExecutionLogRepository extends JpaRepository<ExecutionLog, Long
      * @return List<ExecutionLog> 日志列表
      */
     List<ExecutionLog> findByRobotId(Long robotId);
+
+    /**
+     * 根据任务名称查询执行日志列表
+     *
+     * @param taskName 任务名称
+     * @return List<ExecutionLog> 日志列表
+     */
+    List<ExecutionLog> findByTaskName(String taskName);
     
     /**
      * 查询所有执行日志（按创建时间倒序）

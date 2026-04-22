@@ -18,6 +18,11 @@ import java.util.List;
 public interface TaskRepository extends JpaRepository<Task, Long> {
     
     /**
+     * 根据状态统计任务数量
+     */
+    long countByStatus(String status);
+    
+    /**
      * 根据任务接收人查询任务列表
      *
      * @param assigneeId 任务接收人ID

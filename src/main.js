@@ -8,9 +8,12 @@ import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 // 全局表格Hover样式
 import './styles/table-hover.css'
 
+// 全局 ECharts 注册（必须在 vue-echarts 之前）
+import './utils/echarts.ts'
+
 const app = createApp(App)
 
-// 注册所有图标
+// 注册所有 Element Plus 图标
 for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
   app.component(key, component)
 }
