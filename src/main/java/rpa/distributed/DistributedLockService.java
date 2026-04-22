@@ -73,7 +73,8 @@ public class DistributedLockService {
             // 计算等待结束时间
             long deadline = startTime + (waitSeconds * 1000L);
             
-            while (System.currentTimeMillis() < deadline) {
+            // 使用 do-while 确保至少执行一次锁获取尝试
+            do {
                 boolean acquired = doAcquire(lockName, holder, ttlSeconds);
                 
                 if (acquired) {
@@ -92,14 +93,16 @@ public class DistributedLockService {
                 // 锁竞争计数
                 stats.incrementContention();
                 
-                // 等待后重试
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    break;
+                // 如果不是最后一次尝试，等待后重试
+                if (System.currentTimeMillis() < deadline) {
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
                 }
-            }
+            } while (System.currentTimeMillis() < deadline);
             
             // 超时未获取
             result.setSuccess(false);
@@ -263,14 +266,34 @@ public class DistributedLockService {
             }
         }
         
-        return activeLocks.get(lockName);
+        // 本地锁：动态计算剩余 TTL
+        LockInfo info = activeLocks.get(lockName);
+        if (info != null) {
+            long now = System.currentTimeMillis();
+            long remainingMs = info.getExpireTime() - now;
+            int remainingTtl = (int) Math.max(0, remainingMs / 1000);
+            info.setTtl(remainingTtl);
+        }
+        return info;
     }
 
     /**
      * 获取所有活跃锁
      */
     public List<LockInfo> getActiveLocks() {
-        return new ArrayList<>(activeLocks.values());
+        List<LockInfo> result = new ArrayList<>(activeLocks.values());
+        
+        // 动态计算每个锁的剩余 TTL
+        long now = System.currentTimeMillis();
+        for (LockInfo info : result) {
+            if (info.getExpireTime() > 0) {
+                long remainingMs = info.getExpireTime() - now;
+                int remainingTtl = (int) Math.max(0, remainingMs / 1000);
+                info.setTtl(remainingTtl);
+            }
+        }
+        
+        return result;
     }
 
     /**

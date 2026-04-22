@@ -3,8 +3,6 @@ package rpa.repository;
 import rpa.entity.ExecutionLog;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
-import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -51,58 +49,4 @@ public interface ExecutionLogRepository extends JpaRepository<ExecutionLog, Long
      */
     @Query("SELECT e FROM ExecutionLog e ORDER BY e.createTime DESC")
     List<ExecutionLog> findAllOrderByCreateTimeDesc();
-    
-    /**
-     * 根据状态统计执行次数
-     */
-    @Query("SELECT COUNT(e) FROM ExecutionLog e WHERE e.status = :status")
-    long countByStatus(@Param("status") String status);
-    
-    /**
-     * 统计指定时间范围内的执行次数
-     */
-    @Query("SELECT COUNT(e) FROM ExecutionLog e WHERE e.createTime BETWEEN :start AND :end")
-    long countByTimeRange(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
-    
-    /**
-     * 统计指定时间范围内指定状态的执行次数
-     */
-    @Query("SELECT COUNT(e) FROM ExecutionLog e WHERE e.createTime BETWEEN :start AND :end AND e.status = :status")
-    long countByTimeRangeAndStatus(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end, @Param("status") String status);
-    
-    /**
-     * 根据状态分组统计
-     */
-    @Query("SELECT e.status, COUNT(e) FROM ExecutionLog e GROUP BY e.status")
-    List<Object[]> countGroupByStatus();
-    
-    /**
-     * 查询最近N条执行日志
-     */
-    @Query(value = "SELECT * FROM execution_log ORDER BY create_time DESC LIMIT :limit", nativeQuery = true)
-    List<ExecutionLog> findRecentLogs(@Param("limit") int limit);
-    
-    /**
-     * 根据时间范围查询
-     */
-    @Query("SELECT e FROM ExecutionLog e WHERE e.createTime BETWEEN :start AND :end ORDER BY e.createTime DESC")
-    List<ExecutionLog> findByTimeRange(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
-    
-    /**
-     * 按小时统计执行次数（用于执行趋势）
-     */
-    @Query("SELECT HOUR(e.createTime) as hour, COUNT(e) FROM ExecutionLog e WHERE DATE(e.createTime) = DATE(:date) GROUP BY HOUR(e.createTime)")
-    List<Object[]> countByHour(@Param("date") LocalDateTime date);
-    
-    /**
-     * 按天统计执行次数（用于执行趋势）
-     */
-    @Query("SELECT DATE(e.createTime) as day, COUNT(e) FROM ExecutionLog e WHERE e.createTime >= :startDate GROUP BY DATE(e.createTime)")
-    List<Object[]> countByDay(@Param("startDate") LocalDateTime startDate);
-    
-    /**
-     * 统计各状态的数量
-     */
-    @Query("SELECT e.status, COUNT(e) FROM ExecutionLog e WHERE e.createTime >= :startDate GROUP BY e.status")
-    List<Object[]> countStatusGroupByStatus(@Param("startDate") LocalDateTime startDate);
 }

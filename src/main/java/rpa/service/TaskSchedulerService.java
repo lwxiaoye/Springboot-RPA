@@ -2,8 +2,10 @@ package rpa.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import rpa.distributed.DistributedLockService;
 import rpa.entity.Task;
 import rpa.entity.Robot;
 import rpa.entity.TaskQueue;
@@ -41,6 +43,10 @@ public class TaskSchedulerService {
     private final RpaProcessService rpaProcessService;
     private final TaskQueueService queueService;
     private final ExecutionLogService executionLogService;
+    private final DistributedLockService lockService;
+
+    @Value("${rpa.node.id:node-default}")
+    private String nodeId;
 
     private final Map<Long, Long> queueTaskCount = new ConcurrentHashMap<>();
 
@@ -63,9 +69,10 @@ public class TaskSchedulerService {
     }
 
     /**
-     * 执行已分配的任务
+     * 执行已分配的任务（集成分布式锁）
+     * 集群环境中通过抢锁确保同一任务只有一个节点执行
      */
-    @Scheduled(fixedRate = 30000)
+    @Scheduled(fixedDelay = 30000)  // 改为 fixedDelay 防止任务重叠
     public void executeAssignedTasks() {
         List<Task> assignedTasks = taskRepository.findByStatus("assigned");
         if (assignedTasks.isEmpty()) {
@@ -76,7 +83,7 @@ public class TaskSchedulerService {
 
         for (Task task : assignedTasks) {
             try {
-                executeTask(task);
+                executeTaskWithLock(task);  // 使用带锁的版本
             } catch (Exception e) {
                 log.error("任务执行失败: taskId={}", task.getId(), e);
                 // 执行失败，标记为失败状态
@@ -167,9 +174,146 @@ public class TaskSchedulerService {
     }
 
     /**
-     * 执行已分配的任务
-     * 直接执行流程，不需要机器人
+     * 带分布式锁的任务执行（核心方法）
+     * 集群中多个节点同时调度同一任务时，通过抢锁确保只有一个节点执行
+     * 
+     * @param task 待执行的任务
      */
+    private void executeTaskWithLock(Task task) {
+        String lockName = "task_execution_" + task.getId();
+        
+        // 尝试获取锁（TTL=300秒=5分钟，等待超时=0秒不等待）
+        DistributedLockService.LockResult lockResult = lockService.tryLock(
+            lockName,
+            nodeId,
+            300,  // 锁有效期：5分钟（根据任务类型调整）
+            0     // 不等待，立即返回
+        );
+        
+        if (!lockResult.isSuccess()) {
+            log.info("任务 {} 抢锁失败，可能其他节点正在执行，跳过本次调度", task.getId());
+            return;  // 其他节点已获得锁，直接返回
+        }
+        
+        log.info("任务 {} 抢锁成功，开始执行（持有者: {}）", task.getId(), nodeId);
+        
+        try {
+            // 执行任务（带续期机制）
+            executeTaskWithRenew(task, lockName, nodeId);
+        } finally {
+            // 确保释放锁
+            boolean released = lockService.releaseLock(lockName, nodeId);
+            if (released) {
+                log.info("任务 {} 执行完成，锁已释放", task.getId());
+            } else {
+                log.warn("任务 {} 锁释放失败（可能已过期自动释放）", task.getId());
+            }
+        }
+    }
+
+    /**
+     * 执行任务并定期续期（看门狗机制）
+     * 防止长时间任务执行时锁过期
+     * 
+     * @param task 任务
+     * @param lockName 锁名称
+     * @param holder 持有者
+     */
+    private void executeTaskWithRenew(Task task, String lockName, String holder) {
+        if (task.getProcessId() == null) {
+            log.warn("任务 {} 未关联流程，无法执行", task.getId());
+            completeTask(task.getId(), "failed", null, "未关联流程");
+            return;
+        }
+
+        // 更新任务状态为 running
+        task.setStatus("running");
+        task.setStartTime(java.time.LocalDateTime.now());
+        taskRepository.save(task);
+
+        executionLogService.create(
+            task.getId(),
+            task.getProcessId(),
+            task.getRobotId(),
+            "开始执行",
+            "running",
+            "任务开始执行流程（节点: " + nodeId + "）"
+        );
+
+        // 启动续期线程（看门狗）
+        final Task finalTask = task;
+        Thread renewThread = startWatchdog(finalTask.getId(), lockName, holder, 60);  // 每60秒续期一次
+        
+        try {
+            // 调用流程执行服务
+            Map<String, Object> result = rpaProcessService.execute(task.getProcessId());
+
+            // 判断执行结果
+            Boolean success = (Boolean) result.getOrDefault("success", false);
+            String message = (String) result.getOrDefault("message", "");
+
+            if (success) {
+                completeTask(task.getId(), "completed", 
+                    result.containsKey("data") ? result.get("data").toString() : null, null);
+                log.info("任务 {} 执行成功", task.getName());
+            } else {
+                completeTask(task.getId(), "failed", null, message);
+                log.warn("任务 {} 执行失败: {}", task.getName(), message);
+            }
+
+        } catch (Exception e) {
+            log.error("任务 {} 执行异常", task.getName(), e);
+            completeTask(task.getId(), "failed", null, e.getMessage());
+        } finally {
+            // 停止续期线程
+            renewThread.interrupt();
+        }
+    }
+
+    /**
+     * 启动看门狗线程（自动续期）
+     * 防止长时间任务执行时锁过期
+     * 
+     * @param taskId 任务ID（用于线程命名）
+     * @param lockName 锁名称
+     * @param holder 持有者
+     * @param renewIntervalSeconds 续期间隔（秒）
+     * @return 续期线程
+     */
+    private Thread startWatchdog(Long taskId, String lockName, String holder, int renewIntervalSeconds) {
+        Thread watchdog = new Thread(() -> {
+            try {
+                while (!Thread.currentThread().isInterrupted()) {
+                    Thread.sleep(renewIntervalSeconds * 1000L);
+                    
+                    // 续期锁
+                    boolean renewed = lockService.renewLock(lockName, holder, 300);
+                    if (renewed) {
+                        log.debug("任务 {} 锁续期成功: lockName={}", taskId, lockName);
+                    } else {
+                        log.warn("任务 {} 锁续期失败（锁可能已释放）: lockName={}", taskId, lockName);
+                        break;  // 锁已不存在，停止续期
+                    }
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                log.debug("任务 {} 看门狗线程被中断，停止续期", taskId);
+            } catch (Exception e) {
+                log.error("任务 {} 看门狗线程异常", taskId, e);
+            }
+        }, "lock-watchdog-task-" + taskId);
+        
+        watchdog.setDaemon(true);  // 守护线程，不影响主程序退出
+        watchdog.start();
+        return watchdog;
+    }
+
+    /**
+     * 执行已分配的任务（原始方法，保留备用）
+     * 直接执行流程，不需要机器人
+     * @deprecated 已被 executeTaskWithLock 替代
+     */
+    @Deprecated
     private void executeTask(Task task) {
         if (task.getProcessId() == null) {
             log.warn("任务 {} 未关联流程，无法执行", task.getId());

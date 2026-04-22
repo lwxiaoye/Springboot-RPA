@@ -79,7 +79,6 @@ rpa\repository\NotificationRepository.class
 rpa\repository\ResourceRepository.class
 rpa\service\TaskService.class
 rpa\config\RedisConfig.class
-rpa\websocket\RpaWebSocketHandler.class
 rpa\util\RobotCodeExecutor.class
 rpa\entity\SystemConfig.class
 rpa\entity\TraceLog.class
@@ -89,11 +88,9 @@ rpa\repository\ProcessVersionRepository.class
 rpa\repository\RobotCategoryRepository.class
 rpa\controller\AiController.class
 rpa\entity\DataCollect.class
-rpa\controller\MonitorController.class
 rpa\service\TaskSchedulerService.class
 rpa\repository\DataProcessRepository.class
 rpa\controller\NotificationController.class
-rpa\controller\WebSocketController.class
 rpa\entity\Task.class
 rpa\entity\DataLineage.class
 rpa\service\DataProcessService.class
@@ -121,7 +118,6 @@ rpa\controller\DataProcessController.class
 rpa\entity\RpaProcess.class
 rpa\repository\AlertRuleRepository.class
 rpa\distributed\DistributedLockService$LockInfo.class
-rpa\config\WebSocketConfig.class
 rpa\controller\EnterpriseController$CredentialStoreRequest.class
 rpa\config\JwtUtils.class
 rpa\service\NotificationService.class
@@ -135,7 +131,6 @@ rpa\entity\ExecutionLog.class
 rpa\service\IntelligentSchedulerService$IdleLoadBalanceStrategy.class
 rpa\repository\AuditLogRepository.class
 rpa\controller\EnterpriseController$MaskRequest.class
-rpa\service\ExcelService$1.class
 rpa\repository\DataParseRepository.class
 rpa\ai\CaptchaService.class
 rpa\security\CredentialVault$StoreRequest.class

@@ -23,10 +23,6 @@
             <el-icon><Odometer /></el-icon>
             <span>首页</span>
           </el-menu-item>
-          <el-menu-item index="monitor">
-            <el-icon><DataLine /></el-icon>
-            <span>实时监控</span>
-          </el-menu-item>
           <el-menu-item index="rpa">
             <el-icon><VideoCamera /></el-icon>
             <span>RPA运营管理</span>
@@ -334,8 +330,8 @@ const route = useRoute()
 
 const sidebarCollapsed = ref(false)
 const showDataSubmenu = ref(true)
-const activeTopMenu = ref('dashboard')
-const activeMenu = ref('monitor')
+const activeTopMenu = ref('rpa')
+const activeMenu = ref('tasks')
 const unreadCount = ref(0)
 
 const currentUser = ref({
@@ -355,13 +351,8 @@ const userInitial = computed(() => {
 
 // 顶部菜单选择
 const handleTopMenuSelect = (index) => {
-  activeTopMenu.value = index
   if (index === 'dashboard') {
-    router.push('/')
-  } else if (index === 'monitor') {
-    router.push('/rpa/monitor')
-  } else if (index === 'rpa') {
-    router.push('/rpa/tasks')
+    router.push('/dashboard')
   } else if (index === 'system') {
     router.push('/system/profile')
   }
@@ -371,8 +362,7 @@ const handleTopMenuSelect = (index) => {
 const switchMenu = (menu) => {
   activeMenu.value = menu
 const routeMap = {
-  dashboard: '/',
-  monitor: '/rpa/monitor',
+  dashboard: '/dashboard',
   tasks: '/rpa/tasks',
   robots: '/rpa/robots',
   processes: '/rpa/processes',
@@ -400,9 +390,9 @@ const routeMap = {
   router.push(routeMap[menu])
 }
 
-// 跳转到首页
+// 跳转到工作台
 const goToDashboard = () => {
-  router.push('/')
+  router.push('/dashboard')
 }
 
 // 跳转到通知
@@ -455,21 +445,7 @@ onMounted(() => {
 
   // 根据当前路由设置激活菜单
   const path = route.path
-
-  // 设置顶部菜单
-  if (path === '/home' || path === '/') {
-    activeTopMenu.value = 'dashboard'
-  } else if (path.includes('/rpa/monitor')) {
-    activeTopMenu.value = 'monitor'
-  } else if (path.includes('/rpa')) {
-    activeTopMenu.value = 'rpa'
-  } else if (path.includes('/system')) {
-    activeTopMenu.value = 'system'
-  }
-
-  // 设置侧边栏菜单
-  if (path === '/home' || path === '/') activeMenu.value = 'dashboard'
-  else if (path.includes('/rpa/monitor')) activeMenu.value = 'monitor'
+  if (path === '/dashboard' || path === '/') activeMenu.value = 'dashboard'
   else if (path.includes('/rpa/tasks')) activeMenu.value = 'tasks'
   else if (path.includes('/rpa/robots')) activeMenu.value = 'robots'
   else if (path.includes('/rpa/processes')) activeMenu.value = 'processes'

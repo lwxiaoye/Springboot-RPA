@@ -5,28 +5,6 @@
       <p class="page-desc">配置定时、文件、API、Webhook触发规则，自动化执行流程</p>
     </div>
 
-    <!-- 视图切换 -->
-    <div class="view-tabs">
-      <el-radio-group v-model="currentView" size="default">
-        <el-radio-button value="list">
-          <el-icon><List /></el-icon>
-          列表视图
-        </el-radio-button>
-        <el-radio-button value="calendar">
-          <el-icon><Calendar /></el-icon>
-          日历视图
-        </el-radio-button>
-      </el-radio-group>
-    </div>
-
-    <!-- 日历视图 -->
-    <div v-if="currentView === 'calendar'" class="calendar-view">
-      <ScheduleCalendar @refresh="loadTriggers" />
-    </div>
-
-    <!-- 列表视图 -->
-    <div v-if="currentView === 'list'" class="list-view">
-
     <div class="stats-row">
       <div class="stat-card">
         <div class="stat-icon primary"><el-icon><Timer /></el-icon></div>
@@ -130,7 +108,7 @@
           {{ formatDateTime(row.lastTriggerTime) }}
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="260" fixed="right" align="center">
+      <el-table-column label="操作" width="240" fixed="right" align="center">
         <template #default="{ row }">
           <el-button link type="success" @click="triggerNow(row)" :loading="triggeringId === row.id">触发</el-button>
           <el-button link type="primary" @click="editTrigger(row)">编辑</el-button>
@@ -157,7 +135,6 @@
         @size-change="handleSizeChange"
         @current-change="handleCurrentChange"
       />
-    </div>
     </div>
 
     <!-- 新建/编辑触发器弹窗 -->
@@ -204,11 +181,31 @@
             <el-time-picker v-model="triggerForm.scheduleTimeObj" format="HH:mm" value-format="HH:mm" placeholder="选择时间" style="width: 100%" />
           </el-form-item>
           <el-form-item v-if="scheduleMode === 'simple'" label="执行周期">
-            <el-select v-model="triggerForm.scheduleType" style="width: 100%">
+            <el-select v-model="triggerForm.scheduleType" style="width: 100%" @change="onScheduleTypeChange">
               <el-option value="day" label="每天" />
               <el-option value="week" label="每周" />
               <el-option value="month" label="每月" />
             </el-select>
+          </el-form-item>
+          <!-- 每周：选择星期几 -->
+          <el-form-item v-if="scheduleMode === 'simple' && triggerForm.scheduleType === 'week'" label="选择星期">
+            <el-checkbox-group v-model="selectedWeekDays">
+              <el-checkbox label="1">周一</el-checkbox>
+              <el-checkbox label="2">周二</el-checkbox>
+              <el-checkbox label="3">周三</el-checkbox>
+              <el-checkbox label="4">周四</el-checkbox>
+              <el-checkbox label="5">周五</el-checkbox>
+              <el-checkbox label="6">周六</el-checkbox>
+              <el-checkbox label="7">周日</el-checkbox>
+            </el-checkbox-group>
+            <div class="form-tip">可选择多个星期</div>
+          </el-form-item>
+          <!-- 每月：选择日期 -->
+          <el-form-item v-if="scheduleMode === 'simple' && triggerForm.scheduleType === 'month'" label="选择日期">
+            <el-select v-model="selectedMonthDay" placeholder="选择日期" style="width: 100%">
+              <el-option v-for="day in 31" :key="day" :label="day + '日'" :value="String(day)" />
+            </el-select>
+            <div class="form-tip">选择每月的具体日期（1-31）</div>
           </el-form-item>
         </template>
 
@@ -333,11 +330,8 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Search, Plus, Timer, CircleCheck, Clock, TrendCharts, Document, CircleClose, List, Calendar } from '@element-plus/icons-vue'
+import { Search, Plus, Timer, CircleCheck, Clock, TrendCharts, Document, CircleClose } from '@element-plus/icons-vue'
 import { apiGet, apiPost, apiPut, apiDelete } from '../../utils/api.js'
-import ScheduleCalendar from './components/ScheduleCalendar.vue'
-
-const currentView = ref('list')
 
 const loading = ref(false)
 const submitLoading = ref(false)
@@ -355,6 +349,8 @@ const searchKeyword = ref('')
 const typeFilter = ref('')
 const statusFilter = ref('')
 const scheduleMode = ref('cron')
+const selectedWeekDays = ref([])
+const selectedMonthDay = ref('')
 
 const pagination = reactive({ page: 1, size: 10, total: 0 })
 
@@ -508,6 +504,7 @@ const showCreateModal = () => {
     cron: '',
     scheduleTimeObj: null,
     scheduleType: 'day',
+    scheduleDays: '',
     watchPath: '',
     filePattern: '',
     watchSubdirs: false,
@@ -517,6 +514,8 @@ const showCreateModal = () => {
     autoStart: true,
     maxConcurrent: 1
   })
+  selectedWeekDays.value = []
+  selectedMonthDay.value = ''
   scheduleMode.value = 'cron'
   dialogVisible.value = true
 }
@@ -537,6 +536,7 @@ const editTrigger = (trigger) => {
     scheduleTimeObj: trigger.scheduleTime || null,
     scheduleTime: trigger.scheduleTime || '',
     scheduleType: trigger.scheduleType || 'day',
+    scheduleDays: trigger.scheduleDays || '',
     watchPath: trigger.watchPath || '',
     filePattern: trigger.filePattern || '',
     watchSubdirs: trigger.watchSubdirs || false,
@@ -547,6 +547,20 @@ const editTrigger = (trigger) => {
     maxConcurrent: trigger.maxConcurrent || 1
   })
   
+  // 解析scheduleDays到选择器
+  if (trigger.scheduleDays) {
+    if (trigger.scheduleType === 'week') {
+      // 周的格式："1,2,3" -> ['1','2','3']
+      selectedWeekDays.value = trigger.scheduleDays.split(',').filter(d => d)
+    } else if (trigger.scheduleType === 'month') {
+      // 月的格式："15" -> "15"
+      selectedMonthDay.value = trigger.scheduleDays
+    }
+  } else {
+    selectedWeekDays.value = []
+    selectedMonthDay.value = ''
+  }
+  
   // 根据是否有cron表达式设置定时模式
   scheduleMode.value = trigger.cron ? 'cron' : 'simple'
   dialogVisible.value = true
@@ -555,6 +569,13 @@ const editTrigger = (trigger) => {
 const onTriggerTypeChange = () => {
   triggerForm.cron = ''
   triggerForm.scheduleTimeObj = null
+}
+
+const onScheduleTypeChange = () => {
+  // 切换周期类型时清空相关选择
+  selectedWeekDays.value = []
+  selectedMonthDay.value = ''
+  triggerForm.scheduleDays = ''
 }
 
 const viewDetail = (trigger) => {
@@ -603,11 +624,22 @@ const submitTrigger = async () => {
       const process = processes.value.find(p => p.id === triggerForm.processId)
       const queue = queues.value.find(q => q.id === triggerForm.queueId)
 
+      // 处理scheduleDays字段
+      let scheduleDaysValue = ''
+      if (triggerForm.scheduleType === 'week' && selectedWeekDays.value.length > 0) {
+        // 周：将数组转为逗号分隔的字符串，如 "1,2,3"
+        scheduleDaysValue = selectedWeekDays.value.join(',')
+      } else if (triggerForm.scheduleType === 'month' && selectedMonthDay.value) {
+        // 月：直接使用选中的日期
+        scheduleDaysValue = selectedMonthDay.value
+      }
+
       const data = {
         ...triggerForm,
         processName: process?.name || '',
         queueName: queue?.name || '',
-        scheduleTime: triggerForm.scheduleTimeObj
+        scheduleTime: triggerForm.scheduleTimeObj,
+        scheduleDays: scheduleDaysValue
       }
 
       let result
@@ -662,27 +694,7 @@ onMounted(() => {
   margin: 0 auto;
 }
 
-/* 视图切换 */
-.view-tabs {
-  margin-bottom: 20px;
-}
-
-.view-tabs :deep(.el-radio-button__inner) {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.calendar-view {
-  background: white;
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.list-view {
-}
-
+/* 页面头部 */
 .page-header {
   margin-bottom: 24px;
   padding-bottom: 20px;
@@ -810,54 +822,25 @@ onMounted(() => {
   color: var(--text-tertiary, #9ca3af);
 }
 
-/* 表格 - 使用全局统一样式 */
+/* 表格 */
 :deep(.el-table) {
   border-radius: 12px;
   overflow: hidden;
-  border: 1px solid var(--border-color, #e4e7ed);
-  width: 100%;
+  border: 1px solid var(--border-color, #e5e7eb);
 }
 
-:deep(.el-table th.el-table__cell) {
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
+:deep(.el-table th) {
+  background: var(--bg-tertiary, #f9fafb) !important;
   font-weight: 600;
-  color: #374151;
-  font-size: 13px;
-  padding: 12px 16px !important;
-  border-bottom: 2px solid #e4e7ed !important;
+  color: var(--text-primary, #1f2937);
 }
 
-:deep(.el-table td.el-table__cell) {
-  padding: 12px 16px !important;
-  border-bottom: 1px solid #f1f5f9 !important;
-  vertical-align: middle;
+:deep(.el-table td) {
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
 }
 
-/* 表格行 Hover 动效 */
-:deep(.el-table__body tr) {
-  transition: all 0.2s ease;
-}
-
-/* 左侧边框指示器 */
-:deep(.el-table__body tr:hover > td:first-child) {
-  box-shadow: inset 4px 0 0 #409eff;
-}
-
-:deep(.el-table__body tr:hover > td) {
-  background: linear-gradient(135deg, rgba(64, 158, 255, 0.03) 0%, rgba(64, 158, 255, 0.08) 100%) !important;
-}
-
-/* 操作按钮单元格 */
-:deep(.el-table .cell) {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  flex-wrap: nowrap;
-}
-
-:deep(.el-table .cell .el-button) {
-  padding: 4px 6px;
-  font-size: 12px;
+:deep(.el-table__row:hover > td) {
+  background: var(--bg-primary, #f5f7fa) !important;
 }
 
 .code-text {

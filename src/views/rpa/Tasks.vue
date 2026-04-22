@@ -32,7 +32,7 @@
               <span class="task-process">流程: {{ task.processName || '-' }}</span>
             </div>
             <div class="task-actions">
-            <el-tag size="small" :type="getStatusType(task.status)">{{ getStatusText(task.status) }}</el-tag>
+              <el-tag size="small" :type="getStatusType(task.status)">{{ getStatusText(task.status) }}</el-tag>
               <el-button link type="danger" size="small" @click.stop="deleteTask(task)">
                 <el-icon><Delete /></el-icon>
               </el-button>
@@ -101,7 +101,7 @@
             <div v-for="process in boundProcesses" :key="process.id" class="process-item bound">
               <div class="process-info">
                 <div class="process-name-row">
-                <span class="process-name">{{ process.name }}</span>
+                  <span class="process-name">{{ process.name }}</span>
                   <el-tag size="small" type="success">已绑定</el-tag>
                 </div>
                 <span class="process-desc">{{ process.description || '暂无描述' }}</span>
@@ -446,8 +446,8 @@ const runProcess = async (process) => {
 const deleteTask = async (task) => {
   if (!task) {
     ElMessage.warning('请先选择要删除的任务')
-      return
-    }
+    return
+  }
   try {
     await ElMessageBox.confirm(
       `确定要删除任务"${task.name}"吗？此操作不可恢复。`,
@@ -461,18 +461,18 @@ const deleteTask = async (task) => {
     )
     deleteLoading.value = true
     const result = await apiDelete(`/task/${task.id}`)
-        if (result.code === 0) {
+    if (result.code === 0) {
       ElMessage.success('任务删除成功')
-          cancelEdit()
+      cancelEdit()
       await loadTasks()
-        } else {
+    } else {
       ElMessage.error(result.message || '删除失败')
-        }
+    }
   } catch (error) {
     if (error !== 'cancel') {
       ElMessage.error('删除请求失败')
-      }
-    } finally {
+    }
+  } finally {
     deleteLoading.value = false
   }
 }
