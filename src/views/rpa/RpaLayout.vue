@@ -44,9 +44,10 @@
 
         <el-dropdown trigger="click">
           <div class="user-avatar">
-            <el-avatar :size="36" class="avatar-circle">
+            <el-avatar :size="36" class="avatar-circle" v-if="!currentUser.avatar">
               {{ userInitial }}
             </el-avatar>
+            <el-avatar :size="36" class="avatar-circle" v-else :src="getAvatarUrl(currentUser.avatar)" @error="handleAvatarError" />
             <div class="user-meta">
               <div class="user-name">{{ userName }}</div>
               <div class="user-role">{{ userRole }}</div>
@@ -290,7 +291,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
@@ -434,7 +435,23 @@ const loadUnreadCount = async () => {
   }
 }
 
-onMounted(() => {
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'
+
+// 获取头像完整 URL
+const getAvatarUrl = (path) => {
+  if (!path) return null
+  if (path.startsWith('http://') || path.startsWith('https://')) return path
+  return `${API_BASE}${path}`
+}
+
+// 处理头像加载失败
+const handleAvatarError = (e) => {
+  console.error('头像加载失败，回退到首字母显示')
+  currentUser.value.avatar = null
+}
+
+// 加载用户信息
+const loadUserInfo = () => {
   const userInfo = localStorage.getItem('userInfo')
   if (userInfo) {
     try {
@@ -442,6 +459,22 @@ onMounted(() => {
       currentUser.value = { ...currentUser.value, ...user }
     } catch (e) {}
   }
+}
+
+onMounted(() => {
+  loadUserInfo()
+
+  // 监听 storage 事件，当其他页面修改 userInfo 时同步更新
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'userInfo') {
+      loadUserInfo()
+    }
+  })
+
+  // 监听自定义的头像更新事件
+  window.addEventListener('avatarUpdated', () => {
+    loadUserInfo()
+  })
 
   // 根据当前路由设置激活菜单
   const path = route.path
@@ -468,6 +501,12 @@ onMounted(() => {
 
   // 加载未读通知数
   loadUnreadCount()
+})
+
+// 组件卸载时移除事件监听
+onUnmounted(() => {
+  window.removeEventListener('storage', loadUserInfo)
+  window.removeEventListener('avatarUpdated', loadUserInfo)
 })
 </script>
 

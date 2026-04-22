@@ -430,6 +430,15 @@ const handleAvatarChange = async (e) => {
         // 使用后端返回的相对路径
         currentUser.value.avatar = result.data?.imageUrl || avatarPreview.value
         console.log('头像上传成功，新路径:', currentUser.value.avatar)
+        
+        // 同步更新 localStorage
+        const storedUser = JSON.parse(localStorage.getItem('userInfo') || '{}')
+        storedUser.avatar = currentUser.value.avatar
+        localStorage.setItem('userInfo', JSON.stringify(storedUser))
+        
+        // 触发自定义事件，通知其他组件更新头像
+        window.dispatchEvent(new Event('avatarUpdated'))
+        
         ElMessage.success('头像更新成功')
       } else {
         ElMessage.error('上传失败')

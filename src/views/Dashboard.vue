@@ -44,9 +44,10 @@
 
         <el-dropdown trigger="click">
           <div class="user-avatar">
-            <el-avatar :size="36" :src="userAvatar" class="avatar-circle">
+            <el-avatar :size="36" class="avatar-circle" v-if="!currentUser.avatar">
               {{ userInitial }}
             </el-avatar>
+            <el-avatar :size="36" class="avatar-circle" v-else :src="getAvatarUrl(currentUser.avatar)" @error="handleAvatarError" />
             <div class="user-meta">
               <div class="user-name">{{ userName }}</div>
               <div class="user-role">{{ userRole }}</div>
@@ -349,7 +350,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
@@ -382,8 +383,22 @@ const currentUser = ref({
 
 const userName = computed(() => currentUser.value.realName || currentUser.value.username)
 const userInitial = computed(() => userName.value.charAt(0).toUpperCase())
-const userAvatar = computed(() => currentUser.value.avatar || '')
 const userRole = computed(() => currentUser.value.role === 1 ? '管理员' : '用户')
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'
+
+// 获取头像完整 URL
+const getAvatarUrl = (path) => {
+  if (!path) return null
+  if (path.startsWith('http://') || path.startsWith('https://')) return path
+  return `${API_BASE}${path}`
+}
+
+// 处理头像加载失败
+const handleAvatarError = (e) => {
+  console.error('头像加载失败，回退到首字母显示')
+  currentUser.value.avatar = null
+}
 
 const unreadCount = ref(0)
 
@@ -576,7 +591,7 @@ const viewAlert = (alert) => {
 }
 
 // 数据加载
-const loadUserFromStorage = () => {
+const loadUserInfo = () => {
   const userStr = localStorage.getItem('userInfo')
   if (userStr) {
     try {
@@ -652,10 +667,28 @@ const loadHotProcesses = async () => {
 }
 
 onMounted(() => {
-  loadUserFromStorage()
+  loadUserInfo()
   loadStats()
   loadNotifications()
   loadHotProcesses()
+
+  // 监听 storage 事件，当其他页面修改 userInfo 时同步更新
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'userInfo') {
+      loadUserInfo()
+    }
+  })
+
+  // 监听自定义的头像更新事件
+  window.addEventListener('avatarUpdated', () => {
+    loadUserInfo()
+  })
+})
+
+// 组件卸载时移除事件监听
+onUnmounted(() => {
+  window.removeEventListener('storage', loadUserInfo)
+  window.removeEventListener('avatarUpdated', loadUserInfo)
 })
 </script>
 
