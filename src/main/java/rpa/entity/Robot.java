@@ -129,6 +129,14 @@ public class Robot {
     /** 最后心跳时间 */
     private LocalDateTime lastHeartbeat = LocalDateTime.now();
 
+    /** 心跳间隔（秒），默认30秒 */
+    @Column(name = "heartbeat_interval")
+    private Integer heartbeatInterval = 30;
+
+    /** 最大心跳间隔（秒），超过此时间未收到心跳视为离线，默认120秒 */
+    @Column(name = "max_heartbeat_gap")
+    private Integer maxHeartbeatGap = 120;
+
     /** 最后任务执行时间 */
     private LocalDateTime lastExecutionTime;
 
