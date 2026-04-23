@@ -117,7 +117,7 @@ const router = createRouter({
     routes
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, from) => {
     // 公开的路由，不需要登录
     const publicRoutes = ['/login']
     
@@ -126,18 +126,16 @@ router.beforeEach((to, from, next) => {
     
     // 如果访问的是公开路由，直接放行
     if (publicRoutes.includes(to.path)) {
-        next()
-        return
+        return true
     }
     
     // 如果访问的不是公开路由，且没有 token，跳转到登录页
     if (!token) {
-        next('/login')
-        return
+        return '/login'
     }
     
     // 有 token，放行
-    next()
+    return true
 })
 
 export default router

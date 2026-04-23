@@ -700,7 +700,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import {
   DataLine, CircleCheck, Timer, Money, Plus, Download, TrendCharts, PieChart,
@@ -712,7 +712,7 @@ import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { LineChart, BarChart as EChartsBarChart, PieChart as PieChartType } from 'echarts/charts'
 import { TitleComponent, TooltipComponent, LegendComponent, GridComponent } from 'echarts/components'
-import { apiGet } from '../../utils/api.js'
+import { apiGet, apiPost, apiPut, apiDelete } from '../../utils/api.js'
 
 use([CanvasRenderer, LineChart, EChartsBarChart, PieChartType, TitleComponent, TooltipComponent, LegendComponent, GridComponent])
 
@@ -731,97 +731,96 @@ const processDateRange = ref([])
 const processTopN = ref(10)
 const forecastPeriod = ref('30')
 
+// 监听日报日期变化，自动重新加载
+watch(dailyDate, (newDate) => {
+  if (currentTab.value === 'daily') {
+    loadDailyReport()
+  }
+})
+
+// 监听月报月份变化，自动重新加载
+watch(monthlyDate, (newMonth) => {
+  if (currentTab.value === 'monthly') {
+    loadMonthlyReport()
+  }
+})
+
+// 监听预测周期变化
+watch(forecastPeriod, () => {
+  if (currentTab.value === 'forecast') {
+    loadForecast()
+  }
+})
+
 const currentMonth = computed(() => {
   const [year, month] = monthlyDate.value.split('-')
   return `${year}年${parseInt(month)}月`
 })
 
-// 统计概览
+// 统计概览 - 初始为空，从 API 加载
 const stats = reactive({
-  totalTasks: 12580,
-  successRate: 94.5,
-  avgDuration: 2.3,
-  savedHours: 2560
+  totalTasks: 0,
+  successRate: 0,
+  avgDuration: 0,
+  savedHours: 0
 })
 
-// 日报数据
+// 日报数据 - 初始为空
 const dailyStats = reactive({
-  success: 156,
-  failed: 8,
-  running: 12,
-  total: 176
+  success: 0,
+  failed: 0,
+  running: 0,
+  total: 0
 })
 
-const dailyLogs = ref([
-  { taskName: '客户信息采集', processName: '数据采集流程', status: 'success', dataCount: 320, startTime: '2026-04-03 09:00:00', duration: '5m30s' },
-  { taskName: '订单同步', processName: '订单处理流程', status: 'success', dataCount: 128, startTime: '2026-04-03 09:30:00', duration: '3m45s' },
-  { taskName: '发票审核', processName: '发票审核流程', status: 'failed', dataCount: 0, startTime: '2026-04-03 10:00:00', duration: '1m20s' },
-  { taskName: '报表生成', processName: '报表生成流程', status: 'running', dataCount: 0, startTime: '2026-04-03 10:15:00', duration: '-' },
-])
+const dailyLogs = ref([])
 
-// 月报数据
+// 月报数据 - 初始为空
 const monthlyStats = reactive({
-  totalExecutions: 4250,
-  successCount: 4016,
-  failedCount: 234,
-  successRate: 94.5,
-  totalData: 89560,
-  dailyAvg: 2985,
-  peakData: 5200,
-  dataSuccessRate: 96.2
+  totalExecutions: 0,
+  successCount: 0,
+  failedCount: 0,
+  successRate: 0,
+  totalData: 0,
+  dailyAvg: 0,
+  peakData: 0,
+  dataSuccessRate: 0
 })
 
-// 机器人数据
+// 机器人数据 - 初始为空
 const robotStats = reactive({
-  busyRate: 65,
-  idleRate: 28,
-  offlineRate: 7,
-  totalRuntime: '1,520h'
+  busyRate: 0,
+  idleRate: 0,
+  offlineRate: 0,
+  totalRuntime: '0h'
 })
 
-const robotList = ref([
-  { name: 'Robot-Collector-01', status: 'busy', statusText: '忙碌', execCount: 1256, successRate: 98.5, runtime: '320h', dataCount: 45600, lastRun: '2026-04-03 10:30:00' },
-  { name: 'Robot-Parser-01', status: 'busy', statusText: '忙碌', execCount: 892, successRate: 95.2, runtime: '280h', dataCount: 38900, lastRun: '2026-04-03 10:28:00' },
-  { name: 'Robot-Processor-01', status: 'idle', statusText: '空闲', execCount: 456, successRate: 92.1, runtime: '180h', dataCount: 12500, lastRun: '2026-04-03 09:45:00' },
-  { name: 'Robot-General-01', status: 'offline', statusText: '离线', execCount: 234, successRate: 88.9, runtime: '120h', dataCount: 8600, lastRun: '2026-04-02 18:00:00' },
-])
+const robotList = ref([])
 
-// 流程数据
-const processList = ref([
-  { name: '客户信息采集流程', code: 'CUSTOMER_COLLECT', execCount: 1256, avgDuration: '5m30s', maxDuration: '12m', minDuration: '3m', totalDuration: '115h', successRate: 98.5 },
-  { name: '订单同步流程', code: 'ORDER_SYNC', execCount: 892, avgDuration: '3m45s', maxDuration: '8m', minDuration: '2m', totalDuration: '56h', successRate: 96.8 },
-  { name: '发票审核流程', code: 'INVOICE_CHECK', execCount: 567, avgDuration: '4m20s', maxDuration: '15m', minDuration: '2m30s', totalDuration: '41h', successRate: 94.2 },
-  { name: '报表生成流程', code: 'REPORT_GEN', execCount: 320, avgDuration: '8m15s', maxDuration: '25m', minDuration: '5m', totalDuration: '44h', successRate: 91.5 },
-])
+// 流程数据 - 初始为空
+const processList = ref([])
 
-// ROI数据
+// ROI数据 - 初始为空
 const roiStats = reactive({
-  annualSavings: 358000,
-  roi: 358,
-  paybackPeriod: 3,
-  laborReduction: 12
+  annualSavings: 0,
+  roi: 0,
+  paybackPeriod: 0,
+  laborReduction: 0
 })
 
-// 预测数据
+// 预测数据 - 初始为空
 const forecastStats = reactive({
-  growthRate: 15,
-  suggestRobotCount: 2,
-  capacityRate: 78,
-  suggestion: '基于历史数据分析，预计下月任务量将增长15%。建议扩容2台机器人以确保服务质量。同时建议优化发票审核流程，预计可提升20%效率。'
+  growthRate: 0,
+  suggestRobotCount: 0,
+  capacityRate: 0,
+  suggestion: '暂无预测数据'
 })
 
-// 自定义报表
-const customReports = ref([
-  { id: 1, name: '财务流程周报', type: '任务执行', dimensions: '执行次数,成功率,采集数据量', createUser: 'admin', createTime: '2026-03-15 10:00:00', lastRun: '2026-03-30 09:00:00' },
-  { id: 2, name: 'HR流程报表', type: '数据采集', dimensions: '采集数据量,时间趋势', createUser: 'admin', createTime: '2026-03-10 14:30:00', lastRun: '2026-03-29 18:00:00' }
-])
+// 自定义报表 - 从 API 加载
+const customReports = ref([])
 
-// 订阅列表
-const subscriptions = ref([
-  { id: 1, name: '每日任务日报', report: '任务执行日报', frequency: '每日', recipients: 'admin@company.com', channel: '邮件', status: true, lastRun: '2026-04-03 09:00:00' },
-  { id: 2, name: '每周汇总', report: '任务执行周报', frequency: '每周', recipients: 'leader@company.com', channel: '钉钉', status: true, lastRun: '2026-03-31 09:00:00' },
-  { id: 3, name: '月度分析', report: '任务执行月报', frequency: '每月', recipients: 'manager@company.com', channel: '邮件', status: false, lastRun: '2026-03-01 09:00:00' }
-])
+// 订阅列表 - 从 API 加载
+const subscriptions = ref([])
 
 // 成本计算
 const costForm = reactive({
@@ -875,6 +874,18 @@ const switchToTab = (tab) => {
 
 const onTabChange = (tab) => {
   console.log('切换到:', tab)
+  // 根据不同 Tab 加载对应数据
+  switch (tab) {
+    case 'forecast':
+      loadForecast()
+      break
+    case 'monthly':
+      loadMonthlyReport()
+      break
+    case 'roi':
+      // ROI 页面不需要预加载，用户点击计算时才调用
+      break
+  }
 }
 
 // 状态标签类型
@@ -900,32 +911,50 @@ const getReportTypeTag = (type) => {
   return map[type] || 'info'
 }
 
-// 图表配置
-const hourlyTrendOption = computed(() => ({
-  tooltip: { trigger: 'axis' },
-  grid: { left: '3%', right: '4%', bottom: '10%', top: '10%', containLabel: true },
-  xAxis: {
-    type: 'category',
-    data: ['00:00', '02:00', '04:00', '06:00', '08:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00', '22:00']
-  },
-  yAxis: { type: 'value', name: '任务数' },
-  series: [
-    {
-      name: '成功',
-      type: 'bar',
-      stack: 'total',
-      data: [2, 0, 0, 5, 25, 35, 30, 28, 22, 15, 8, 3],
-      itemStyle: { color: '#67c23a' }
-    },
-    {
-      name: '失败',
-      type: 'bar',
-      stack: 'total',
-      data: [0, 0, 0, 1, 2, 1, 2, 1, 0, 0, 1, 0],
-      itemStyle: { color: '#f56c6c' }
+// 图表配置 - 使用真实数据
+const hourlyTrendOption = computed(() => {
+  // 从 dailyLogs 中计算每小时趋势
+  const hourlyData = Array(24).fill(0).map(() => ({ success: 0, failed: 0 }))
+  
+  dailyLogs.value.forEach(log => {
+    if (log.startTime) {
+      const hour = new Date(log.startTime).getHours()
+      if (hour >= 0 && hour < 24) {
+        if (log.status === 'success' || log.status === 'completed') {
+          hourlyData[hour].success++
+        } else if (log.status === 'failed' || log.status === 'abnormal') {
+          hourlyData[hour].failed++
+        }
+      }
     }
-  ]
-}))
+  })
+  
+  return {
+    tooltip: { trigger: 'axis' },
+    grid: { left: '3%', right: '4%', bottom: '10%', top: '10%', containLabel: true },
+    xAxis: {
+      type: 'category',
+      data: Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`)
+    },
+    yAxis: { type: 'value', name: '任务数' },
+    series: [
+      {
+        name: '成功',
+        type: 'bar',
+        stack: 'total',
+        data: hourlyData.map(h => h.success),
+        itemStyle: { color: '#67c23a' }
+      },
+      {
+        name: '失败',
+        type: 'bar',
+        stack: 'total',
+        data: hourlyData.map(h => h.failed),
+        itemStyle: { color: '#f56c6c' }
+      }
+    ]
+  }
+})
 
 const dailyPieOption = computed(() => ({
   tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
@@ -937,9 +966,9 @@ const dailyPieOption = computed(() => ({
     itemStyle: { borderRadius: 10, borderColor: '#fff', borderWidth: 2 },
     label: { show: true, formatter: '{b}: {d}%' },
     data: [
-      { value: 156, name: '成功', itemStyle: { color: '#67c23a' } },
-      { value: 8, name: '失败', itemStyle: { color: '#f56c6c' } },
-      { value: 12, name: '进行中', itemStyle: { color: '#e6a23c' } }
+      { value: dailyStats.success, name: '成功', itemStyle: { color: '#67c23a' } },
+      { value: dailyStats.failed, name: '失败', itemStyle: { color: '#f56c6c' } },
+      { value: dailyStats.running, name: '进行中', itemStyle: { color: '#e6a23c' } }
     ]
   }]
 }))
@@ -996,9 +1025,9 @@ const robotStatusOption = computed(() => ({
     radius: ['45%', '70%'],
     innerRadius: '35%',
     data: [
-      { value: 65, name: '忙碌', itemStyle: { color: '#e6a23c' } },
-      { value: 28, name: '空闲', itemStyle: { color: '#67c23a' } },
-      { value: 7, name: '离线', itemStyle: { color: '#909399' } }
+      { value: robotStats.busyRate, name: '忙碌', itemStyle: { color: '#e6a23c' } },
+      { value: robotStats.idleRate, name: '空闲', itemStyle: { color: '#67c23a' } },
+      { value: robotStats.offlineRate, name: '离线', itemStyle: { color: '#909399' } }
     ]
   }]
 }))
@@ -1007,10 +1036,13 @@ const robotRankingOption = computed(() => ({
   tooltip: { trigger: 'axis' },
   grid: { left: '3%', right: '4%', bottom: '10%', top: '10%', containLabel: true },
   xAxis: { type: 'value', name: '执行次数' },
-  yAxis: { type: 'category', data: ['Robot-Collector-01', 'Robot-Parser-01', 'Robot-Processor-01', 'Robot-General-01'] },
+  yAxis: { 
+    type: 'category', 
+    data: robotList.value.slice(0, 10).map(r => r.name).reverse() 
+  },
   series: [{
     type: 'bar',
-    data: [1256, 892, 456, 234],
+    data: robotList.value.slice(0, 10).map(r => r.execCount).reverse(),
     itemStyle: { color: '#409eff', borderRadius: [0, 4, 4, 0] }
   }]
 }))
@@ -1171,30 +1203,63 @@ const editCustomReport = (report) => {
   ElMessage.info(`编辑报表: ${report.name}`)
 }
 
-const deleteCustomReport = (report) => {
-  const index = customReports.value.findIndex(r => r.id === report.id)
-  if (index !== -1) {
-    customReports.value.splice(index, 1)
-    ElMessage.success('报表删除成功')
+const deleteCustomReport = async (report) => {
+  try {
+    const result = await apiDelete(`/report/custom/${report.id}`)
+    if (result.code === 0) {
+      await loadCustomReports()
+      ElMessage.success('报表删除成功')
+    } else {
+      ElMessage.error(result.message || '删除失败')
+    }
+  } catch (e) {
+    console.error('删除报表失败:', e)
+    ElMessage.error('删除报表失败')
   }
 }
 
-const runReport = (report) => {
-  ElMessage.success(`报表 "${report.name}" 运行成功`)
+const runReport = async (report) => {
+  try {
+    const result = await apiPost(`/report/custom/${report.id}/run`, {})
+    if (result.code === 0) {
+      ElMessage.success(`报表 "${report.name}" 运行成功`)
+      await loadCustomReports()
+    } else {
+      ElMessage.error(result.message || '运行失败')
+    }
+  } catch (e) {
+    console.error('运行报表失败:', e)
+    ElMessage.error('运行报表失败')
+  }
 }
 
-const calculateSavings = () => {
-  const monthlyManualHours = (costForm.manualTime * costForm.frequency) / 60
-  const monthlyCost = monthlyManualHours * costForm.hourlyRate
-  const rpaCost = costForm.rpaCount * costForm.rpaCostPerUnit
-
-  savings.monthlyHours = Math.round(monthlyManualHours * 100) / 100
-  savings.monthlyCost = Math.round(monthlyCost * 100) / 100
-  savings.yearlyHours = Math.round(savings.monthlyHours * 12 * 100) / 100
-  savings.yearlyCost = Math.round(savings.monthlyCost * 12 * 100) / 100
-  savings.roi = Math.round((savings.yearlyCost / rpaCost) * 100)
-  savings.paybackPeriod = Math.round((rpaCost / savings.monthlyCost) * 10) / 10
-  showResult.value = true
+const calculateSavings = async () => {
+  try {
+    const payload = {
+      rpaCount: costForm.rpaCount,
+      rpaCostPerUnit: costForm.rpaCostPerUnit,
+      manualTime: costForm.manualTime,
+      frequency: costForm.frequency,
+      hourlyRate: costForm.hourlyRate
+    }
+    
+    const result = await apiPost('/report/roi/calculate', payload)
+    if (result.code === 0 && result.data) {
+      const data = result.data
+      savings.monthlyHours = data.monthlyHours || 0
+      savings.monthlyCost = data.monthlyCost || 0
+      savings.yearlyHours = data.yearlyHours || 0
+      savings.yearlyCost = data.yearlyCost || 0
+      savings.roi = data.roi || 0
+      savings.paybackPeriod = data.paybackPeriod || 0
+      showResult.value = true
+    } else {
+      ElMessage.error(result.message || '计算失败')
+    }
+  } catch (e) {
+    console.error('计算ROI失败:', e)
+    ElMessage.error('计算失败')
+  }
 }
 
 const resetCalculator = () => {
@@ -1211,146 +1276,262 @@ const editSubscription = (sub) => {
   ElMessage.info(`编辑订阅: ${sub.name}`)
 }
 
-const deleteSubscription = (sub) => {
-  const index = subscriptions.value.findIndex(s => s.id === sub.id)
-  if (index !== -1) {
-    subscriptions.value.splice(index, 1)
-    ElMessage.success('订阅删除成功')
+const deleteSubscription = async (sub) => {
+  try {
+    const result = await apiDelete(`/report/subscription/${sub.id}`)
+    if (result.code === 0) {
+      await loadSubscriptions()
+      ElMessage.success('订阅删除成功')
+    } else {
+      ElMessage.error(result.message || '删除失败')
+    }
+  } catch (e) {
+    console.error('删除订阅失败:', e)
+    ElMessage.error('删除订阅失败')
   }
 }
 
-const toggleSubscription = (sub) => {
-  ElMessage.success(`订阅${sub.status ? '启用' : '禁用'}成功`)
+const toggleSubscription = async (sub) => {
+  try {
+    const result = await apiPut(`/report/subscription/${sub.id}/toggle`, {})
+    if (result.code === 0) {
+      await loadSubscriptions()
+      ElMessage.success(result.message || '操作成功')
+    } else {
+      ElMessage.error(result.message || '操作失败')
+    }
+  } catch (e) {
+    console.error('切换订阅状态失败:', e)
+    ElMessage.error('操作失败')
+  }
 }
 
-const saveCustomReport = () => {
+const saveCustomReport = async () => {
   if (!reportForm.name) {
     ElMessage.warning('请输入报表名称')
     return
   }
-  customReports.value.push({
-    id: Date.now(),
-    ...reportForm,
-    dimensions: reportForm.dimensions.join(','),
-    createUser: 'admin',
-    createTime: new Date().toLocaleString(),
-    lastRun: '从未运行'
-  })
-  reportDialogVisible.value = false
-  ElMessage.success('报表创建成功')
+  try {
+    // 从 localStorage 获取当前用户信息
+    const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}')
+    const userId = userInfo.id || 1
+    const userName = userInfo.username || userInfo.name || 'admin'
+    
+    const payload = {
+      name: reportForm.name,
+      type: reportForm.type,
+      dimensions: JSON.stringify(reportForm.dimensions),
+      dateRange: reportForm.dateRange,
+      chartType: reportForm.chartType,
+      description: reportForm.description,
+      createUser: Number(userId), // 确保是数字类型
+      createUserName: userName
+    }
+    
+    console.log('创建报表请求:', payload) // 调试日志
+    
+    const result = await apiPost('/report/custom', payload)
+    console.log('创建报表响应:', result) // 调试日志
+    
+    if (result.code === 0) {
+      reportDialogVisible.value = false
+      await loadCustomReports()
+      ElMessage.success('报表创建成功')
+    } else {
+      ElMessage.error(result.message || '创建失败')
+    }
+  } catch (e) {
+    console.error('创建报表失败:', e)
+    ElMessage.error('创建报表失败: ' + e.message)
+  }
 }
 
-const saveSubscription = () => {
+const saveSubscription = async () => {
   if (!subForm.name || !subForm.recipients) {
     ElMessage.warning('请填写完整信息')
     return
   }
-  subscriptions.value.push({
-    id: Date.now(),
-    ...subForm,
-    status: true,
-    lastRun: '从未发送'
-  })
-  subDialogVisible.value = false
-  ElMessage.success('订阅创建成功')
+  try {
+    // 从 localStorage 获取当前用户信息
+    const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}')
+    const userId = userInfo.id || 1
+    const userName = userInfo.username || userInfo.name || 'admin'
+    
+    const payload = {
+      name: subForm.name,
+      reportType: subForm.report,
+      frequency: subForm.frequency,
+      channel: subForm.channel,
+      recipients: subForm.recipients,
+      createUser: Number(userId), // 确保是数字类型
+      createUserName: userName
+    }
+    
+    console.log('创建订阅请求:', payload) // 调试日志
+    
+    const result = await apiPost('/report/subscription', payload)
+    console.log('创建订阅响应:', result) // 调试日志
+    
+    if (result.code === 0) {
+      subDialogVisible.value = false
+      await loadSubscriptions()
+      ElMessage.success('订阅创建成功')
+    } else {
+      ElMessage.error(result.message || '创建失败')
+    }
+  } catch (e) {
+    console.error('创建订阅失败:', e)
+    ElMessage.error('创建订阅失败: ' + e.message)
+  }
 }
 
 // 加载真实统计数据
 const loadStats = async () => {
   try {
-    // 从执行日志接口获取数据
-    const logResult = await apiGet('/log')
-    if (logResult.code === 0) {
-      const logs = logResult.data || []
-
-      // 计算统计数据
-      const total = logs.length
-      const success = logs.filter(l => l.status === 'success' || l.status === 'completed').length
-      const failed = logs.filter(l => l.status === 'failed').length
-      const running = logs.filter(l => l.status === 'running').length
-      const totalDataCount = logs.reduce((sum, l) => sum + (l.dataCount || 0), 0)
-
-      // 更新概览统计
-      stats.totalTasks = total
-      stats.successRate = total > 0 ? Math.round((success / total) * 100 * 10) / 10 : 0
-      stats.savedHours = Math.round(total * 0.5 * 10) / 10
-
-      // 更新日报数据
-      dailyStats.total = total
-      dailyStats.success = success
-      dailyStats.failed = failed
-      dailyStats.running = running
-
-      // 更新数据
-      dailyLogs.value = logs.slice(0, 50)
+    // 从报表分析接口获取概览数据
+    const overviewResult = await apiGet('/report/overview')
+    if (overviewResult.code === 0 && overviewResult.data) {
+      const data = overviewResult.data
+      stats.totalTasks = data.totalTasks || 0
+      stats.successRate = data.successRate || 0
+      stats.avgDuration = data.avgDuration || 0
+      stats.savedHours = data.savedHours || 0
     }
 
-    // 从机器人接口获取数据
-    const robotResult = await apiGet('/robot')
-    if (robotResult.code === 0) {
-      const robots = robotResult.data || []
-      const busy = robots.filter(r => r.status === 'busy').length
-      const idle = robots.filter(r => r.status === 'idle').length
-      const offline = robots.filter(r => r.status === 'offline').length
+    // 加载日报数据
+    await loadDailyReport()
 
-      robotStats.busyRate = robots.length > 0 ? Math.round((busy / robots.length) * 100) : 0
-      robotStats.idleRate = robots.length > 0 ? Math.round((idle / robots.length) * 100) : 0
-      robotStats.offlineRate = robots.length > 0 ? Math.round((offline / robots.length) * 100) : 0
+    // 加载机器人利用率
+    await loadRobotUtilization()
 
-      robotList.value = robots.slice(0, 10).map(r => ({
-        name: r.name,
-        status: r.status,
-        statusText: r.status === 'idle' ? '空闲' : r.status === 'busy' ? '忙碌' : '离线',
-        execCount: r.totalExecutions || 0,
-        successRate: r.totalExecutions > 0 ? Math.round((r.successExecutions / r.totalExecutions) * 100) : 0,
-        runtime: formatRuntime(r.totalRuntime || 0),
-        dataCount: 0,
-        lastRun: r.lastExecutionTime || '-'
-      }))
-    }
+    // 加载流程效率
+    await loadProcessEfficiency()
 
-    // 从流程接口获取数据
-    const processResult = await apiGet('/process')
-    if (processResult.code === 0) {
-      const processes = processResult.data || []
-      processList.value = processes.slice(0, 10).map(p => ({
-        name: p.name,
-        code: p.code,
-        execCount: p.taskCount || p.todayExecutions || 0,
-        avgDuration: '5m00s',
-        maxDuration: '10m00s',
-        minDuration: '2m00s',
-        totalDuration: '50h00m',
-        successRate: 95
-      }))
+    // 加载自定义报表列表
+    await loadCustomReports()
 
-      // 更新月度统计
-      monthlyStats.totalExecutions = processes.reduce((sum, p) => sum + (p.taskCount || 0), 0)
-      monthlyStats.totalData = processes.reduce((sum, p) => sum + (p.totalDataCount || 0), 0)
-    }
-
-    // 从队列接口获取数据
-    const queueResult = await apiGet('/queue')
-    if (queueResult.code === 0) {
-      const queues = queueResult.data || []
-      const totalPending = queues.reduce((sum, q) => sum + (q.currentPendingCount || 0), 0)
-      const totalRunning = queues.reduce((sum, q) => sum + (q.currentRunningCount || 0), 0)
-      stats.pendingTasks = totalPending
-      stats.runningTasks = totalRunning
-    }
-
-    // 从触发器接口获取数据
-    const triggerResult = await apiGet('/trigger')
-    if (triggerResult.code === 0) {
-      const triggers = triggerResult.data || []
-      const totalTriggers = triggers.reduce((sum, t) => sum + (t.totalTriggers || 0), 0)
-      const successTriggers = triggers.reduce((sum, t) => sum + (t.successTriggers || 0), 0)
-      stats.totalTriggers = totalTriggers
-      stats.triggerSuccessRate = totalTriggers > 0 ? Math.round((successTriggers / totalTriggers) * 100) : 0
-    }
+    // 加载订阅列表
+    await loadSubscriptions()
 
   } catch (e) {
     console.error('加载报表数据失败:', e)
+  }
+}
+
+// 加载日报数据
+const loadDailyReport = async () => {
+  try {
+    console.log('加载日报数据，日期:', dailyDate.value)
+    const result = await apiGet('/report/daily', { date: dailyDate.value })
+    console.log('日报API响应:', result)
+    if (result.code === 0 && result.data) {
+      const data = result.data
+      dailyStats.total = data.total || 0
+      dailyStats.success = data.success || 0
+      dailyStats.failed = data.failed || 0
+      dailyStats.running = data.running || 0
+      dailyLogs.value = data.logs || []
+      console.log('日报数据已更新:', { dailyStats, logsCount: dailyLogs.value.length })
+    } else {
+      console.warn('日报API返回异常:', result)
+    }
+  } catch (e) {
+    console.error('加载日报数据失败:', e)
+  }
+}
+
+// 加载机器人利用率
+const loadRobotUtilization = async () => {
+  try {
+    const result = await apiGet('/report/robot-utilization')
+    if (result.code === 0 && result.data) {
+      const data = result.data
+      robotStats.busyRate = data.busyRate || 0
+      robotStats.idleRate = data.idleRate || 0
+      robotStats.offlineRate = data.offlineRate || 0
+      robotStats.totalRuntime = data.totalRuntime || '0h'
+      robotList.value = data.robots || []
+    }
+  } catch (e) {
+    console.error('加载机器人数据失败:', e)
+  }
+}
+
+// 加载流程效率
+const loadProcessEfficiency = async () => {
+  try {
+    const result = await apiGet('/report/process-efficiency', { topN: processTopN.value })
+    if (result.code === 0 && result.data) {
+      processList.value = result.data.processes || []
+    }
+  } catch (e) {
+    console.error('加载流程数据失败:', e)
+  }
+}
+
+// 加载自定义报表列表
+const loadCustomReports = async () => {
+  try {
+    loading.value = true
+    const result = await apiGet('/report/custom')
+    if (result.code === 0) {
+      customReports.value = result.data || []
+    }
+  } catch (e) {
+    console.error('加载自定义报表失败:', e)
+  } finally {
+    loading.value = false
+  }
+}
+
+// 加载订阅列表
+const loadSubscriptions = async () => {
+  try {
+    subLoading.value = true
+    const result = await apiGet('/report/subscription')
+    if (result.code === 0) {
+      subscriptions.value = result.data || []
+    }
+  } catch (e) {
+    console.error('加载订阅列表失败:', e)
+  } finally {
+    subLoading.value = false
+  }
+}
+
+// 加载趋势预测
+const loadForecast = async () => {
+  try {
+    const result = await apiGet('/report/forecast', { days: parseInt(forecastPeriod.value) })
+    if (result.code === 0 && result.data) {
+      const data = result.data
+      forecastStats.growthRate = data.growthRate || 0
+      forecastStats.suggestRobotCount = data.suggestRobotCount || 0
+      forecastStats.capacityRate = data.capacityRate || 0
+      forecastStats.suggestion = data.suggestion || '暂无预测数据'
+    }
+  } catch (e) {
+    console.error('加载趋势预测失败:', e)
+  }
+}
+
+// 加载月报数据
+const loadMonthlyReport = async () => {
+  try {
+    const result = await apiGet('/report/monthly', { yearMonth: monthlyDate.value })
+    if (result.code === 0 && result.data) {
+      const data = result.data
+      monthlyStats.totalExecutions = data.totalExecutions || 0
+      monthlyStats.successCount = data.successCount || 0
+      monthlyStats.failedCount = data.failedCount || 0
+      monthlyStats.successRate = data.successRate || 0
+      monthlyStats.totalData = data.totalData || 0
+      monthlyStats.dailyAvg = data.dailyAvg || 0
+      monthlyStats.peakData = data.peakData || 0
+      monthlyStats.dataSuccessRate = data.dataSuccessRate || 0
+    }
+  } catch (e) {
+    console.error('加载月报数据失败:', e)
   }
 }
 

@@ -7,15 +7,22 @@ function getAuthHeaders() {
   return token ? { 'Authorization': `Bearer ${token}` } : {}
 }
 
-async function apiGet(path) {
+async function apiGet(path, params = null) {
   try {
-    const res = await fetch(`${API_BASE}${path}`, {
+    // 构建URL，如果有参数则附加查询字符串
+    let url = `${API_BASE}${path}`
+    if (params && Object.keys(params).length > 0) {
+      const queryString = new URLSearchParams(params).toString()
+      url += `?${queryString}`
+    }
+    
+    const res = await fetch(url, {
       headers: { 'Content-Type': 'application/json', ...getAuthHeaders() }
     })
     
     // 如果返回 403，说明 token 无效或过期
     if (res.status === 403) {
-      console.warn(`API GET ${path} 403 Forbidden - Token 可能无效或已过期`)
+      console.warn(`API GET ${url} 403 Forbidden - Token 可能无效或已过期`)
       // 清除无效的 token 和用户信息
       localStorage.removeItem('token')
       localStorage.removeItem('userInfo')

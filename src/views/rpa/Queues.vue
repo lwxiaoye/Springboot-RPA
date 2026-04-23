@@ -61,9 +61,10 @@
       </el-table-column>
       <el-table-column prop="priorityLevel" label="优先级" width="80" align="center">
         <template #default="{ row }">
-          <el-tag :type="getPriorityType(row.priorityLevel)" size="small">
+          <el-tag v-if="getPriorityType(row.priorityLevel)" :type="getPriorityType(row.priorityLevel)" size="small">
             {{ getPriorityText(row.priorityLevel) }}
           </el-tag>
+          <span v-else>{{ getPriorityText(row.priorityLevel) }}</span>
         </template>
       </el-table-column>
       <el-table-column prop="status" label="状态" width="90" align="center">
@@ -182,7 +183,8 @@
             </div>
             <div class="detail-item">
               <label>优先级：</label>
-              <el-tag :type="getPriorityType(currentQueue.priorityLevel)" size="small">{{ getPriorityText(currentQueue.priorityLevel) }}</el-tag>
+              <el-tag v-if="getPriorityType(currentQueue.priorityLevel)" :type="getPriorityType(currentQueue.priorityLevel)" size="small">{{ getPriorityText(currentQueue.priorityLevel) }}</el-tag>
+              <span v-else>{{ getPriorityText(currentQueue.priorityLevel) }}</span>
             </div>
             <div class="detail-item">
               <label>最大并发：</label>
@@ -393,7 +395,9 @@ const getPriorityText = (level) => {
 
 const getPriorityType = (level) => {
   const map = { 1: 'info', 2: '', 3: 'warning', 4: 'danger' }
-  return map[level] || ''
+  const type = map[level]
+  // 如果返回空字符串，不传递type属性给ElTag
+  return type === '' ? undefined : type
 }
 
 const getStatusText = (s) => {

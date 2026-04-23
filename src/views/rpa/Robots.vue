@@ -814,6 +814,67 @@ const goToAiGeneratorForEdit = () => {
   router.push(`/rpa/ai-code-generator?category=${category}&editMode=true`)
 }
 
+// AI生成代码（编辑模式）
+const generateCodeWithAIForEdit = async () => {
+  if (!editForm.aiPrompt?.trim()) {
+    ElMessage.warning('请输入需求描述')
+    return
+  }
+
+  generatingCode.value = true
+
+  try {
+    const response = await apiPost('/ai/generate-robot-code', {
+      prompt: editForm.aiPrompt,
+      category: editForm.robotCategory
+    })
+
+    if (response.code === 0 && response.data?.code) {
+      editForm.robotCode = response.data.code
+      ElMessage.success('代码生成成功')
+    } else {
+      // API返回错误，使用备用代码
+      const categoryNames = {
+        'DATA_COLLECT': '数据采集',
+        'DATA_PARSE': '数据解析',
+        'DATA_PROCESS': '数据加工',
+        'GENERAL': '通用执行'
+      }
+
+      const mockCode = `// AI生成的RPA机器人\n// 分类: ${categoryNames[editForm.robotCategory] || '通用'}\n// 描述: ${editForm.aiPrompt}\n\n@collect http://example.com/data\n@table_selector table.data-list tbody tr\n@columns 列1,列2,列3\n@process clean,transform\n@store report_data\n@log ${categoryNames[editForm.robotCategory] || '任务'}执行完成`
+
+      editForm.robotCode = mockCode
+      ElMessage.warning(response.message || '使用本地模板生成，请确保已在集成中心配置智谱AI')
+    }
+  } catch (error) {
+    // 网络错误等
+    const categoryNames = {
+      'DATA_COLLECT': '数据采集',
+      'DATA_PARSE': '数据解析',
+      'DATA_PROCESS': '数据加工',
+      'GENERAL': '通用执行'
+    }
+
+    const mockCode = `// AI生成的RPA机器人\n// 分类: ${categoryNames[editForm.robotCategory] || '通用'}\n// 描述: ${editForm.aiPrompt}\n\n@collect http://example.com/data\n@table_selector table.data-list tbody tr\n@columns 列1,列2,列3\n@process clean,transform\n@store report_data\n@log ${categoryNames[editForm.robotCategory] || '任务'}执行完成`
+
+    editForm.robotCode = mockCode
+    ElMessage.warning('AI服务不可用，使用本地模板生成')
+  } finally {
+    generatingCode.value = false
+  }
+}
+
+// 复制代码（编辑模式）
+const copyCodeForEdit = () => {
+  if (!editForm.robotCode) {
+    ElMessage.warning('暂无代码可复制')
+    return
+  }
+  navigator.clipboard.writeText(editForm.robotCode)
+    .then(() => ElMessage.success('已复制到剪贴板'))
+    .catch(() => ElMessage.error('复制失败'))
+}
+
 // 显示AI代码生成弹窗
 const showAiCodeDialog = () => {
   const category = createForm.robotCategory || 'DATA_COLLECT'
