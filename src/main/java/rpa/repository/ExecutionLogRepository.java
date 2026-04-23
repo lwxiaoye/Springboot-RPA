@@ -97,6 +97,12 @@ public interface ExecutionLogRepository extends JpaRepository<ExecutionLog, Long
     List<ExecutionLog> findByTimeRange(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
     
     /**
+     * 根据创建时间范围查询执行日志（用于MonitorController）
+     */
+    @Query("SELECT e FROM ExecutionLog e WHERE e.createTime >= :startTime AND e.createTime <= :endTime ORDER BY e.createTime DESC")
+    List<ExecutionLog> findByCreateTimeBetween(@Param("startTime") LocalDateTime startTime, @Param("endTime") LocalDateTime endTime);
+    
+    /**
      * 按小时统计执行次数（用于执行趋势）
      */
     @Query("SELECT HOUR(e.createTime) as hour, COUNT(e) FROM ExecutionLog e WHERE DATE(e.createTime) = DATE(:date) GROUP BY HOUR(e.createTime)")
@@ -113,4 +119,16 @@ public interface ExecutionLogRepository extends JpaRepository<ExecutionLog, Long
      */
     @Query("SELECT e.status, COUNT(e) FROM ExecutionLog e WHERE e.createTime >= :startDate GROUP BY e.status")
     List<Object[]> countStatusGroupByStatus(@Param("startDate") LocalDateTime startDate);
+    
+    /**
+     * 根据创建时间范围统计执行日志数量（用于MonitorController）
+     */
+    @Query("SELECT COUNT(e) FROM ExecutionLog e WHERE e.createTime >= :startTime AND e.createTime <= :endTime")
+    long countByCreateTimeBetween(@Param("startTime") LocalDateTime startTime, @Param("endTime") LocalDateTime endTime);
+    
+    /**
+     * 根据创建时间范围和状态统计执行日志数量（用于MonitorController）
+     */
+    @Query("SELECT COUNT(e) FROM ExecutionLog e WHERE e.createTime >= :startTime AND e.createTime <= :endTime AND e.status = :status")
+    long countByCreateTimeBetweenAndStatus(@Param("startTime") LocalDateTime startTime, @Param("endTime") LocalDateTime endTime, @Param("status") String status);
 }
