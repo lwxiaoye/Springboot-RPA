@@ -23,10 +23,6 @@
             <el-icon><Odometer /></el-icon>
             <span>首页</span>
           </el-menu-item>
-          <el-menu-item index="monitor">
-            <el-icon><DataLine /></el-icon>
-            <span>实时监控</span>
-          </el-menu-item>
           <el-menu-item index="rpa">
             <el-icon><VideoCamera /></el-icon>
             <span>RPA运营管理</span>
@@ -48,9 +44,10 @@
 
         <el-dropdown trigger="click">
           <div class="user-avatar">
-            <el-avatar :size="36" class="avatar-circle">
+            <el-avatar :size="36" class="avatar-circle" v-if="!currentUser.avatar">
               {{ userInitial }}
             </el-avatar>
+            <el-avatar :size="36" class="avatar-circle" v-else :src="getAvatarUrl(currentUser.avatar)" @error="handleAvatarError" />
             <div class="user-meta">
               <div class="user-name">{{ userName }}</div>
               <div class="user-role">{{ userRole }}</div>
@@ -294,7 +291,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
@@ -334,8 +331,8 @@ const route = useRoute()
 
 const sidebarCollapsed = ref(false)
 const showDataSubmenu = ref(true)
-const activeTopMenu = ref('dashboard')
-const activeMenu = ref('monitor')
+const activeTopMenu = ref('rpa')
+const activeMenu = ref('tasks')
 const unreadCount = ref(0)
 
 const currentUser = ref({
@@ -355,13 +352,8 @@ const userInitial = computed(() => {
 
 // 顶部菜单选择
 const handleTopMenuSelect = (index) => {
-  activeTopMenu.value = index
   if (index === 'dashboard') {
-    router.push('/')
-  } else if (index === 'monitor') {
-    router.push('/rpa/monitor')
-  } else if (index === 'rpa') {
-    router.push('/rpa/tasks')
+    router.push('/dashboard')
   } else if (index === 'system') {
     router.push('/system/profile')
   }
@@ -371,8 +363,7 @@ const handleTopMenuSelect = (index) => {
 const switchMenu = (menu) => {
   activeMenu.value = menu
 const routeMap = {
-  dashboard: '/',
-  monitor: '/rpa/monitor',
+  dashboard: '/dashboard',
   tasks: '/rpa/tasks',
   robots: '/rpa/robots',
   processes: '/rpa/processes',
@@ -400,9 +391,9 @@ const routeMap = {
   router.push(routeMap[menu])
 }
 
-// 跳转到首页
+// 跳转到工作台
 const goToDashboard = () => {
-  router.push('/')
+  router.push('/dashboard')
 }
 
 // 跳转到通知
@@ -444,7 +435,23 @@ const loadUnreadCount = async () => {
   }
 }
 
-onMounted(() => {
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'
+
+// 获取头像完整 URL
+const getAvatarUrl = (path) => {
+  if (!path) return null
+  if (path.startsWith('http://') || path.startsWith('https://')) return path
+  return `${API_BASE}${path}`
+}
+
+// 处理头像加载失败
+const handleAvatarError = (e) => {
+  console.error('头像加载失败，回退到首字母显示')
+  currentUser.value.avatar = null
+}
+
+// 加载用户信息
+const loadUserInfo = () => {
   const userInfo = localStorage.getItem('userInfo')
   if (userInfo) {
     try {
@@ -452,24 +459,26 @@ onMounted(() => {
       currentUser.value = { ...currentUser.value, ...user }
     } catch (e) {}
   }
+}
+
+onMounted(() => {
+  loadUserInfo()
+
+  // 监听 storage 事件，当其他页面修改 userInfo 时同步更新
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'userInfo') {
+      loadUserInfo()
+    }
+  })
+
+  // 监听自定义的头像更新事件
+  window.addEventListener('avatarUpdated', () => {
+    loadUserInfo()
+  })
 
   // 根据当前路由设置激活菜单
   const path = route.path
-
-  // 设置顶部菜单
-  if (path === '/home' || path === '/') {
-    activeTopMenu.value = 'dashboard'
-  } else if (path.includes('/rpa/monitor')) {
-    activeTopMenu.value = 'monitor'
-  } else if (path.includes('/rpa')) {
-    activeTopMenu.value = 'rpa'
-  } else if (path.includes('/system')) {
-    activeTopMenu.value = 'system'
-  }
-
-  // 设置侧边栏菜单
-  if (path === '/home' || path === '/') activeMenu.value = 'dashboard'
-  else if (path.includes('/rpa/monitor')) activeMenu.value = 'monitor'
+  if (path === '/dashboard' || path === '/') activeMenu.value = 'dashboard'
   else if (path.includes('/rpa/tasks')) activeMenu.value = 'tasks'
   else if (path.includes('/rpa/robots')) activeMenu.value = 'robots'
   else if (path.includes('/rpa/processes')) activeMenu.value = 'processes'
@@ -492,6 +501,12 @@ onMounted(() => {
 
   // 加载未读通知数
   loadUnreadCount()
+})
+
+// 组件卸载时移除事件监听
+onUnmounted(() => {
+  window.removeEventListener('storage', loadUserInfo)
+  window.removeEventListener('avatarUpdated', loadUserInfo)
 })
 </script>
 

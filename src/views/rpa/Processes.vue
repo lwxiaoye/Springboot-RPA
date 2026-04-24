@@ -36,10 +36,11 @@
       </el-table-column>
       <el-table-column prop="creatorName" label="创建人" width="100" align="center" />
       <el-table-column prop="createTime" label="创建时间" min-width="160" />
-      <el-table-column label="操作" width="260" fixed="right" align="center">
+      <el-table-column label="操作" width="280" fixed="right" align="center">
         <template #default="{ row }">
           <el-button link type="primary" @click="viewDetail(row)">详情</el-button>
           <el-button link type="success" @click="handleExecute(row)">执行</el-button>
+          <el-button link type="primary" @click="editProcess(row)">编辑</el-button>
           <el-button link type="primary" @click="openDesigner(row)">设计</el-button>
           <el-popconfirm title="确认删除该流程吗？" @confirm="deleteProcess(row)">
             <template #reference>
@@ -62,137 +63,45 @@
       />
     </div>
 
-    <!-- 新建/编辑流程弹窗 - 分步向导 -->
-    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="800px" class="process-wizard-dialog" :close-on-click-modal="false">
-      <!-- 步骤指示器 -->
-      <div class="wizard-steps">
-        <div class="wizard-step" :class="{ active: wizardStep === 1, completed: wizardStep > 1 }">
-          <div class="step-circle">{{ wizardStep > 1 ? '✓' : '1' }}</div>
-          <span class="step-text">基本信息</span>
-        </div>
-        <div class="step-line" :class="{ active: wizardStep > 1 }"></div>
-        <div class="wizard-step" :class="{ active: wizardStep === 2 }">
-          <div class="step-circle">2</div>
-          <span class="step-text">设计步骤</span>
-        </div>
-      </div>
-
-      <!-- 步骤1：基本信息 -->
-      <div v-show="wizardStep === 1" class="wizard-content">
-        <el-form :model="processForm" :rules="formRules" ref="formRef" label-width="100px">
-          <el-form-item label="流程名称" prop="name">
-            <el-input v-model="processForm.name" placeholder="请输入流程名称" />
-          </el-form-item>
-          <el-form-item label="流程编码" prop="code">
-            <el-input v-model="processForm.code" placeholder="请输入流程编码，如：ORDER_PROCESS" />
-          </el-form-item>
-          <el-form-item label="版本号" prop="version">
-            <el-input v-model="processForm.version" placeholder="请输入版本号，如：1.0.0" />
-          </el-form-item>
-          <el-form-item label="流程描述">
-            <el-input v-model="processForm.description" type="textarea" :rows="3" placeholder="请输入流程描述" />
-          </el-form-item>
-          <el-form-item label="状态" prop="status">
-            <el-radio-group v-model="processForm.status">
-              <el-radio label="draft">草稿</el-radio>
-              <el-radio label="active">已发布</el-radio>
-            </el-radio-group>
-          </el-form-item>
-          <el-form-item label="执行凭据">
-            <el-select v-model="processForm.credentialId" placeholder="选择执行时使用的凭据（可选）" clearable filterable style="width: 100%">
-              <el-option v-for="cred in credentials" :key="cred.id" :label="cred.name" :value="cred.id">
-                <div class="credential-option">
-                  <span>{{ cred.name }}</span>
-                  <el-tag size="small" type="info">{{ getCredentialTypeText(cred.type) }}</el-tag>
-                </div>
-              </el-option>
-            </el-select>
-            <div class="form-tip">选择执行此流程时需要使用的凭据（如数据库密码、API密钥等）</div>
-          </el-form-item>
-        </el-form>
-      </div>
-
-      <!-- 步骤2：设计流程步骤 -->
-      <div v-show="wizardStep === 2" class="wizard-content designer-content">
-        <div class="designer-header-inline">
-          <div class="header-info">
-            <span class="process-name">{{ processForm.name }}</span>
-            <span class="process-tip">为流程添加执行步骤并绑定机器人</span>
-          </div>
-          <el-button @click="addWizardStep" type="success" size="small">
-            <el-icon><Plus /></el-icon> 添加步骤
-          </el-button>
-        </div>
-
-        <div class="steps-list-container">
-          <draggable v-model="wizardSteps" item-key="id" class="wizard-steps-list">
-            <template #item="{ element, index }">
-              <div class="wizard-step-card">
-                <div class="step-drag">
-                  <el-icon><Rank /></el-icon>
-                </div>
-                <div class="step-badge">{{ index + 1 }}</div>
-                <div class="step-form">
-                  <el-input v-model="element.name" placeholder="步骤名称" size="default" class="step-name-input">
-                    <template #prefix><el-icon><Edit /></el-icon></template>
-                  </el-input>
-                  <el-select v-model="element.type" placeholder="选择步骤类型" size="default" clearable class="step-type-select" @change="onStepTypeChange(element)">
-                    <template #prefix><el-icon><Operation /></el-icon></template>
-                    <el-option value="collect" label="数据采集" />
-                    <el-option value="parse" label="数据解析" />
-                    <el-option value="process" label="数据加工" />
-                    <el-option value="query" label="数据查询" />
-                    <el-option value="transform" label="数据转换" />
-                    <el-option value="output" label="数据输出" />
-                    <el-option value="validate" label="数据校验" />
-                  </el-select>
-                  <div class="robot-select-row">
-                    <el-select v-model="element.category" placeholder="选择机器人分类" size="default" clearable class="step-category-select" @change="onCategoryChange(element)">
-                      <template #prefix><el-icon><Folder /></el-icon></template>
-                      <el-option v-for="cat in robotCategories" :key="cat.code" :value="cat.code" :label="cat.name" />
-                    </el-select>
-                    <el-select v-model="element.robotId" placeholder="选择执行机器人" size="default" filterable clearable class="step-robot-select" :disabled="!element.category">
-                      <template #prefix><el-icon><Monitor /></el-icon></template>
-                      <el-option v-for="robot in getFilteredRobots(element.category)" :key="robot.id" :value="robot.id" :label="robot.name">
-                        <div class="robot-option">
-                          <span>{{ robot.name }}</span>
-                          <el-tag size="small" :type="robot.status === 'idle' ? 'success' : robot.status === 'busy' ? 'warning' : 'info'">
-                            {{ robot.status === 'idle' ? '空闲' : robot.status === 'busy' ? '忙碌' : '离线' }}
-                          </el-tag>
-                        </div>
-                      </el-option>
-                    </el-select>
-                  </div>
-                </div>
-                <el-button link type="danger" @click="removeWizardStep(index)">
-                  <el-icon><Delete /></el-icon>
-                </el-button>
+    <!-- 新建/编辑流程弹窗 -->
+    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="600px" class="process-dialog" :close-on-click-modal="false">
+      <el-form :model="processForm" :rules="formRules" ref="formRef" label-width="100px">
+        <el-form-item label="流程名称" prop="name">
+          <el-input v-model="processForm.name" placeholder="请输入流程名称" />
+        </el-form-item>
+        <el-form-item label="流程编码" prop="code">
+          <el-input v-model="processForm.code" placeholder="请输入流程编码，如：ORDER_PROCESS" />
+        </el-form-item>
+        <el-form-item label="版本号" prop="version">
+          <el-input v-model="processForm.version" placeholder="请输入版本号，如：1.0.0" />
+        </el-form-item>
+        <el-form-item label="流程描述">
+          <el-input v-model="processForm.description" type="textarea" :rows="3" placeholder="请输入流程描述" />
+        </el-form-item>
+        <el-form-item label="状态" prop="status">
+          <el-radio-group v-model="processForm.status">
+            <el-radio label="draft">草稿</el-radio>
+            <el-radio label="active">已发布</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="执行凭据">
+          <el-select v-model="processForm.credentialId" placeholder="选择执行时使用的凭据（可选）" clearable filterable style="width: 100%">
+            <el-option v-for="cred in credentials" :key="cred.id" :label="cred.name" :value="cred.id">
+              <div class="credential-option">
+                <span>{{ cred.name }}</span>
+                <el-tag size="small" type="info">{{ getCredentialTypeText(cred.type) }}</el-tag>
               </div>
-            </template>
-          </draggable>
-
-          <div v-if="wizardSteps.length === 0" class="empty-wizard-steps">
-            <el-empty description="暂无步骤" :image-size="60">
-              <el-button type="primary" @click="addWizardStep">添加第一个步骤</el-button>
-            </el-empty>
-          </div>
-        </div>
-      </div>
+            </el-option>
+          </el-select>
+          <div class="form-tip">选择执行此流程时需要使用的凭据（如数据库密码、API密钥等）</div>
+        </el-form-item>
+      </el-form>
 
       <template #footer>
-        <div class="wizard-footer">
-          <div class="footer-left">
-            <el-button v-if="wizardStep === 2" @click="skipDesign">跳过设计</el-button>
-            <el-button v-if="isEdit" type="danger" @click="handleDeleteProcess">删除流程</el-button>
-          </div>
-          <div class="footer-right">
-            <el-button v-if="wizardStep === 2" @click="wizardStep = 1">上一步</el-button>
-            <el-button @click="dialogVisible = false">取消</el-button>
-            <el-button v-if="wizardStep === 1" type="primary" @click="nextStep" :disabled="!canNextStep">下一步</el-button>
-            <el-button v-if="wizardStep === 2" type="primary" @click="submitProcessWithDesign" :loading="submitLoading">
-              {{ wizardSteps.length > 0 ? '完成并保存' : '完成' }}
-            </el-button>
-          </div>
+        <div class="dialog-footer">
+          <el-button @click="dialogVisible = false">取消</el-button>
+          <el-button v-if="isEdit" type="danger" @click="handleDeleteProcess">删除流程</el-button>
+          <el-button type="primary" @click="submitProcess" :loading="submitLoading">确定</el-button>
         </div>
       </template>
     </el-dialog>
@@ -327,8 +236,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useRouter } from 'vue-router'
-import { Search, Plus, Check, Delete, Edit, Rank, Monitor, List, Document, Warning, Folder, Operation, ArrowLeft } from '@element-plus/icons-vue'
-import draggable from 'vuedraggable'
+import { Search, Plus, Check, Delete, ArrowLeft } from '@element-plus/icons-vue'
 import CanvasDesigner from './CanvasDesigner.vue'
 
 import { apiGet, apiPost, apiPut, apiDelete } from '../../utils/api.js'
@@ -353,17 +261,8 @@ const currentEditId = ref(null)
 const currentDesignId = ref(null)
 const formRef = ref(null)
 const savingDesign = ref(false)
-const steps = ref([])
 const canvasData = ref({ nodes: [], edges: [] })
 const canvasDesignerRef = ref(null)
-const detailSteps = ref([])
-const wizardStep = ref(1)
-const wizardSteps = ref([])
-const tempProcessId = ref(null)
-
-const canNextStep = computed(() => {
-  return processForm.name && processForm.code && processForm.version
-})
 
 const pagination = reactive({ page: 1, size: 10, total: 0 })
 
@@ -422,110 +321,8 @@ const loadProcesses = async () => {
 const showCreateModal = () => {
   isEdit.value = false
   currentEditId.value = null
-  wizardStep.value = 1
-  wizardSteps.value = []
-  tempProcessId.value = null
   Object.assign(processForm, { name: '', code: '', version: '1.0.0', description: '', status: 'draft' })
-  // 预加载机器人和分类
-  loadRobots()
-  loadRobotCategories()
   dialogVisible.value = true
-}
-
-// 下一步
-const nextStep = async () => {
-  if (!formRef.value) return
-  await formRef.value.validate(async (valid) => {
-    if (valid) {
-      submitLoading.value = true
-      try {
-        if (isEdit.value && tempProcessId.value) {
-          // 编辑模式：更新流程基本信息
-          await apiPut(`/process/${tempProcessId.value}`, {
-            name: processForm.name,
-            code: processForm.code,
-            version: processForm.version,
-            description: processForm.description,
-            status: processForm.status
-          })
-        } else {
-          // 新建模式：创建流程
-          const result = await apiPost('/process', {
-            name: processForm.name,
-            code: processForm.code,
-            version: processForm.version,
-            description: processForm.description,
-            status: processForm.status
-          })
-          if (result.code === 0) {
-            tempProcessId.value = result.data.id
-            isEdit.value = true
-            currentEditId.value = result.data.id
-          } else {
-            ElMessage.error(result.message || '创建失败')
-            submitLoading.value = false
-            return
-          }
-        }
-        // 加载机器人列表和分类并跳转到步骤2
-        await loadRobots()
-        await loadRobotCategories()
-        wizardStep.value = 2
-      } catch {
-        ElMessage.error('请求失败')
-      } finally {
-        submitLoading.value = false
-      }
-    }
-  })
-}
-
-// 跳过设计
-const skipDesign = () => {
-  dialogVisible.value = false
-  wizardStep.value = 1
-  wizardSteps.value = []
-  ElMessage.success('流程创建成功')
-  loadProcesses()
-}
-
-// 添加向导步骤
-const addWizardStep = () => {
-  wizardSteps.value.push({ 
-    id: Date.now(), 
-    name: '新步骤', 
-    type: '',
-    description: '',
-    category: '',
-    robotId: null,
-    config: {}
-  })
-}
-
-// 删除向导步骤
-const removeWizardStep = (index) => {
-  wizardSteps.value.splice(index, 1)
-}
-
-// 提交带设计的流程
-const submitProcessWithDesign = async () => {
-  submitLoading.value = true
-  try {
-    // 保存设计
-    if (wizardSteps.value.length > 0 && tempProcessId.value) {
-      const stepsData = JSON.stringify(wizardSteps.value)
-      await apiPost(`/process/${tempProcessId.value}/design`, { steps: stepsData })
-    }
-    dialogVisible.value = false
-    wizardStep.value = 1
-    wizardSteps.value = []
-    ElMessage.success(isEdit.value ? '流程更新成功' : '流程创建成功')
-    await loadProcesses()
-  } catch {
-    ElMessage.error('保存失败')
-  } finally {
-    submitLoading.value = false
-  }
 }
 
 const editProcess = async (process) => {
@@ -538,25 +335,6 @@ const editProcess = async (process) => {
     description: process.description,
     status: process.status
   })
-  
-  // 加载该流程的已有设计步骤
-  wizardStep.value = 1
-  wizardSteps.value = []
-  tempProcessId.value = process.id
-  
-  try {
-    const result = await apiGet(`/process/${process.id}/design`)
-    if (result.code === 0 && result.data) {
-      try {
-        wizardSteps.value = JSON.parse(result.data)
-      } catch {
-        wizardSteps.value = []
-      }
-    }
-  } catch {
-    wizardSteps.value = []
-  }
-  
   dialogVisible.value = true
 }
 
@@ -816,9 +594,9 @@ const stepTypeMap = {
   parse: { label: '数据解析', tag: 'success' },
   process: { label: '数据加工', tag: 'warning' },
   query: { label: '数据查询', tag: 'info' },
-  transform: { label: '数据转换', tag: 'warning' },
+  transform: { label: '数据转换', tag: '' },
   output: { label: '数据输出', tag: 'danger' },
-  validate: { label: '数据校验', tag: 'success' },
+  validate: { label: '数据校验', tag: '' },
   default: { label: '通用步骤', tag: 'info' }
 }
 
@@ -941,54 +719,25 @@ onMounted(() => { loadProcesses(); loadCredentials() })
   color: var(--text-tertiary, #9ca3af);
 }
 
-/* 表格 - 使用全局统一样式 */
+/* 表格 */
 :deep(.el-table) {
   border-radius: 12px;
   overflow: hidden;
-  border: 1px solid var(--border-color, #e4e7ed);
-  width: 100%;
+  border: 1px solid var(--border-color, #e5e7eb);
 }
 
-:deep(.el-table th.el-table__cell) {
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
+:deep(.el-table th) {
+  background: var(--bg-tertiary, #f9fafb) !important;
   font-weight: 600;
-  color: #374151;
-  font-size: 13px;
-  padding: 12px 16px !important;
-  border-bottom: 2px solid #e4e7ed !important;
+  color: var(--text-primary, #1f2937);
 }
 
-:deep(.el-table td.el-table__cell) {
-  padding: 12px 16px !important;
-  border-bottom: 1px solid #f1f5f9 !important;
-  vertical-align: middle;
+:deep(.el-table td) {
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
 }
 
-/* 表格行 Hover 动效 - 不使用position:relative避免影响布局 */
-:deep(.el-table__body tr) {
-  transition: all 0.2s ease;
-}
-
-/* 左侧边框指示器 - 使用td的::before */
-:deep(.el-table__body tr:hover > td:first-child) {
-  box-shadow: inset 4px 0 0 #409eff;
-}
-
-:deep(.el-table__body tr:hover > td) {
-  background: linear-gradient(135deg, rgba(64, 158, 255, 0.03) 0%, rgba(64, 158, 255, 0.08) 100%) !important;
-}
-
-/* 操作按钮容器 */
-:deep(.el-table .cell) {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  flex-wrap: nowrap;
-}
-
-:deep(.el-table .cell .el-button) {
-  padding: 4px 6px;
-  font-size: 12px;
+:deep(.el-table__row:hover > td) {
+  background: var(--bg-primary, #f5f7fa) !important;
 }
 
 /* 分页 */
@@ -2042,251 +1791,48 @@ onMounted(() => { loadProcesses(); loadCredentials() })
   transform: translateY(-1px);
 }
 
-/* ================================================
-   分步向导样式 - 沉稳科技风
-   ================================================ */
-.process-wizard-dialog :deep(.el-dialog__header) {
-  padding: 0;
-  border-bottom: none;
+/* 流程表单弹窗样式 */
+.process-dialog :deep(.el-dialog__header) {
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e4e7ed;
 }
 
-.process-wizard-dialog :deep(.el-dialog__body) {
-  padding: 0;
+.process-dialog :deep(.el-dialog__body) {
+  padding: 24px 28px;
+  background: #f5f7fa;
 }
 
-.wizard-steps {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 28px 40px 24px;
-  background: linear-gradient(135deg, #1a1f36 0%, #2d3748 100%);
-}
-
-.wizard-step {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.step-circle {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.15);
-  color: rgba(255, 255, 255, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  font-size: 14px;
-  transition: all 0.35s ease;
-  border: 2px solid rgba(255, 255, 255, 0.2);
-}
-
-.wizard-step.active .step-circle {
-  background: #409eff;
-  color: white;
-  box-shadow: 0 4px 16px rgba(64, 158, 255, 0.4);
-  border-color: transparent;
-  transform: scale(1.1);
-}
-
-.wizard-step.completed .step-circle {
-  background: #67c23a;
-  color: white;
-  border-color: transparent;
-}
-
-.step-text {
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.6);
-  font-weight: 500;
-  transition: all 0.3s ease;
-}
-
-.wizard-step.active .step-text {
-  color: white;
-}
-
-.step-line {
-  width: 80px;
-  height: 2px;
-  background: rgba(255, 255, 255, 0.2);
-  margin: 0 20px;
-  transition: all 0.5s ease;
-}
-
-.step-line.active {
-  background: linear-gradient(90deg, #67c23a, #409eff);
-}
-
-.wizard-content {
-  padding: 28px 40px;
-  min-height: 300px;
-  background: #f0f2f5;
-}
-
-.wizard-content :deep(.el-form) {
-  max-width: 520px;
-  margin: 0 auto;
+.process-dialog :deep(.el-form) {
   background: white;
-  padding: 28px 32px;
-  border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(26, 31, 54, 0.06);
+  padding: 24px 28px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(26, 31, 54, 0.06);
 }
 
-.wizard-footer {
+.dialog-footer {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 40px;
-  border-top: 1px solid #e4e7ed;
-  background: white;
-}
-
-.footer-left, .footer-right {
-  display: flex;
+  justify-content: flex-end;
   gap: 12px;
+  margin-top: 20px;
 }
 
-.wizard-footer :deep(.el-button) {
+.dialog-footer :deep(.el-button) {
   border-radius: 6px;
   transition: all 0.25s ease;
   padding: 10px 20px;
 }
 
-.wizard-footer :deep(.el-button:hover) {
+.dialog-footer :deep(.el-button:hover) {
   transform: translateY(-1px);
 }
 
-.wizard-footer :deep(.el-button--primary) {
+.dialog-footer :deep(.el-button--primary) {
   background: linear-gradient(135deg, #409eff 0%, #3a8ee6 100%);
   border: none;
 }
 
-.wizard-footer :deep(.el-button--primary:hover) {
+.dialog-footer :deep(.el-button--primary:hover) {
   box-shadow: 0 4px 14px rgba(64, 158, 255, 0.4);
-}
-
-/* 设计器内容样式 */
-.designer-content {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.designer-header-inline {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 14px 18px;
-  background: linear-gradient(135deg, #1a1f36 0%, #2d3748 100%);
-  border-radius: 8px;
-  color: white;
-}
-
-.header-info {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.process-name {
-  font-size: 15px;
-  font-weight: 600;
-}
-
-.process-tip {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.7);
-}
-
-.steps-list-container {
-  flex: 1;
-  max-height: 260px;
-  overflow-y: auto;
-  padding: 8px 0;
-}
-
-.wizard-steps-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.wizard-step-card {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  background: white;
-  border-radius: 8px;
-  border: 1px solid #e4e7ed;
-  transition: all 0.25s ease;
-  box-shadow: 0 1px 4px rgba(26, 31, 54, 0.04);
-}
-
-.wizard-step-card:hover {
-  border-color: #409eff;
-  box-shadow: 0 2px 10px rgba(64, 158, 255, 0.12);
-  transform: translateX(3px);
-}
-
-.step-drag {
-  cursor: move;
-  color: #909399;
-  display: flex;
-  align-items: center;
-  transition: color 0.2s;
-}
-
-.wizard-step-card:hover .step-drag {
-  color: #409eff;
-}
-
-.step-badge {
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #1a1f36 0%, #2d3748 100%);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 11px;
-  font-weight: 600;
-  flex-shrink: 0;
-}
-
-.step-form {
-  flex: 1;
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-.step-name-input, .step-robot-select {
-  flex: 1;
-}
-
-.robot-option {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-}
-
-.empty-wizard-steps {
-  padding: 40px 20px;
-  background: white;
-  border-radius: 8px;
-  border: 2px dashed #dcdfe6;
-  transition: all 0.3s ease;
-}
-
-.empty-wizard-steps:hover {
-  border-color: #409eff;
-  background: #f0f5ff;
 }
 
 </style>

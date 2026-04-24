@@ -62,8 +62,8 @@
 
       <el-table :data="paginatedRobots" v-loading="loading" border stripe>
         <el-table-column type="index" label="序号" width="60" align="center" />
-        <el-table-column prop="name" label="机器人名称" width="200" />
-        <el-table-column prop="ip" label="IP地址" width="200" />
+        <el-table-column prop="name" label="机器人名称" min-width="140" />
+        <el-table-column prop="ip" label="IP地址" min-width="120" />
         <el-table-column prop="robotCategory" label="分类" width="100" align="center">
           <template #default="{ row }">
             <el-tag :type="getCategoryType(row.robotCategory)" size="small">
@@ -91,7 +91,7 @@
           </template>
         </el-table-column>
         <el-table-column prop="lastHeartbeat" label="最后心跳" min-width="150" />
-        <el-table-column label="操作" min-width="200" align="center">
+        <el-table-column label="操作" width="180" fixed="right" align="center">
           <template #default="{ row }">
             <el-button link type="primary" @click="editRobot(row)">编辑</el-button>
             <el-button link type="primary" @click="viewDetail(row)">详情</el-button>
@@ -814,6 +814,67 @@ const goToAiGeneratorForEdit = () => {
   router.push(`/rpa/ai-code-generator?category=${category}&editMode=true`)
 }
 
+// AI生成代码（编辑模式）
+const generateCodeWithAIForEdit = async () => {
+  if (!editForm.aiPrompt?.trim()) {
+    ElMessage.warning('请输入需求描述')
+    return
+  }
+
+  generatingCode.value = true
+
+  try {
+    const response = await apiPost('/ai/generate-robot-code', {
+      prompt: editForm.aiPrompt,
+      category: editForm.robotCategory
+    })
+
+    if (response.code === 0 && response.data?.code) {
+      editForm.robotCode = response.data.code
+      ElMessage.success('代码生成成功')
+    } else {
+      // API返回错误，使用备用代码
+      const categoryNames = {
+        'DATA_COLLECT': '数据采集',
+        'DATA_PARSE': '数据解析',
+        'DATA_PROCESS': '数据加工',
+        'GENERAL': '通用执行'
+      }
+
+      const mockCode = `// AI生成的RPA机器人\n// 分类: ${categoryNames[editForm.robotCategory] || '通用'}\n// 描述: ${editForm.aiPrompt}\n\n@collect http://example.com/data\n@table_selector table.data-list tbody tr\n@columns 列1,列2,列3\n@process clean,transform\n@store report_data\n@log ${categoryNames[editForm.robotCategory] || '任务'}执行完成`
+
+      editForm.robotCode = mockCode
+      ElMessage.warning(response.message || '使用本地模板生成，请确保已在集成中心配置智谱AI')
+    }
+  } catch (error) {
+    // 网络错误等
+    const categoryNames = {
+      'DATA_COLLECT': '数据采集',
+      'DATA_PARSE': '数据解析',
+      'DATA_PROCESS': '数据加工',
+      'GENERAL': '通用执行'
+    }
+
+    const mockCode = `// AI生成的RPA机器人\n// 分类: ${categoryNames[editForm.robotCategory] || '通用'}\n// 描述: ${editForm.aiPrompt}\n\n@collect http://example.com/data\n@table_selector table.data-list tbody tr\n@columns 列1,列2,列3\n@process clean,transform\n@store report_data\n@log ${categoryNames[editForm.robotCategory] || '任务'}执行完成`
+
+    editForm.robotCode = mockCode
+    ElMessage.warning('AI服务不可用，使用本地模板生成')
+  } finally {
+    generatingCode.value = false
+  }
+}
+
+// 复制代码（编辑模式）
+const copyCodeForEdit = () => {
+  if (!editForm.robotCode) {
+    ElMessage.warning('暂无代码可复制')
+    return
+  }
+  navigator.clipboard.writeText(editForm.robotCode)
+    .then(() => ElMessage.success('已复制到剪贴板'))
+    .catch(() => ElMessage.error('复制失败'))
+}
+
 // 显示AI代码生成弹窗
 const showAiCodeDialog = () => {
   const category = createForm.robotCategory || 'DATA_COLLECT'
@@ -1410,50 +1471,21 @@ onMounted(() => {
 :deep(.el-table) {
   border-radius: 12px;
   overflow: hidden;
-  border: 1px solid var(--border-color, #e4e7ed);
-  width: 100%;
+  border: 1px solid var(--border-color, #e5e7eb);
 }
 
-:deep(.el-table th.el-table__cell) {
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
+:deep(.el-table th) {
+  background: var(--bg-tertiary, #f9fafb) !important;
   font-weight: 600;
-  color: #374151;
-  font-size: 13px;
-  padding: 12px 16px !important;
-  border-bottom: 2px solid #e4e7ed !important;
+  color: var(--text-primary, #1f2937);
 }
 
-:deep(.el-table td.el-table__cell) {
-  padding: 12px 16px !important;
-  border-bottom: 1px solid #f1f5f9 !important;
-  vertical-align: middle;
+:deep(.el-table td) {
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
 }
 
-/* 表格行 Hover 动效 */
-:deep(.el-table__body tr) {
-  transition: all 0.2s ease;
-}
-
-/* 左侧边框指示器 */
-:deep(.el-table__body tr:hover > td:first-child) {
-  box-shadow: inset 4px 0 0 #409eff;
-}
-
-:deep(.el-table__body tr:hover > td) {
-  background: linear-gradient(135deg, rgba(64, 158, 255, 0.03) 0%, rgba(64, 158, 255, 0.08) 100%) !important;
-}
-
-/* 操作按钮单元格 */
-:deep(.el-table .cell) {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  flex-wrap: nowrap;
-}
-
-:deep(.el-table .cell .el-button) {
-  padding: 4px 8px;
-  font-size: 13px;
+:deep(.el-table__row:hover > td) {
+  background: var(--bg-primary, #f5f7fa) !important;
 }
 
 /* 分页 */

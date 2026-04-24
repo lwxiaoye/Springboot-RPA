@@ -140,6 +140,7 @@ const router = useRouter()
 
 // 后端接口地址
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'
+
 // 响应式数据
 const loading = ref(false)
 const rememberMe = ref(false)
@@ -190,7 +191,7 @@ const handlePasswordLogin = async () => {
     loading.value = true
 
     try {
-      const response = await fetch(`/api/user/login`, {
+      const response = await fetch(`${API_BASE_URL}/user/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -241,7 +242,7 @@ const handlePasswordLogin = async () => {
         loginFailCount.value = 0
       
         // 跳转到仪表盘页面
-        router.push('/')
+        router.push('/dashboard')
       } else {
         // 登录失败
         loginFailCount.value++
@@ -390,8 +391,8 @@ const checkLoginStatus = () => {
   const token = localStorage.getItem('token')
   const userInfo = localStorage.getItem('userInfo')
   if (token && userInfo) {
-    // 已登录，跳转到首页页面
-    router.push('/')
+    // 已登录，跳转到仪表盘页面
+    router.push('/dashboard')
   }
 }
 

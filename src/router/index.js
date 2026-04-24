@@ -1,14 +1,12 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Login from '../views/Login.vue'
+import Dashboard from '../views/Dashboard.vue'
 import RpaLayout from '../views/rpa/RpaLayout.vue'
 import SystemLayout from '../views/sys/SystemLayout.vue'
 import ProfilePage from '../views/sys/Profile.vue'
 import UserManagement from '../views/sys/UserManagement.vue'
 import RoleManagement from '../views/sys/RoleManagement.vue'
 import ResourceManagement from '../views/sys/ResourceManagement.vue'
-
-// 工作台首页
-import HomeDashboard from '../views/HomeDashboard.vue'
 
 // RPA运营管理模块页面
 import Tasks from '../views/rpa/Tasks.vue'
@@ -28,7 +26,7 @@ import CredentialVault from '../views/rpa/CredentialVault.vue'
 import SystemSettings from '../views/rpa/SystemSettings.vue'
 import ReportAnalytics from '../views/rpa/ReportAnalytics.vue'
 
-// 队列管理、触发器管理、死信队列、机器人健康
+// 新增独立页面（队列管理、触发器管理、死信队列、机器人健康）
 import Queues from '../views/rpa/Queues.vue'
 import Triggers from '../views/rpa/Triggers.vue'
 import DeadLetterQueue from '../views/rpa/DeadLetterQueue.vue'
@@ -41,12 +39,9 @@ import ScriptExecutor from '../views/rpa/ScriptExecutor.vue'
 import DataMasking from '../views/rpa/DataMasking.vue'
 import DistributedLock from '../views/rpa/DistributedLock.vue'
 
-// 智能录制器和AI助手页面
+// 新增：智能录制器和AI助手页面
 import Recorder from '../views/rpa/Recorder.vue'
 import AiAssistant from '../views/rpa/AiAssistant.vue'
-
-// 实时监控页面
-import RealTimeMonitor from '../views/rpa/RealTimeMonitor.vue'
 
 const routes = [
     {
@@ -54,18 +49,18 @@ const routes = [
         name: 'Login',
         component: Login
     },
-    // 独立首页 - 无侧边栏，登录后第一个进入的页面
+    // 仪表板 - 独立页面，有自己的顶部导航，无侧边栏
     {
-        path: '/',
-        component: HomeDashboard
+        path: '/dashboard',
+        name: 'Dashboard',
+        component: Dashboard
     },
     // RPA运营管理模块 - 使用 RpaLayout 布局
     {
         path: '/rpa',
         component: RpaLayout,
-        redirect: '/rpa/tasks',
+        redirect: '/dashboard',
         children: [
-            { path: 'monitor', name: 'RealTimeMonitor', component: RealTimeMonitor },
             { path: 'tasks', name: 'Tasks', component: Tasks },
             { path: 'robots', name: 'Robots', component: Robots },
             { path: 'robot/:id', name: 'RobotDetail', component: RobotDetail, props: true },
@@ -84,16 +79,18 @@ const routes = [
             { path: 'notifications', name: 'Notifications', component: Notifications },
             { path: 'settings', name: 'SystemSettings', component: SystemSettings },
             { path: 'data-query', name: 'DataQuery', component: DataQuery },
+            // 企业级功能
             { path: 'ai', name: 'AiCenter', component: AiCenter },
             { path: 'recording', name: 'RecordingCenter', component: RecordingCenter },
             { path: 'script', name: 'ScriptExecutor', component: ScriptExecutor },
             { path: 'masking', name: 'DataMasking', component: DataMasking },
             { path: 'locks', name: 'DistributedLock', component: DistributedLock },
+            // 新增：智能录制器和AI助手
             { path: 'recorder', name: 'Recorder', component: Recorder },
             { path: 'ai-assistant', name: 'AiAssistant', component: AiAssistant }
         ]
     },
-    // 系统管理模块
+    // 系统管理模块 - 使用 SystemLayout 布局
     {
         path: '/system',
         component: SystemLayout,
@@ -105,7 +102,10 @@ const routes = [
             { path: 'resources', name: 'ResourceManagement', component: ResourceManagement }
         ]
     },
-    // 404 重定向
+    {
+        path: '/',
+        redirect: '/login'
+    },
     {
         path: '/:pathMatch(.*)*',
         redirect: '/login'
@@ -117,19 +117,24 @@ const router = createRouter({
     routes
 })
 
-// 路由导航守卫
 router.beforeEach((to, from) => {
+    // 公开的路由，不需要登录
     const publicRoutes = ['/login']
+    
+    // 获取 token
     const token = localStorage.getItem('token')
-
+    
+    // 如果访问的是公开路由，直接放行
     if (publicRoutes.includes(to.path)) {
         return true
     }
-
+    
+    // 如果访问的不是公开路由，且没有 token，跳转到登录页
     if (!token) {
         return '/login'
     }
-
+    
+    // 有 token，放行
     return true
 })
 

@@ -61,9 +61,10 @@
       </el-table-column>
       <el-table-column prop="priorityLevel" label="优先级" width="80" align="center">
         <template #default="{ row }">
-          <el-tag :type="getPriorityType(row.priorityLevel)" size="small">
+          <el-tag v-if="getPriorityType(row.priorityLevel)" :type="getPriorityType(row.priorityLevel)" size="small">
             {{ getPriorityText(row.priorityLevel) }}
           </el-tag>
+          <span v-else>{{ getPriorityText(row.priorityLevel) }}</span>
         </template>
       </el-table-column>
       <el-table-column prop="status" label="状态" width="90" align="center">
@@ -100,7 +101,7 @@
         </template>
       </el-table-column>
       <el-table-column prop="creator" label="创建人" width="100" align="center" />
-      <el-table-column label="操作" width="220" fixed="right" align="center">
+      <el-table-column label="操作" width="180" fixed="right" align="center">
         <template #default="{ row }">
           <el-button link type="primary" @click="viewDetail(row)">详情</el-button>
           <el-button link type="warning" @click="toggleStatus(row)">
@@ -182,7 +183,8 @@
             </div>
             <div class="detail-item">
               <label>优先级：</label>
-              <el-tag :type="getPriorityType(currentQueue.priorityLevel)" size="small">{{ getPriorityText(currentQueue.priorityLevel) }}</el-tag>
+              <el-tag v-if="getPriorityType(currentQueue.priorityLevel)" :type="getPriorityType(currentQueue.priorityLevel)" size="small">{{ getPriorityText(currentQueue.priorityLevel) }}</el-tag>
+              <span v-else>{{ getPriorityText(currentQueue.priorityLevel) }}</span>
             </div>
             <div class="detail-item">
               <label>最大并发：</label>
@@ -392,8 +394,10 @@ const getPriorityText = (level) => {
 }
 
 const getPriorityType = (level) => {
-  const map = { 1: 'info', 2: 'primary', 3: 'warning', 4: 'danger' }
-  return map[level] || 'info'
+  const map = { 1: 'info', 2: '', 3: 'warning', 4: 'danger' }
+  const type = map[level]
+  // 如果返回空字符串，不传递type属性给ElTag
+  return type === '' ? undefined : type
 }
 
 const getStatusText = (s) => {
@@ -690,54 +694,25 @@ onMounted(() => { loadQueues() })
   color: var(--text-tertiary, #9ca3af);
 }
 
-/* 表格 - 使用全局统一样式 */
+/* 表格 */
 :deep(.el-table) {
   border-radius: 12px;
   overflow: hidden;
-  border: 1px solid var(--border-color, #e4e7ed);
-  width: 100%;
+  border: 1px solid var(--border-color, #e5e7eb);
 }
 
-:deep(.el-table th.el-table__cell) {
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
+:deep(.el-table th) {
+  background: var(--bg-tertiary, #f9fafb) !important;
   font-weight: 600;
-  color: #374151;
-  font-size: 13px;
-  padding: 12px 16px !important;
-  border-bottom: 2px solid #e4e7ed !important;
+  color: var(--text-primary, #1f2937);
 }
 
-:deep(.el-table td.el-table__cell) {
-  padding: 12px 16px !important;
-  border-bottom: 1px solid #f1f5f9 !important;
-  vertical-align: middle;
+:deep(.el-table td) {
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
 }
 
-/* 表格行 Hover 动效 */
-:deep(.el-table__body tr) {
-  transition: all 0.2s ease;
-}
-
-/* 左侧边框指示器 */
-:deep(.el-table__body tr:hover > td:first-child) {
-  box-shadow: inset 4px 0 0 #409eff;
-}
-
-:deep(.el-table__body tr:hover > td) {
-  background: linear-gradient(135deg, rgba(64, 158, 255, 0.03) 0%, rgba(64, 158, 255, 0.08) 100%) !important;
-}
-
-/* 操作按钮单元格 */
-:deep(.el-table .cell) {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  flex-wrap: nowrap;
-}
-
-:deep(.el-table .cell .el-button) {
-  padding: 4px 8px;
-  font-size: 13px;
+:deep(.el-table__row:hover > td) {
+  background: var(--bg-primary, #f5f7fa) !important;
 }
 
 .code-text {

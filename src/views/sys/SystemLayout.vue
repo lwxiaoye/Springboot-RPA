@@ -23,10 +23,6 @@
             <el-icon><Odometer /></el-icon>
             <span>首页</span>
           </el-menu-item>
-          <el-menu-item index="monitor">
-            <el-icon><DataLine /></el-icon>
-            <span>实时监控</span>
-          </el-menu-item>
           <el-menu-item index="rpa">
             <el-icon><VideoCamera /></el-icon>
             <span>RPA运营管理</span>
@@ -48,9 +44,10 @@
 
         <el-dropdown trigger="click">
           <div class="user-avatar">
-            <el-avatar :size="36" class="avatar-circle">
+            <el-avatar :size="36" class="avatar-circle" v-if="!currentUser.avatar">
               {{ userInitial }}
             </el-avatar>
+            <el-avatar :size="36" class="avatar-circle" v-else :src="getAvatarUrl(currentUser.avatar)" @error="handleAvatarError" />
             <div class="user-meta">
               <div class="user-name">{{ userName }}</div>
               <div class="user-role">{{ userRole }}</div>
@@ -173,7 +170,7 @@
 </template>
 
 <script setup>
-import { ref, watch, computed, onMounted } from 'vue'
+import { ref, watch, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
@@ -186,11 +183,9 @@ const router = useRouter()
 const route = useRoute()
 
 const sidebarCollapsed = ref(false)
+const activeTopMenu = ref('system')
 const activeLeftMenu = ref('/system/profile')
 const unreadCount = ref(0)
-
-// 设置当前激活的顶部菜单
-const activeTopMenu = ref('system')
 
 const currentUser = ref({
   id: 1,
@@ -210,15 +205,14 @@ watch(
   (newPath) => {
     if (newPath.startsWith('/dashboard')) {
       activeTopMenu.value = 'dashboard'
-    } else if (newPath.startsWith('/rpa/monitor')) {
-      activeTopMenu.value = 'monitor'
+      activeLeftMenu.value = '/dashboard'
     } else if (newPath.startsWith('/rpa')) {
       activeTopMenu.value = 'rpa'
+      activeLeftMenu.value = newPath
     } else if (newPath.startsWith('/system')) {
       activeTopMenu.value = 'system'
+      activeLeftMenu.value = newPath
     }
-    // 更新左侧菜单
-    activeLeftMenu.value = newPath
   },
   { immediate: true }
 )
@@ -227,12 +221,10 @@ const handleTopMenuSelect = (index) => {
   activeTopMenu.value = index
   if (index === 'dashboard') {
     router.push('/dashboard')
-  } else if (index === 'monitor') {
-    router.push('/rpa/monitor')
   } else if (index === 'rpa') {
     router.push('/rpa/tasks')
   } else if (index === 'system') {
-    // 保持在当前页面，不跳转
+    router.push('/system/profile')
   }
 }
 
@@ -258,7 +250,23 @@ const handleLogout = () => {
   })
 }
 
-const loadUserFromStorage = () => {
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'
+
+// 获取头像完整 URL
+const getAvatarUrl = (path) => {
+  if (!path) return null
+  if (path.startsWith('http://') || path.startsWith('https://')) return path
+  return `${API_BASE}${path}`
+}
+
+// 处理头像加载失败
+const handleAvatarError = (e) => {
+  console.error('头像加载失败，回退到首字母显示')
+  currentUser.value.avatar = null
+}
+
+// 加载用户信息
+const loadUserInfo = () => {
   const userInfo = localStorage.getItem('userInfo')
   if (userInfo) {
     try {
@@ -280,8 +288,26 @@ const loadUnreadCount = async () => {
 }
 
 onMounted(() => {
-  loadUserFromStorage()
+  loadUserInfo()
   loadUnreadCount()
+
+  // 监听 storage 事件，当其他页面修改 userInfo 时同步更新
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'userInfo') {
+      loadUserInfo()
+    }
+  })
+
+  // 监听自定义的头像更新事件
+  window.addEventListener('avatarUpdated', () => {
+    loadUserInfo()
+  })
+})
+
+// 组件卸载时移除事件监听
+onUnmounted(() => {
+  window.removeEventListener('storage', loadUserInfo)
+  window.removeEventListener('avatarUpdated', loadUserInfo)
 })
 </script>
 
