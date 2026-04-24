@@ -1,0 +1,42 @@
+/* 全局表格Hover样式增强 */
+
+/* Element Plus 表格行悬停效果 */
+.el-table--enable-row-hover .el-table__body tr:hover > td {
+    background-color: rgba(64, 158, 255, 0.08) !important;
+}
+
+.el-table--striped .el-table__body tr:hover > td {
+    background-color: rgba(64, 158, 255, 0.08) !important;
+}
+
+/* 表格单元格悬停 */
+.el-table td.el-table__cell:hover {
+    background-color: rgba(64, 158, 255, 0.05);
+}
+
+/* 表格可点击行样式 */
+.table-row-clickable {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.table-row-clickable:hover {
+    background-color: rgba(64, 158, 255, 0.1) !important;
+}
+
+/* 表格操作按钮组悬停 */
+.el-table .cell .el-button-group:hover {
+    background-color: rgba(64, 158, 255, 0.05);
+    border-radius: 4px;
+}
+
+/* 表格排序图标悬停 */
+.el-table .ascending:hover .sort-caret.ascending,
+.el-table .descending:hover .sort-caret.descending {
+    border-bottom-color: #409eff;
+}
+
+/* 表格展开行样式 */
+.el-table__expanded-cell:hover {
+    background-color: rgba(64, 158, 255, 0.03) !important;
+}
