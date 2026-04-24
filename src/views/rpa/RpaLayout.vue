@@ -108,6 +108,15 @@
             <span class="menu-text" v-if="!sidebarCollapsed">机器人管理</span>
           </div>
 
+          <!-- 实时监控 -->
+          <div class="menu-item"
+            :class="{ active: activeMenu === 'monitor' }"
+            @click="switchMenu('monitor')"
+          >
+            <el-icon class="menu-icon"><VideoPlay /></el-icon>
+            <span class="menu-text" v-if="!sidebarCollapsed">实时监控</span>
+          </div>
+
           <!-- 流程仓库 -->
           <div class="menu-item"
             :class="{ active: activeMenu === 'processes' }"
@@ -366,6 +375,7 @@ const routeMap = {
   dashboard: '/dashboard',
   tasks: '/rpa/tasks',
   robots: '/rpa/robots',
+  monitor: '/rpa/monitor',
   processes: '/rpa/processes',
   queues: '/rpa/queues',
   triggers: '/rpa/triggers',
@@ -481,6 +491,7 @@ onMounted(() => {
   if (path === '/dashboard' || path === '/') activeMenu.value = 'dashboard'
   else if (path.includes('/rpa/tasks')) activeMenu.value = 'tasks'
   else if (path.includes('/rpa/robots')) activeMenu.value = 'robots'
+  else if (path.includes('/rpa/monitor')) activeMenu.value = 'monitor'
   else if (path.includes('/rpa/processes')) activeMenu.value = 'processes'
   else if (path.includes('/rpa/queues')) activeMenu.value = 'queues'
   else if (path.includes('/rpa/triggers')) activeMenu.value = 'triggers'

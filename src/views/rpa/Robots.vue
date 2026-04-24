@@ -582,6 +582,13 @@
             <el-form-item label="启用状态">
               <el-switch v-model="editForm.enabled" active-text="启用" inactive-text="禁用" />
             </el-form-item>
+            <el-form-item label="机器人状态">
+              <el-select v-model="editForm.status" placeholder="选择状态" size="large" style="width: 100%">
+                <el-option label="空闲" value="idle" />
+                <el-option label="忙碌" value="busy" />
+                <el-option label="离线" value="offline" />
+              </el-select>
+            </el-form-item>
           </el-form>
         </div>
       </div>
@@ -637,7 +644,8 @@ const editForm = reactive({
   selectedTemplate: '',
   queueId: null,
   description: '',
-  enabled: true
+  enabled: true,
+  status: 'idle'
 })
 
 const pagination = reactive({ page: 1, size: 10, total: 0 })
@@ -1137,7 +1145,8 @@ const editRobot = (robot) => {
     selectedTemplate: '',
     queueId: robot.queueId || null,
     description: robot.description || '',
-    enabled: robot.enabled !== false
+    enabled: robot.enabled !== false,
+    status: robot.status || 'idle'
   })
 
   // 检查是否有AI生成的代码（编辑模式）
@@ -1175,7 +1184,8 @@ const submitEdit = async () => {
           description: editForm.description,
           queueId: editForm.queueId || null,
           queueName: queue?.name || null,
-          enabled: editForm.enabled
+          enabled: editForm.enabled,
+          status: editForm.status
         })
         if (result.code === 0) {
           ElMessage.success('更新成功')

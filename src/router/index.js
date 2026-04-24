@@ -43,6 +43,9 @@ import DistributedLock from '../views/rpa/DistributedLock.vue'
 import Recorder from '../views/rpa/Recorder.vue'
 import AiAssistant from '../views/rpa/AiAssistant.vue'
 
+// 实时监控页面
+import RealTimeMonitor from '../views/rpa/RealTimeMonitor.vue'
+
 const routes = [
     {
         path: '/login',
@@ -64,6 +67,7 @@ const routes = [
             { path: 'tasks', name: 'Tasks', component: Tasks },
             { path: 'robots', name: 'Robots', component: Robots },
             { path: 'robot/:id', name: 'RobotDetail', component: RobotDetail, props: true },
+            { path: 'monitor', name: 'RealTimeMonitor', component: RealTimeMonitor },
             { path: 'processes', name: 'Processes', component: Processes },
             { path: 'process/:id', name: 'ProcessDetail', component: ProcessDetail, props: true },
             { path: 'process-designer', name: 'ProcessDesigner', component: ProcessDesigner },

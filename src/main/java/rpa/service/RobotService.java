@@ -138,9 +138,10 @@ public class RobotService {
      * @param boundProcessName 绑定的流程名称
      * @param robotCode 机器人执行代码
      * @param status 状态
+     * @param enabled 是否启用
      * @return 更新后的机器人
      */
-    public Robot update(Long id, String name, String robotCategory, String capabilities, String ip, String hostname, Integer port, String description, Long boundProcessId, String boundProcessName, String robotCode, String status) {
+    public Robot update(Long id, String name, String robotCategory, String capabilities, String ip, String hostname, Integer port, String description, Long boundProcessId, String boundProcessName, String robotCode, String status, Boolean enabled) {
         return repository.findById(id).map(robot -> {
             if (name != null) {
                 robot.setName(name);
@@ -175,6 +176,9 @@ public class RobotService {
             if (status != null) {
                 robot.setStatus(status);
                 robot.setLastHeartbeat(LocalDateTime.now());
+            }
+            if (enabled != null) {
+                robot.setEnabled(enabled);
             }
             return repository.save(robot);
         }).orElseThrow(() -> new RuntimeException("机器人不存在"));

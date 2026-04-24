@@ -146,8 +146,9 @@ public class RobotController {
             String boundProcessName = (String) request.get("boundProcessName");
             String robotCode = (String) request.get("robotCode");
             String status = (String) request.get("status");
+            Boolean enabled = request.get("enabled") != null ? Boolean.valueOf(request.get("enabled").toString()) : null;
 
-            Robot robot = service.update(id, name, robotCategory, capabilities, ip, hostname, port, description, boundProcessId, boundProcessName, robotCode, status);
+            Robot robot = service.update(id, name, robotCategory, capabilities, ip, hostname, port, description, boundProcessId, boundProcessName, robotCode, status, enabled);
 
             // 记录审计日志
             Map<String, Object> changes = new HashMap<>();
