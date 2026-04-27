@@ -39,7 +39,7 @@
           </el-button>
         </div>
 
-        <el-table :data="filteredQueues" v-loading="loading" border stripe>
+        <el-table :data="filteredQueues" v-loading="loading" border stripe :default-sort="{ prop: 'createTime', order: 'descending' }">
           <el-table-column type="index" label="序号" width="60" align="center" />
           <el-table-column prop="name" label="队列名称" min-width="150" />
           <el-table-column prop="type" label="队列类型" width="120" align="center">
@@ -87,7 +87,7 @@
           </el-button>
         </div>
 
-        <el-table :data="paginatedTriggers" v-loading="triggerLoading" border stripe class="unified-table">
+        <el-table :data="paginatedTriggers" v-loading="triggerLoading" border stripe class="unified-table" :default-sort="{ prop: 'lastTrigger', order: 'descending' }">
           <el-table-column type="index" label="序号" width="60" align="center" />
           <el-table-column prop="name" label="触发器名称" min-width="150" />
           <el-table-column prop="type" label="触发类型" width="120" align="center">

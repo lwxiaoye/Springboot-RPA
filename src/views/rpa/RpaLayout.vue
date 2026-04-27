@@ -281,13 +281,13 @@
             <span class="menu-text" v-if="!sidebarCollapsed">系统设置</span>
           </div>
 
-          <!-- 通知管理 -->
+          <!-- 协作中枢 -->
           <div class="menu-item"
-            :class="{ active: activeMenu === 'notifications' }"
-            @click="switchMenu('notifications')"
+            :class="{ active: activeMenu === 'collaboration' }"
+            @click="switchMenu('collaboration')"
           >
-            <el-icon class="menu-icon"><Bell /></el-icon>
-            <span class="menu-text" v-if="!sidebarCollapsed">通知管理</span>
+            <el-icon class="menu-icon"><ChatLineSquare /></el-icon>
+            <span class="menu-text" v-if="!sidebarCollapsed">协作中枢</span>
           </div>
         </nav>
       </aside>
@@ -322,6 +322,7 @@ import {
   Operation,
   Search,
   Bell,
+  ChatLineSquare,
   Connection,
   Tools,
   Timer,
@@ -386,6 +387,7 @@ const routeMap = {
   reports: '/rpa/reports',
   settings: '/rpa/settings',
   notifications: '/rpa/notifications',
+  collaboration: '/rpa/collaboration',
   dataCollect: '/rpa/data-collect',
   dataParse: '/rpa/data-parse',
   dataProcess: '/rpa/data-process',
@@ -406,9 +408,9 @@ const goToDashboard = () => {
   router.push('/dashboard')
 }
 
-// 跳转到通知
+// 跳转到协作中枢
 const goToNotifications = () => {
-  router.push('/rpa/notifications')
+  router.push('/rpa/collaboration')
 }
 
 // 展开/收起数据管理子菜单
@@ -431,17 +433,16 @@ const handleLogout = () => {
   })
 }
 
-// 加载未读通知数
+// 加载未读消息数
 const loadUnreadCount = async () => {
   try {
     const { apiGet } = await import('../../utils/api.js')
-    const result = await apiGet('/notification/stats')
-    if (result?.code === 0 && result.data?.unreads) {
-      const unreads = result.data.unreads
-      unreadCount.value = (unreads.collect || 0) + (unreads.temp || 0) + (unreads.user || 0)
+    const result = await apiGet('/chat/conversations?userId=1')
+    if (result?.code === 0 && result.data) {
+      unreadCount.value = result.data.reduce((sum, c) => sum + (c.unreadCount || 0), 0)
     }
   } catch (e) {
-    // ignore
+    unreadCount.value = 0
   }
 }
 
@@ -501,6 +502,7 @@ onMounted(() => {
   else if (path.includes('/rpa/reports')) activeMenu.value = 'reports'
   else if (path.includes('/rpa/settings')) activeMenu.value = 'settings'
   else if (path.includes('/rpa/notifications')) activeMenu.value = 'notifications'
+  else if (path.includes('/rpa/collaboration')) activeMenu.value = 'collaboration'
   else if (path.includes('/rpa/data-collect')) activeMenu.value = 'dataCollect'
   else if (path.includes('/rpa/data-parse')) activeMenu.value = 'dataParse'
   else if (path.includes('/rpa/data-process')) activeMenu.value = 'dataProcess'

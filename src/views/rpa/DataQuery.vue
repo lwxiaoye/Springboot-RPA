@@ -44,7 +44,7 @@
       </div>
     </div>
 
-    <el-table :data="paginatedData" v-loading="loading" border stripe>
+    <el-table :data="paginatedData" v-loading="loading" border stripe :default-sort="{ prop: 'collectTime', order: 'descending' }">
       <el-table-column type="index" label="序号" width="60" align="center" />
       <el-table-column prop="invoiceNo" label="发票号码" width="130" />
       <el-table-column prop="invoiceType" label="发票类型" width="100" align="center">

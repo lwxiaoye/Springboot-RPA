@@ -44,7 +44,7 @@
     </div>
 
     <!-- 活跃锁列表 -->
-    <el-table :data="paginatedLocks" v-loading="loading" border stripe>
+    <el-table :data="paginatedLocks" v-loading="loading" border stripe :default-sort="{ prop: 'acquireTime', order: 'descending' }">
       <el-table-column type="index" label="序号" width="60" align="center" />
       <el-table-column prop="lockName" label="锁名称" min-width="150">
         <template #default="{ row }">

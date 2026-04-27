@@ -2,8 +2,10 @@ package rpa.service;
 
 import rpa.entity.Task;
 import rpa.entity.RpaProcess;
+import rpa.entity.User;
 import rpa.repository.TaskRepository;
 import rpa.repository.RpaProcessRepository;
+import rpa.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -20,6 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * - 从凭据中心获取凭据
  * - 执行机器人代码
  * - 记录执行日志
+ * - 发送任务完成通知
  * </p>
  */
 @Slf4j
@@ -30,6 +33,8 @@ public class TaskExecutionService {
     private final RpaProcessRepository processRepository;
     private final CredentialService credentialService;
     private final AuditLogService auditLogService;
+    private final EmailNotificationService emailNotificationService;
+    private final UserRepository userRepository;
 
     // 任务上下文缓存（用于存储执行中的凭据）
     private final Map<Long, TaskContext> taskContextCache = new ConcurrentHashMap<>();
@@ -38,11 +43,15 @@ public class TaskExecutionService {
             TaskRepository taskRepository,
             RpaProcessRepository processRepository,
             CredentialService credentialService,
-            AuditLogService auditLogService) {
+            AuditLogService auditLogService,
+            EmailNotificationService emailNotificationService,
+            UserRepository userRepository) {
         this.taskRepository = taskRepository;
         this.processRepository = processRepository;
         this.credentialService = credentialService;
         this.auditLogService = auditLogService;
+        this.emailNotificationService = emailNotificationService;
+        this.userRepository = userRepository;
     }
 
     /**
@@ -176,6 +185,8 @@ public class TaskExecutionService {
             allResults.append("[任务异常] ").append(e.getMessage());
             task.setResultData(allResults.toString());
             auditLogService.logTaskExecute(taskId, taskName, false, e.getMessage());
+            hasFailure = true;
+            lastError = e.getMessage();
 
         } finally {
             // 清理任务上下文
@@ -186,6 +197,49 @@ public class TaskExecutionService {
             task.setEndTime(LocalDateTime.now());
             task.setUpdateTime(LocalDateTime.now());
             taskRepository.save(task);
+
+            // 发送任务完成/失败邮件通知
+            sendTaskNotification(task, hasFailure, lastError);
+        }
+    }
+
+    /**
+     * 发送任务完成/失败邮件通知
+     */
+    private void sendTaskNotification(Task task, boolean hasFailure, String errorMessage) {
+        try {
+            // 获取任务创建者信息
+            Long creatorId = task.getCreatorId();
+            String creatorEmail = null;
+
+            if (creatorId != null) {
+                creatorEmail = userRepository.findById(creatorId)
+                        .map(User::getEmail)
+                        .orElse(null);
+            }
+
+            // 如果没有创建者邮箱，尝试获取任务中保存的邮箱
+            if (creatorEmail == null || creatorEmail.isEmpty()) {
+                creatorEmail = task.getNotifyEmail();
+            }
+
+            // 如果还是没有，使用默认邮箱
+            if (creatorEmail == null || creatorEmail.isEmpty()) {
+                creatorEmail = "lwxiaoye@163.com"; // 使用配置的默认邮箱
+            }
+
+            if (hasFailure) {
+                // 发送失败通知
+                emailNotificationService.sendTaskFailedEmail(task, errorMessage, creatorEmail);
+                log.info("任务失败通知邮件已发送: taskId={}, email={}", task.getId(), creatorEmail);
+            } else {
+                // 发送成功通知
+                emailNotificationService.sendTaskCompletionEmail(task, creatorEmail);
+                log.info("任务完成通知邮件已发送: taskId={}, email={}", task.getId(), creatorEmail);
+            }
+        } catch (Exception e) {
+            // 邮件发送失败不影响任务状态
+            log.warn("发送任务通知邮件失败: taskId={}, error={}", task.getId(), e.getMessage());
         }
     }
 

@@ -590,7 +590,7 @@ public class ReportAnalyticsService {
      */
     public ReportSubscription createSubscription(ReportSubscription subscription) {
         subscription.setCreateTime(LocalDateTime.now());
-        subscription.setEnabled(true);
+        subscription.setEnabled(1);
         return subscriptionRepository.save(subscription);
     }
 
@@ -621,7 +621,7 @@ public class ReportAnalyticsService {
      */
     public ReportSubscription toggleSubscription(Long id) {
         return subscriptionRepository.findById(id).map(sub -> {
-            sub.setEnabled(!sub.getEnabled());
+            sub.setEnabled(sub.getEnabled() == 1 ? 0 : 1);
             sub.setUpdateTime(LocalDateTime.now());
             return subscriptionRepository.save(sub);
         }).orElseThrow(() -> new RuntimeException("订阅不存在"));

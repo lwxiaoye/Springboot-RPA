@@ -75,7 +75,7 @@
         </el-button>
       </div>
 
-      <el-table :data="paginatedRobots" v-loading="loading" border stripe highlight-current-row class="robots-table">
+      <el-table :data="paginatedRobots" v-loading="loading" border stripe highlight-current-row class="robots-table" :default-sort="{ prop: 'createTime', order: 'descending' }">
         <el-table-column type="index" label="序号" width="60" align="center">
           <template #default="{ $index }">
             <div class="index-cell">

@@ -17,6 +17,7 @@ import ProcessDetail from '../views/rpa/ProcessDetail.vue'
 import ProcessDesigner from '../views/rpa/ProcessDesigner.vue'
 import Logs from '../views/rpa/Logs.vue'
 import Notifications from '../views/rpa/Notifications.vue'
+import CollaborationHub from '../views/rpa/CollaborationHub.vue'
 import DataQuery from '../views/rpa/DataQuery.vue'
 
 // 新增页面
@@ -80,6 +81,7 @@ const routes = [
             { path: 'credentials', name: 'CredentialVault', component: CredentialVault },
             { path: 'reports', name: 'ReportAnalytics', component: ReportAnalytics },
             { path: 'notifications', name: 'Notifications', component: Notifications },
+            { path: 'collaboration', name: 'CollaborationHub', component: CollaborationHub },
             { path: 'settings', name: 'SystemSettings', component: SystemSettings },
             { path: 'data-query', name: 'DataQuery', component: DataQuery },
             // 企业级功能

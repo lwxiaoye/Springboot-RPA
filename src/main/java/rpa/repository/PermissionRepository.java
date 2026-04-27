@@ -4,6 +4,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import rpa.entity.Permission;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * 权限数据访问层接口
@@ -19,6 +20,14 @@ import java.util.List;
 @Repository
 public interface PermissionRepository extends JpaRepository<Permission, Long> {
     
+    /**
+     * 根据权限代码查询权限
+     *
+     * @param code 权限代码
+     * @return Optional<Permission> 权限信息
+     */
+    Optional<Permission> findByCode(String code);
+
     /**
      * 根据权限类型查询权限列表
      *

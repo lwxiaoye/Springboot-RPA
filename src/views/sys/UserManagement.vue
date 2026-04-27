@@ -46,7 +46,7 @@
     </div>
 
     <!-- 用户表格 -->
-    <el-table :data="paginatedUsers" style="width: 100%" v-loading="loading" border stripe class="unified-table">
+    <el-table :data="paginatedUsers" style="width: 100%" v-loading="loading" border stripe class="unified-table" :default-sort="{ prop: 'createTime', order: 'descending' }">
       <el-table-column type="index" label="序号" width="80" align="center">
         <template #default="{ $index }">
           <div class="index-cell">

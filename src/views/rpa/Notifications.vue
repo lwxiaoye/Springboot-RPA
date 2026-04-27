@@ -40,7 +40,7 @@
       <el-button @click="markAllRead" :disabled="!hasUnread">全部已读</el-button>
     </div>
 
-    <el-table :data="paginatedNotifications" v-loading="loading" border stripe>
+    <el-table :data="paginatedNotifications" v-loading="loading" border stripe :default-sort="{ prop: 'createTime', order: 'descending' }">
       <el-table-column type="index" label="序号" width="60" align="center" />
       <el-table-column prop="type" label="类型" width="100" align="center">
         <template #default="{ row }">

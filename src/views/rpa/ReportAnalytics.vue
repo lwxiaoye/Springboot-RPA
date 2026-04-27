@@ -705,7 +705,7 @@ import { ElMessage } from 'element-plus'
 import {
   DataLine, CircleCheck, Timer, Money, Plus, Download, TrendCharts, PieChart,
   Document, Calendar, Cpu, Stopwatch, Edit, Coin, Clock, User, Top, Bottom,
-  Coffee, CloseBold, Warning, Check
+  Coffee, CloseBold, Warning, Check, Lock
 } from '@element-plus/icons-vue'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
@@ -722,6 +722,16 @@ const subLoading = ref(false)
 const reportDialogVisible = ref(false)
 const subDialogVisible = ref(false)
 const showResult = ref(false)
+
+// 权限控制
+const permissions = reactive({
+  canView: true,
+  canExport: false,
+  canSubscription: false,
+  isAdmin: false,
+  allPermissions: [],
+  loaded: false
+})
 
 // 日期选择
 const dailyDate = ref(new Date().toISOString().split('T')[0])
@@ -1091,109 +1101,6 @@ const forecastChartOption = computed(() => ({
   ]
 }))
 
-// 导出报表
-const exportReport = (type) => {
-  let data = []
-  let filename = ''
-  let headers = []
-
-  switch (type) {
-    case 'daily':
-      filename = '任务执行日报'
-      headers = ['任务名称', '流程', '状态', '采集数据', '开始时间', '耗时']
-      data = dailyLogs.value.map(item => ({
-        '任务名称': item.taskName,
-        '流程': item.processName,
-        '状态': getStatusText(item.status),
-        '采集数据': item.dataCount,
-        '开始时间': item.startTime,
-        '耗时': item.duration
-      }))
-      break
-    case 'monthly':
-      filename = '任务执行月报'
-      headers = ['统计项', '数值']
-      data = [
-        {'统计项': '总执行次数', '数值': monthlyStats.totalExecutions},
-        {'统计项': '成功次数', '数值': monthlyStats.successCount},
-        {'统计项': '失败次数', '数值': monthlyStats.failedCount},
-        {'统计项': '成功率', '数值': monthlyStats.successRate + '%'},
-        {'统计项': '采集数据总量', '数值': monthlyStats.totalData},
-        {'统计项': '日均采集', '数值': monthlyStats.dailyAvg},
-        {'统计项': '峰值日采集', '数值': monthlyStats.peakData},
-        {'统计项': '采集成功率', '数值': monthlyStats.dataSuccessRate + '%'}
-      ]
-      break
-    case 'robot':
-      filename = '机器人利用率'
-      headers = ['机器人名称', '状态', '执行次数', '成功率', '运行时长', '采集数据', '最后执行']
-      data = robotList.value.map(item => ({
-        '机器人名称': item.name,
-        '状态': item.statusText,
-        '执行次数': item.execCount,
-        '成功率': item.successRate + '%',
-        '运行时长': item.runtime,
-        '采集数据': item.dataCount,
-        '最后执行': item.lastRun
-      }))
-      break
-    case 'process':
-      filename = '流程耗时排行'
-      headers = ['流程名称', '流程编码', '执行次数', '平均耗时', '最长耗时', '最短耗时', '总耗时', '成功率']
-      data = processList.value.map(item => ({
-        '流程名称': item.name,
-        '流程编码': item.code,
-        '执行次数': item.execCount,
-        '平均耗时': item.avgDuration,
-        '最长耗时': item.maxDuration,
-        '最短耗时': item.minDuration,
-        '总耗时': item.totalDuration,
-        '成功率': item.successRate + '%'
-      }))
-      break
-    case 'custom':
-      filename = '自定义报表'
-      headers = ['报表名称', '报表类型', '统计维度', '创建人', '创建时间', '最后运行']
-      data = customReports.value.map(item => ({
-        '报表名称': item.name,
-        '报表类型': item.type,
-        '统计维度': item.dimensions,
-        '创建人': item.createUser,
-        '创建时间': item.createTime,
-        '最后运行': item.lastRun
-      }))
-      break
-    default:
-      ElMessage.warning('暂不支持导出该报表类型')
-      return
-  }
-
-  // 生成CSV内容
-  if (data.length === 0) {
-    ElMessage.warning('没有可导出的数据')
-    return
-  }
-
-  const csvHeaders = Object.keys(data[0])
-  const csvContent = [
-    csvHeaders.join(','),
-    ...data.map(row => csvHeaders.map(h => `"${(row[h] || '').toString().replace(/"/g, '""')}"`).join(','))
-  ].join('\n')
-
-  // 添加BOM以支持Excel正确显示中文
-  const bom = '\uFEFF'
-  const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8' })
-  const url = URL.createObjectURL(blob)
-
-  const link = document.createElement('a')
-  link.href = url
-  link.download = `${filename}_${new Date().toISOString().slice(0, 10)}.csv`
-  link.click()
-
-  URL.revokeObjectURL(url)
-  ElMessage.success(`${filename}导出成功，共 ${data.length} 条记录`)
-}
-
 const createCustomReport = () => {
   Object.assign(reportForm, { name: '', type: '任务执行', dimensions: [], dateRange: 'month', chartType: 'line', description: '' })
   reportDialogVisible.value = true
@@ -1542,9 +1449,157 @@ const formatRuntime = (seconds) => {
   return hours + 'h'
 }
 
-onMounted(() => { loadStats() })
-</script>
+onMounted(() => {
+  loadStats()
+  loadPermissions()
+})
 
+// 加载用户权限
+const loadPermissions = async () => {
+  try {
+    const result = await apiGet('/report/permissions')
+    if (result.code === 0 && result.data) {
+      permissions.canView = result.data.canView
+      permissions.canExport = result.data.canExport
+      permissions.canSubscription = result.data.canSubscription
+      permissions.isAdmin = result.data.isAdmin
+      permissions.allPermissions = result.data.permissions || []
+      permissions.loaded = true
+    }
+  } catch (e) {
+    console.error('加载权限失败:', e)
+    // 默认允许查看，拒绝导出
+    permissions.canView = true
+    permissions.canExport = false
+    permissions.loaded = true
+  }
+}
+
+// 检查是否有导出权限
+const checkExportPermission = () => {
+  if (!permissions.loaded) {
+    ElMessage.warning('权限信息加载中，请稍候')
+    return false
+  }
+  if (!permissions.canExport && !permissions.isAdmin) {
+    ElMessage({
+      type: 'warning',
+      message: '您没有导出权限，请联系管理员申请开通',
+      duration: 5000
+    })
+    return false
+  }
+  return true
+}
+
+// 导出报表（带权限检查）
+const exportReport = (type) => {
+  // 检查权限
+  if (!checkExportPermission()) {
+    return
+  }
+
+  let data = []
+  let filename = ''
+  let headers = []
+
+  switch (type) {
+    case 'daily':
+      filename = '任务执行日报'
+      headers = ['任务名称', '流程', '状态', '采集数据', '开始时间', '耗时']
+      data = dailyLogs.value.map(item => ({
+        '任务名称': item.taskName,
+        '流程': item.processName,
+        '状态': getStatusText(item.status),
+        '采集数据': item.dataCount,
+        '开始时间': item.startTime,
+        '耗时': item.duration
+      }))
+      break
+    case 'monthly':
+      filename = '任务执行月报'
+      headers = ['统计项', '数值']
+      data = [
+        {'统计项': '总执行次数', '数值': monthlyStats.totalExecutions},
+        {'统计项': '成功次数', '数值': monthlyStats.successCount},
+        {'统计项': '失败次数', '数值': monthlyStats.failedCount},
+        {'统计项': '成功率', '数值': monthlyStats.successRate + '%'},
+        {'统计项': '采集数据总量', '数值': monthlyStats.totalData},
+        {'统计项': '日均采集', '数值': monthlyStats.dailyAvg},
+        {'统计项': '峰值日采集', '数值': monthlyStats.peakData},
+        {'统计项': '采集成功率', '数值': monthlyStats.dataSuccessRate + '%'}
+      ]
+      break
+    case 'robot':
+      filename = '机器人利用率'
+      headers = ['机器人名称', '状态', '执行次数', '成功率', '运行时长', '采集数据', '最后执行']
+      data = robotList.value.map(item => ({
+        '机器人名称': item.name,
+        '状态': item.statusText,
+        '执行次数': item.execCount,
+        '成功率': item.successRate + '%',
+        '运行时长': item.runtime,
+        '采集数据': item.dataCount,
+        '最后执行': item.lastRun
+      }))
+      break
+    case 'process':
+      filename = '流程耗时排行'
+      headers = ['流程名称', '流程编码', '执行次数', '平均耗时', '最长耗时', '最短耗时', '总耗时', '成功率']
+      data = processList.value.map(item => ({
+        '流程名称': item.name,
+        '流程编码': item.code,
+        '执行次数': item.execCount,
+        '平均耗时': item.avgDuration,
+        '最长耗时': item.maxDuration,
+        '最短耗时': item.minDuration,
+        '总耗时': item.totalDuration,
+        '成功率': item.successRate + '%'
+      }))
+      break
+    case 'custom':
+      filename = '自定义报表'
+      headers = ['报表名称', '报表类型', '统计维度', '创建人', '创建时间', '最后运行']
+      data = customReports.value.map(item => ({
+        '报表名称': item.name,
+        '报表类型': item.type,
+        '统计维度': item.dimensions,
+        '创建人': item.createUser,
+        '创建时间': item.createTime,
+        '最后运行': item.lastRun
+      }))
+      break
+    default:
+      ElMessage.warning('暂不支持导出该报表类型')
+      return
+  }
+
+  // 生成CSV内容
+  if (data.length === 0) {
+    ElMessage.warning('没有可导出的数据')
+    return
+  }
+
+  const csvHeaders = Object.keys(data[0])
+  const csvContent = [
+    csvHeaders.join(','),
+    ...data.map(row => csvHeaders.map(h => `"${(row[h] || '').toString().replace(/"/g, '""')}"`).join(','))
+  ].join('\n')
+
+  // 添加BOM以支持Excel正确显示中文
+  const bom = '\uFEFF'
+  const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `${filename}_${new Date().toISOString().slice(0, 10)}.csv`
+  link.click()
+
+  URL.revokeObjectURL(url)
+  ElMessage.success(`${filename}导出成功，共 ${data.length} 条记录`)
+}
+</script>
 <style scoped>
 .report-page { max-width: 1600px; margin: 0 auto; }
 .page-header { margin-bottom: 24px; }

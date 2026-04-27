@@ -10,6 +10,9 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src')
     }
   },
+  define: {
+    global: 'globalThis'
+  },
   server: {
     port: 5173,
     host: '0.0.0.0',
@@ -21,15 +24,17 @@ export default defineConfig({
         secure: false
       },
       '/ws': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
-        secure: false,
+        target: 'ws://localhost:8080',
+        ws: true
+      },
+      '/ws/chat': {
+        target: 'ws://localhost:8080',
         ws: true,
-        rewrite: (path) => path.replace(/^\/ws/, '/ws')
+        rewrite: (path) => path
       }
     }
   },
   optimizeDeps: {
-    include: ['element-plus', 'vue', 'vue-router', 'echarts', 'vue-echarts']
+    include: ['element-plus', 'vue', 'vue-router', 'echarts', 'vue-echarts', 'sockjs-client', 'stompjs']
   }
 })

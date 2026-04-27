@@ -111,4 +111,17 @@ public class Task {
     
     /** 更新时间 */
     private LocalDateTime updateTime = LocalDateTime.now();
+
+    /** 任务创建者ID */
+    private Long creatorId;
+
+    /** 任务创建者名称 */
+    private String creatorName;
+
+    /** 通知邮箱 - 任务完成/失败时发送通知到此邮箱 */
+    @Column(length = 200)
+    private String notifyEmail;
+
+    /** 是否发送邮件通知（true-发送，false-不发送） */
+    private Boolean emailNotificationEnabled = true;
 }

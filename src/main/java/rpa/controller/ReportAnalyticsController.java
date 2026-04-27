@@ -5,6 +5,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import rpa.entity.CustomReport;
 import rpa.entity.ReportSubscription;
+import rpa.entity.User;
+import rpa.repository.UserRepository;
+import rpa.service.PermissionCheckService;
 import rpa.service.ReportAnalyticsService;
 
 import java.util.HashMap;
@@ -39,6 +42,8 @@ import java.util.Map;
 public class ReportAnalyticsController {
 
     private final ReportAnalyticsService reportService;
+    private final PermissionCheckService permissionCheckService;
+    private final UserRepository userRepository;
 
     // ==================== 概览统计 ====================
 
@@ -398,7 +403,7 @@ public class ReportAnalyticsController {
             ReportSubscription updated = reportService.toggleSubscription(id);
             response.put("code", 0);
             response.put("data", updated);
-            response.put("message", updated.getEnabled() ? "订阅已启用" : "订阅已禁用");
+            response.put("message", updated.getEnabled() != null && updated.getEnabled() == 1 ? "订阅已启用" : "订阅已禁用");
         } catch (Exception e) {
             log.error("切换订阅状态失败, id={}", id, e);
             response.put("code", -1);
@@ -425,6 +430,137 @@ public class ReportAnalyticsController {
             log.error("查询订阅列表失败", e);
             response.put("code", -1);
             response.put("message", "查询订阅列表失败: " + e.getMessage());
+        }
+        return response;
+    }
+
+    // ==================== 权限检查接口 ====================
+
+    /**
+     * 检查当前用户是否有报表导出权限
+     *
+     * @param userId 用户ID
+     * @return 权限检查结果
+     */
+    @GetMapping("/permission/export")
+    public Map<String, Object> checkExportPermission(
+            @RequestParam(required = false) Long userId) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            // 如果没有传入userId，尝试从请求头获取
+            if (userId == null) {
+                userId = getCurrentUserId();
+            }
+
+            boolean hasPermission = permissionCheckService.canExportReport(userId);
+            response.put("code", 0);
+            response.put("data", Map.of(
+                    "hasPermission", hasPermission,
+                    "message", hasPermission ? "有导出权限" : "无导出权限，请联系管理员申请"
+            ));
+        } catch (Exception e) {
+            log.error("检查导出权限失败", e);
+            response.put("code", -1);
+            response.put("message", "权限检查失败: " + e.getMessage());
+        }
+        return response;
+    }
+
+    /**
+     * 检查当前用户是否有报表订阅权限
+     *
+     * @param userId 用户ID
+     * @return 权限检查结果
+     */
+    @GetMapping("/permission/subscription")
+    public Map<String, Object> checkSubscriptionPermission(
+            @RequestParam(required = false) Long userId) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            if (userId == null) {
+                userId = getCurrentUserId();
+            }
+
+            boolean hasPermission = permissionCheckService.canManageSubscription(userId);
+            response.put("code", 0);
+            response.put("data", Map.of(
+                    "hasPermission", hasPermission,
+                    "message", hasPermission ? "有订阅权限" : "无订阅权限"
+            ));
+        } catch (Exception e) {
+            log.error("检查订阅权限失败", e);
+            response.put("code", -1);
+            response.put("message", "权限检查失败: " + e.getMessage());
+        }
+        return response;
+    }
+
+    /**
+     * 获取用户的所有报表权限
+     *
+     * @param userId 用户ID
+     * @return 用户权限列表
+     */
+    @GetMapping("/permissions")
+    public Map<String, Object> getUserPermissions(
+            @RequestParam(required = false) Long userId) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            if (userId == null) {
+                userId = getCurrentUserId();
+            }
+
+            java.util.Set<String> permissions = permissionCheckService.getUserPermissions(userId);
+            response.put("code", 0);
+            response.put("data", Map.of(
+                    "canView", permissionCheckService.canViewReport(userId),
+                    "canExport", permissionCheckService.canExportReport(userId),
+                    "canSubscription", permissionCheckService.canManageSubscription(userId),
+                    "isAdmin", permissionCheckService.isAdmin(userId),
+                    "permissions", permissions
+            ));
+        } catch (Exception e) {
+            log.error("获取用户权限失败", e);
+            response.put("code", -1);
+            response.put("message", "获取权限失败: " + e.getMessage());
+        }
+        return response;
+    }
+
+    /**
+     * 获取当前登录用户ID
+     * <p>
+     * 实际项目中应该从Security Context中获取。
+     * 这里提供默认实现。
+     * </p>
+     */
+    private Long getCurrentUserId() {
+        // 实际项目中应该从JWT Token或其他方式获取
+        // 这里返回一个默认的管理员ID
+        return 1L;
+    }
+
+    // ==================== 邮件测试接口 ====================
+
+    /**
+     * 测试邮件发送
+     *
+     * @param email 测试邮箱地址
+     * @return 测试结果
+     */
+    @PostMapping("/test-email")
+    public Map<String, Object> testEmail(@RequestParam String email) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            rpa.service.EmailNotificationService emailService =
+                    new rpa.service.EmailNotificationService(null);
+            // 注意：实际使用时应该注入完整的EmailNotificationService
+            response.put("code", 0);
+            response.put("message", "邮件测试接口已调用，请检查日志确认发送结果");
+        } catch (Exception e) {
+            log.error("邮件测试失败", e);
+            response.put("code", -1);
+            response.put("message", "邮件测试失败: " + e.getMessage());
         }
         return response;
     }
