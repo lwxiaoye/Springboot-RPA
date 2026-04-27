@@ -87,7 +87,7 @@
           </el-button>
         </div>
 
-        <el-table :data="filteredTriggers" v-loading="triggerLoading" border stripe>
+        <el-table :data="paginatedTriggers" v-loading="triggerLoading" border stripe class="unified-table">
           <el-table-column type="index" label="序号" width="60" align="center" />
           <el-table-column prop="name" label="触发器名称" min-width="150" />
           <el-table-column prop="type" label="触发类型" width="120" align="center">
@@ -543,6 +543,34 @@ onMounted(() => {
 .toolbar { display: flex; gap: 12px; margin-bottom: 20px; align-items: center; }
 .search-box { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #fff; border: 1px solid #d9d9d9; border-radius: 8px; flex: 1; max-width: 320px; }
 .search-box input { border: none; outline: none; flex: 1; background: transparent; }
+
+.pagination-wrapper { margin-top: 16px; display: flex; justify-content: flex-end; background: var(--bg-secondary, #ffffff); padding: 12px 16px; border-radius: 10px; border: 1px solid var(--border-color, #e5e7eb); }
+
+/* 统一表格样式 */
+.unified-table :deep(.el-table__header-wrapper th) {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
+  font-weight: 600;
+  color: var(--text-primary, #1f2937);
+  padding: 12px 0;
+  border-bottom: 2px solid #e5e7eb;
+}
+.unified-table :deep(.el-table__body-wrapper td) {
+  padding: 10px 0;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
+}
+.unified-table :deep(.el-table__header-wrapper th .cell),
+.unified-table :deep(.el-table__body-wrapper td .cell) {
+  padding: 0 6px;
+}
+.unified-table :deep(.el-table__row) {
+  transition: all 0.2s ease;
+}
+.unified-table :deep(.el-table__row:hover > td) {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
 
 .submit-section {
   background: white;

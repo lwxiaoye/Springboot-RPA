@@ -46,10 +46,14 @@
     </div>
 
     <!-- 用户表格 -->
-    <el-table :data="paginatedUsers" style="width: 100%" v-loading="loading">
-      <el-table-column type="index" label="序号" width="80">
+    <el-table :data="paginatedUsers" style="width: 100%" v-loading="loading" border stripe class="unified-table">
+      <el-table-column type="index" label="序号" width="80" align="center">
         <template #default="{ $index }">
-          {{ (pagination.current - 1) * pagination.size + $index + 1 }}
+          <div class="index-cell">
+            <div class="index-line"></div>
+            <span class="index-number">{{ (pagination.current - 1) * pagination.size + $index + 1 }}</span>
+            <div class="index-line"></div>
+          </div>
         </template>
       </el-table-column>
       <el-table-column prop="username" label="用户" min-width="120" />
@@ -79,18 +83,54 @@
       <el-table-column prop="createTime" label="创建时间" min-width="160">
         <template #default="{ row }">{{ formatDate(row.createTime) }}</template>
       </el-table-column>
-      <el-table-column label="操作" width="280">
+      <el-table-column label="操作" fixed="right" width="260">
         <template #default="{ row }">
-          <el-button size="small" @click="editUser(row)">编辑</el-button>
-          <el-button size="small" type="warning" @click="resetPassword(row)">重置密码</el-button>
-          <el-button
-            size="small"
-            :type="row.status === 1 ? 'danger' : 'success'"
-            @click="toggleUserStatus(row)"
-          >
-            {{ row.status === 1 ? '禁用' : '启用' }}
-          </el-button>
-          <el-button size="small" type="danger" @click="deleteUser(row)">删除</el-button>
+          <div class="action-buttons">
+            <el-tooltip content="编辑用户" placement="top" :show-after="300">
+              <el-button link type="primary" size="small" @click="editUser(row)" class="action-btn">
+                <el-icon class="action-icon"><Edit /></el-icon>
+                <span>编辑</span>
+              </el-button>
+            </el-tooltip>
+            <el-tooltip content="重置密码" placement="top" :show-after="300">
+              <el-button link type="warning" size="small" @click="resetPassword(row)" class="action-btn warning-btn">
+                <el-icon class="action-icon"><Key /></el-icon>
+                <span>重置</span>
+              </el-button>
+            </el-tooltip>
+            <el-tooltip :content="row.status === 1 ? '禁用用户' : '启用用户'" placement="top" :show-after="300">
+              <el-popconfirm
+                :title="'确定要' + (row.status === 1 ? '禁用' : '启用') + '用户「' + row.username + '」吗？'"
+                confirmButtonText="确认"
+                cancelButtonText="取消"
+                @confirm="toggleUserStatus(row)"
+              >
+                <template #reference>
+                  <el-button link :type="row.status === 1 ? 'info' : 'success'" size="small" class="action-btn">
+                    <el-icon class="action-icon"><component :is="row.status === 1 ? Lock : Unlock" /></el-icon>
+                    <span>{{ row.status === 1 ? '禁用' : '启用' }}</span>
+                  </el-button>
+                </template>
+              </el-popconfirm>
+            </el-tooltip>
+            <el-tooltip content="删除用户" placement="top" :show-after="300">
+              <el-popconfirm
+                :title="'确定要删除用户「' + row.username + '」吗？'"
+                confirmButtonText="确认删除"
+                cancelButtonText="取消"
+                icon="Delete"
+                iconColor="#f56c6c"
+                @confirm="deleteUser(row)"
+              >
+                <template #reference>
+                  <el-button link type="danger" size="small" class="action-btn danger-btn">
+                    <el-icon class="action-icon"><Delete /></el-icon>
+                    <span>删除</span>
+                  </el-button>
+                </template>
+              </el-popconfirm>
+            </el-tooltip>
+          </div>
         </template>
       </el-table-column>
     </el-table>
@@ -180,6 +220,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { User, Edit, Key, Lock, Unlock, Delete } from '@element-plus/icons-vue'
 
 import { apiGet, apiPost, apiPut, apiDelete } from '../../utils/api.js'
 
@@ -552,5 +593,182 @@ onMounted(() => {
   margin-top: 16px;
   display: flex;
   justify-content: flex-end;
+  background: var(--bg-secondary, #ffffff);
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color, #e5e7eb);
+}
+
+/* 统一表格样式 */
+.unified-table :deep(.el-table) {
+  border: none !important;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.unified-table :deep(.el-table::before) {
+  display: none;
+}
+
+.unified-table :deep(.el-table__header-wrapper th) {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
+  font-weight: 600;
+  color: var(--text-primary, #1f2937);
+  padding: 14px 0;
+  border-bottom: 2px solid #e5e7eb !important;
+}
+
+.unified-table :deep(.el-table__body-wrapper td) {
+  padding: 12px 0;
+  vertical-align: middle;
+  border-bottom: 1px solid #f0f0f0 !important;
+  transition: all 0.2s ease;
+}
+
+.unified-table :deep(.el-table__header-wrapper th .cell),
+.unified-table :deep(.el-table__body-wrapper td .cell) {
+  padding: 0 16px;
+}
+
+.unified-table :deep(.el-table__row) {
+  transition: all 0.2s ease;
+}
+
+.unified-table :deep(.el-table__row:hover > td) {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* 序号单元格动画 */
+.index-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  height: 100%;
+  padding: 4px 0;
+}
+
+.index-number {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text-primary, #1f2937);
+  position: relative;
+  z-index: 1;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.index-line {
+  width: 2px;
+  height: 0;
+  background: linear-gradient(180deg, #00d4ff, #0077ff);
+  border-radius: 1px;
+  transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 0.6;
+}
+
+.unified-table :deep(.el-table__row:hover .index-line) {
+  height: 12px;
+  opacity: 1;
+}
+
+.unified-table :deep(.el-table__row:hover .index-number) {
+  transform: scale(1.1);
+  transition: transform 0.3s ease;
+}
+
+/* 操作按钮 */
+.action-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  font-size: 13px;
+  font-weight: 500;
+  position: relative;
+  overflow: hidden;
+}
+
+.action-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.5) 50%, transparent 100%);
+  transform: translateX(-100%);
+  transition: transform 0.4s ease;
+}
+
+.action-btn:hover::before {
+  transform: translateX(100%);
+}
+
+.action-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.action-icon {
+  font-size: 14px;
+  transition: transform 0.2s ease;
+}
+
+.action-btn:hover .action-icon {
+  transform: scale(1.15);
+}
+
+/* 编辑按钮 */
+.action-btn[type="primary"]:hover {
+  background: linear-gradient(135deg, rgba(64, 158, 255, 0.15) 0%, rgba(64, 158, 255, 0.05) 100%);
+  color: #409eff;
+}
+
+/* 重置密码按钮 */
+.warning-btn {
+  background: rgba(230, 162, 60, 0.08);
+  border: none;
+}
+
+.warning-btn:hover {
+  background: linear-gradient(135deg, rgba(230, 162, 60, 0.15) 0%, rgba(230, 162, 60, 0.05) 100%);
+  color: #e6a23c;
+}
+
+/* 禁用/启用按钮 */
+.action-btn[type="info"]:hover {
+  background: linear-gradient(135deg, rgba(144, 147, 153, 0.15) 0%, rgba(144, 147, 153, 0.05) 100%);
+  color: #909399;
+}
+
+.action-btn[type="success"]:hover {
+  background: linear-gradient(135deg, rgba(103, 194, 58, 0.15) 0%, rgba(103, 194, 58, 0.05) 100%);
+  color: #67c23a;
+}
+
+/* 删除按钮 */
+.danger-btn {
+  background: rgba(245, 108, 108, 0.08);
+  border: none;
+}
+
+.danger-btn:hover {
+  background: linear-gradient(135deg, rgba(245, 108, 108, 0.15) 0%, rgba(245, 108, 108, 0.05) 100%);
+  color: #f56c6c;
 }
 </style>

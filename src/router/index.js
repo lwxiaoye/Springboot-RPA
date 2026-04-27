@@ -52,11 +52,11 @@ const routes = [
         name: 'Login',
         component: Login
     },
-    // 仪表板 - 独立页面，有自己的顶部导航，无侧边栏
+    // 仪表板 - 使用实时监控页面作为首页
     {
         path: '/dashboard',
         name: 'Dashboard',
-        component: Dashboard
+        component: RealTimeMonitor
     },
     // RPA运营管理模块 - 使用 RpaLayout 布局
     {
@@ -67,7 +67,6 @@ const routes = [
             { path: 'tasks', name: 'Tasks', component: Tasks },
             { path: 'robots', name: 'Robots', component: Robots },
             { path: 'robot/:id', name: 'RobotDetail', component: RobotDetail, props: true },
-            { path: 'monitor', name: 'RealTimeMonitor', component: RealTimeMonitor },
             { path: 'processes', name: 'Processes', component: Processes },
             { path: 'process/:id', name: 'ProcessDetail', component: ProcessDetail, props: true },
             { path: 'process-designer', name: 'ProcessDesigner', component: ProcessDesigner },
@@ -89,9 +88,10 @@ const routes = [
             { path: 'script', name: 'ScriptExecutor', component: ScriptExecutor },
             { path: 'masking', name: 'DataMasking', component: DataMasking },
             { path: 'locks', name: 'DistributedLock', component: DistributedLock },
-            // 新增：智能录制器和AI助手
+            // 智能录制器
             { path: 'recorder', name: 'Recorder', component: Recorder },
-            { path: 'ai-assistant', name: 'AiAssistant', component: AiAssistant }
+            // 工作台 - 使用实时监控页面
+            { path: 'workbench', name: 'Workbench', component: RealTimeMonitor }
         ]
     },
     // 系统管理模块 - 使用 SystemLayout 布局

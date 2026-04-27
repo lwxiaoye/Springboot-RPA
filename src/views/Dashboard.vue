@@ -1,75 +1,5 @@
 <template>
   <div class="dashboard-pro">
-    <!-- 顶部导航 -->
-    <header class="dashboard-header">
-      <!-- Logo区域 -->
-      <div class="header-left">
-        <div class="logo-area">
-          <div class="logo-icon">RPA</div>
-          <div class="logo-text">RPA运营管理系统</div>
-        </div>
-      </div>
-
-      <!-- 导航菜单 -->
-      <div class="header-center">
-        <el-menu
-          :default-active="activeTopMenu"
-          mode="horizontal"
-          class="top-menu"
-          :ellipsis="false"
-          @select="handleTopMenuSelect"
-        >
-          <el-menu-item index="dashboard">
-            <el-icon><Odometer /></el-icon>
-            <span>首页</span>
-          </el-menu-item>
-          <el-menu-item index="rpa">
-            <el-icon><VideoCamera /></el-icon>
-            <span>RPA运营管理</span>
-          </el-menu-item>
-          <el-menu-item index="system">
-            <el-icon><Setting /></el-icon>
-            <span>系统管理</span>
-          </el-menu-item>
-        </el-menu>
-      </div>
-
-      <!-- 右侧工具栏 -->
-      <div class="header-right">
-        <el-badge :value="unreadCount" :hidden="unreadCount === 0" class="tool-badge">
-          <el-button class="tool-btn" @click="goToNotifications">
-            <el-icon><Bell /></el-icon>
-          </el-button>
-        </el-badge>
-
-        <el-dropdown trigger="click">
-          <div class="user-avatar">
-            <el-avatar :size="36" class="avatar-circle" v-if="!currentUser.avatar">
-              {{ userInitial }}
-            </el-avatar>
-            <el-avatar :size="36" class="avatar-circle" v-else :src="getAvatarUrl(currentUser.avatar)" @error="handleAvatarError" />
-            <div class="user-meta">
-              <div class="user-name">{{ userName }}</div>
-              <div class="user-role">{{ userRole }}</div>
-            </div>
-            <el-icon class="dropdown-arrow"><ArrowDown /></el-icon>
-          </div>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item @click="goToProfile">
-                <el-icon><User /></el-icon>
-                个人信息
-              </el-dropdown-item>
-              <el-dropdown-item divided @click="handleLogout">
-                <el-icon><SwitchButton /></el-icon>
-                退出登录
-              </el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
-      </div>
-    </header>
-
     <!-- 主内容区 -->
     <main class="dashboard-main">
       <div class="content-wrapper">
@@ -354,10 +284,9 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
-  Bell, ArrowDown, Odometer, VideoCamera, Setting, Refresh, User,
-  SwitchButton, List, CircleCheck, Monitor, Warning, Timer, Star, Key,
+  Bell, ArrowDown, User, SwitchButton, List, CircleCheck, Monitor, Warning, Timer, Star, Key,
   DataLine, BellFilled, WarningFilled, MagicStick, Document, Cpu, VideoPlay,
-  CaretTop, TrendCharts
+  CaretTop, TrendCharts, Refresh, Odometer, VideoCamera, Setting
 } from '@element-plus/icons-vue'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
@@ -368,7 +297,6 @@ import { TitleComponent, TooltipComponent, LegendComponent, GridComponent } from
 use([CanvasRenderer, LineChart, TitleComponent, TooltipComponent, LegendComponent, GridComponent])
 
 const router = useRouter()
-const activeTopMenu = ref('dashboard')
 const selectedPeriod = ref('30')
 
 // 用户信息
@@ -384,21 +312,6 @@ const currentUser = ref({
 const userName = computed(() => currentUser.value.realName || currentUser.value.username)
 const userInitial = computed(() => userName.value.charAt(0).toUpperCase())
 const userRole = computed(() => currentUser.value.role === 1 ? '管理员' : '用户')
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'
-
-// 获取头像完整 URL
-const getAvatarUrl = (path) => {
-  if (!path) return null
-  if (path.startsWith('http://') || path.startsWith('https://')) return path
-  return `${API_BASE}${path}`
-}
-
-// 处理头像加载失败
-const handleAvatarError = (e) => {
-  console.error('头像加载失败，回退到首字母显示')
-  currentUser.value.avatar = null
-}
 
 const unreadCount = ref(0)
 
@@ -560,25 +473,6 @@ const goToProfile = () => router.push('/system/profile')
 const goToProcessDetail = (process) => router.push('/rpa/processes')
 const goToSystemSettings = () => router.push('/system/settings')
 
-const handleLogout = () => {
-  ElMessageBox.confirm('确定要退出登录吗？', '提示', { type: 'warning' }).then(() => {
-    localStorage.removeItem('token')
-    localStorage.removeItem('userInfo')
-    ElMessage.success('已退出登录')
-    router.push('/login')
-  })
-}
-
-const handleTopMenuSelect = (index) => {
-  if (index === 'dashboard') {
-    router.push('/dashboard')
-  } else if (index === 'rpa') {
-    router.push('/rpa/tasks')
-  } else if (index === 'system') {
-    router.push('/system/profile')
-  }
-}
-
 const refreshData = () => {
   ElMessage.success('数据已刷新')
   loadStats()
@@ -591,16 +485,6 @@ const viewAlert = (alert) => {
 }
 
 // 数据加载
-const loadUserInfo = () => {
-  const userStr = localStorage.getItem('userInfo')
-  if (userStr) {
-    try {
-      const user = JSON.parse(userStr)
-      currentUser.value = { ...currentUser.value, ...user }
-    } catch (e) {}
-  }
-}
-
 const loadStats = async () => {
   try {
     const { apiGet } = await import('../utils/api.js')
@@ -667,28 +551,12 @@ const loadHotProcesses = async () => {
 }
 
 onMounted(() => {
-  loadUserInfo()
   loadStats()
   loadNotifications()
   loadHotProcesses()
-
-  // 监听 storage 事件，当其他页面修改 userInfo 时同步更新
-  window.addEventListener('storage', (e) => {
-    if (e.key === 'userInfo') {
-      loadUserInfo()
-    }
-  })
-
-  // 监听自定义的头像更新事件
-  window.addEventListener('avatarUpdated', () => {
-    loadUserInfo()
-  })
 })
 
-// 组件卸载时移除事件监听
 onUnmounted(() => {
-  window.removeEventListener('storage', loadUserInfo)
-  window.removeEventListener('avatarUpdated', loadUserInfo)
 })
 </script>
 
@@ -725,169 +593,9 @@ onUnmounted(() => {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
 }
 
-/* ===== Header ===== */
-.dashboard-header {
-  height: 64px;
-  background: var(--bg-secondary, #ffffff);
-  border-bottom: 1px solid var(--border-color, #e5e7eb);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 24px;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.05));
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.header-left {
-  flex-shrink: 0;
-  width: 280px;
-  min-width: 280px;
-}
-
-.logo-area {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.logo-icon {
-  width: 40px;
-  height: 40px;
-  background: linear-gradient(135deg, #409eff 0%, #66b1ff 100%);
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-weight: 700;
-  font-size: 14px;
-  flex-shrink: 0;
-}
-
-.logo-text {
-  color: var(--text-primary, #1f2937);
-  font-weight: 600;
-  font-size: 18px;
-  white-space: nowrap;
-}
-
-.header-center {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  min-width: 0;
-}
-
-.top-menu {
-  background-color: transparent;
-  border-bottom: none;
-}
-
-.top-menu .el-menu-item {
-  padding: 0 24px 0 14px;
-  margin-left: 10px;
-  font-size: 15px;
-  font-weight: 500;
-  color: var(--text-secondary, #6b7280);
-  height: 64px;
-  line-height: 64px;
-  border-bottom: 2px solid transparent;
-  transition: all 0.2s ease;
-}
-
-.top-menu .el-menu-item:hover {
-  color: var(--primary, #409eff);
-  background-color: rgba(64, 158, 255, 0.05);
-}
-
-.top-menu .el-menu-item.is-active {
-  color: var(--primary, #409eff);
-  border-bottom-color: var(--primary, #409eff);
-  background-color: transparent;
-}
-
-.top-menu .el-menu-item .el-icon {
-  margin-right: 6px;
-  font-size: 18px;
-}
-
-.header-right {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  min-width: auto;
-}
-
-.tool-badge {
-  cursor: pointer;
-}
-
-.tool-btn {
-  border: none;
-  background: transparent;
-  color: var(--text-secondary, #6b7280);
-  padding: 8px;
-  border-radius: 50%;
-  transition: all 0.2s;
-}
-
-.tool-btn:hover {
-  background: var(--bg-tertiary, #f9fafb);
-  color: var(--primary, #409eff);
-}
-
-.user-avatar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  cursor: pointer;
-  padding: 6px 12px 6px 6px;
-  border-radius: 24px;
-  transition: all 0.2s;
-}
-
-.user-avatar:hover {
-  background: var(--bg-tertiary, #f9fafb);
-}
-
-.avatar-circle {
-  border: 2px solid var(--border-color, #e5e7eb);
-  flex-shrink: 0;
-}
-
-.user-meta {
-  display: flex;
-  flex-direction: column;
-  white-space: nowrap;
-}
-
-.user-name {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-primary, #1f2937);
-  line-height: 1.2;
-}
-
-.user-role {
-  font-size: 12px;
-  color: var(--text-tertiary, #9ca3af);
-  line-height: 1.2;
-}
-
-.dropdown-arrow {
-  font-size: 12px;
-  color: var(--text-tertiary, #9ca3af);
-  flex-shrink: 0;
-}
-
 /* ===== Main Content ===== */
 .dashboard-main {
-  padding: 24px;
+  padding: 0;
   width: 100%;
 }
 

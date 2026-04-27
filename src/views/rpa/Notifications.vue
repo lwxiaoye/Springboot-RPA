@@ -492,6 +492,8 @@ onMounted(() => {
 
 :deep(.el-table__row:hover > td) {
   background: var(--bg-primary, #f5f7fa) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 /* 分页 */

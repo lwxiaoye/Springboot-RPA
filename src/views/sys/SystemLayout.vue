@@ -4,9 +4,27 @@
     <header class="dashboard-header">
       <!-- Logo区域 -->
       <div class="header-left">
-        <div class="logo-area">
-          <div class="logo-icon">RPA</div>
-          <div class="logo-text">RPA运营管理系统</div>
+        <div class="logo-area" @click="router.push('/dashboard')">
+          <div class="logo-icon">
+            <div class="hexagon">
+              <svg viewBox="0 0 100 100" width="32" height="32">
+                <defs>
+                  <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:#00d4ff;stop-opacity:1" />
+                    <stop offset="50%" style="stop-color:#0077ff;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#0055cc;stop-opacity:1" />
+                  </linearGradient>
+                </defs>
+                <polygon points="50,5 95,27.5 95,72.5 50,95 5,72.5 5,27.5" fill="none" stroke="url(#logoGradient)" stroke-width="3"/>
+                <path d="M30 50 L45 35 L45 45 L70 45 L70 55 L45 55 L45 65 Z" fill="url(#logoGradient)" opacity="0.9"/>
+                <circle cx="70" cy="35" r="4" fill="#00ffcc" opacity="0.8"/>
+              </svg>
+            </div>
+          </div>
+          <div class="logo-text">
+            <span class="logo-title">RPA</span>
+            <span class="logo-subtitle">Enterprise</span>
+          </div>
         </div>
       </div>
 
@@ -44,10 +62,10 @@
 
         <el-dropdown trigger="click">
           <div class="user-avatar">
-            <el-avatar :size="36" class="avatar-circle" v-if="!currentUser.avatar">
+            <el-avatar :size="34" class="avatar-circle" v-if="!currentUser.avatar">
               {{ userInitial }}
             </el-avatar>
-            <el-avatar :size="36" class="avatar-circle" v-else :src="getAvatarUrl(currentUser.avatar)" @error="handleAvatarError" />
+            <el-avatar :size="34" class="avatar-circle" v-else :src="getAvatarUrl(currentUser.avatar)" @error="handleAvatarError" />
             <div class="user-meta">
               <div class="user-name">{{ userName }}</div>
               <div class="user-role">{{ userRole }}</div>
@@ -75,7 +93,7 @@
       <!-- 左侧菜单 -->
       <aside class="sidebar" :class="{ collapsed: sidebarCollapsed }">
         <div class="sidebar-toggle" @click="sidebarCollapsed = !sidebarCollapsed">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
             <path v-if="sidebarCollapsed" d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/>
             <path v-else d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6 1.41-1.41z"/>
           </svg>
@@ -133,10 +151,12 @@
 
           <!-- 系统管理菜单 -->
           <template v-if="activeTopMenu === 'system'">
+            <div class="menu-section-title">系统设置</div>
             <div class="menu-item" :class="{ active: activeLeftMenu === '/system/profile' }" @click="switchMenu('/system/profile')">
               <el-icon class="menu-icon"><User /></el-icon>
               <span class="menu-text">个人信息</span>
             </div>
+            <div class="menu-section-title">用户权限</div>
             <div class="menu-item" :class="{ active: activeLeftMenu === '/system/users' }" @click="switchMenu('/system/users')">
               <el-icon class="menu-icon"><UserFilled /></el-icon>
               <span class="menu-text">用户管理</span>
@@ -149,6 +169,8 @@
               <el-icon class="menu-icon"><FolderOpened /></el-icon>
               <span class="menu-text">资源管理</span>
             </div>
+            <div class="menu-divider"></div>
+            <div class="menu-section-title">应用设置</div>
             <div class="menu-item" :class="{ active: activeLeftMenu === '/rpa/settings' }" @click="switchMenu('/rpa/settings')">
               <el-icon class="menu-icon"><Tools /></el-icon>
               <span class="menu-text">系统设置</span>
@@ -312,37 +334,50 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* ===== 统一设计系统 - 浅色主题 ===== */
+/* ===== 统一设计系统 ===== */
 .system-layout {
   display: flex;
   flex-direction: column;
   height: 100vh;
   width: 100%;
-  background: var(--bg-primary, #f5f7fa);
+  background: #f5f7fa;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
 }
 
 /* ===== 顶部导航栏 ===== */
 .dashboard-header {
-  height: 64px;
-  background: var(--bg-secondary, #ffffff);
-  border-bottom: 1px solid var(--border-color, #e5e7eb);
+  height: 56px;
+  background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 0 24px;
+  padding: 0 16px;
   position: sticky;
   top: 0;
   z-index: 100;
-  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.05));
-  width: 100%;
-  box-sizing: border-box;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .header-left {
   flex-shrink: 0;
-  width: 280px;
-  min-width: 280px;
+  width: 220px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding-left: 16px;
+  background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
+  position: relative;
+}
+
+.header-left::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.15);
 }
 
 .logo-area {
@@ -350,80 +385,108 @@ onUnmounted(() => {
   align-items: center;
   gap: 12px;
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: all 0.3s ease;
 }
 
 .logo-area:hover {
-  opacity: 0.85;
+  transform: translateX(2px);
 }
 
 .logo-icon {
-  width: 40px;
-  height: 40px;
-  background: linear-gradient(135deg, #409eff 0%, #66b1ff 100%);
-  border-radius: 10px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
-  font-weight: 700;
-  font-size: 14px;
   flex-shrink: 0;
 }
 
+.hexagon {
+  position: relative;
+  animation: logoFloat 3s ease-in-out infinite;
+}
+
+@keyframes logoFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+
 .logo-text {
-  color: var(--text-primary, #1f2937);
-  font-weight: 600;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.logo-title {
+  color: #ffffff;
+  font-weight: 700;
   font-size: 18px;
-  white-space: nowrap;
+  letter-spacing: 2px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  font-family: 'Orbitron', 'Roboto Mono', monospace;
+}
+
+.logo-subtitle {
+  color: rgba(0, 212, 255, 0.9);
+  font-weight: 500;
+  font-size: 11px;
+  letter-spacing: 1px;
 }
 
 .header-center {
   flex: 1;
   display: flex;
   justify-content: center;
-  min-width: 0;
+  padding: 0 20px;
 }
 
 .top-menu {
   background-color: transparent;
   border-bottom: none;
+  height: 56px;
 }
 
-.top-menu .el-menu-item {
-  padding: 0 24px 0 14px;
-  margin-left: 10px;
-  font-size: 15px;
+.top-menu :deep(.el-menu-item) {
+  padding: 0 20px;
+  font-size: 14px;
   font-weight: 500;
-  color: var(--text-secondary, #6b7280);
-  height: 64px;
-  line-height: 64px;
-  border-bottom: 2px solid transparent;
-  transition: all 0.2s ease;
+  color: rgba(255, 255, 255, 0.8);
+  height: 56px;
+  line-height: 56px;
+  border-bottom: 3px solid transparent;
+  transition: all 0.25s ease;
+  position: relative;
 }
 
-.top-menu .el-menu-item:hover {
-  color: var(--primary, #409eff);
-  background-color: rgba(64, 158, 255, 0.05);
+.top-menu :deep(.el-menu-item:hover) {
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
-.top-menu .el-menu-item.is-active {
-  color: var(--primary, #409eff);
-  border-bottom-color: var(--primary, #409eff);
-  background-color: transparent;
+.top-menu :deep(.el-menu-item.is-active) {
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.15);
+  font-weight: 600;
 }
 
-.top-menu .el-menu-item .el-icon {
-  margin-right: 6px;
-  font-size: 18px;
+.top-menu :deep(.el-menu-item.is-active)::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60%;
+  height: 3px;
+  background: linear-gradient(90deg, #00d4ff, #0077ff);
+  border-radius: 3px 3px 0 0;
 }
 
 .header-right {
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  gap: 16px;
-  min-width: auto;
+  gap: 8px;
+  padding-left: 16px;
 }
 
 .tool-badge {
@@ -432,16 +495,18 @@ onUnmounted(() => {
 
 .tool-btn {
   border: none;
-  background: transparent;
-  color: var(--text-secondary, #6b7280);
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.85);
   padding: 8px;
-  border-radius: 50%;
-  transition: all 0.2s;
+  border-radius: 8px;
+  transition: all 0.25s ease;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .tool-btn:hover {
-  background: var(--bg-tertiary, #f9fafb);
-  color: var(--primary, #409eff);
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .user-avatar {
@@ -449,18 +514,22 @@ onUnmounted(() => {
   align-items: center;
   gap: 10px;
   cursor: pointer;
-  padding: 6px 12px 6px 6px;
+  padding: 4px 12px 4px 4px;
   border-radius: 24px;
-  transition: all 0.2s;
+  transition: all 0.25s ease;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .user-avatar:hover {
-  background: var(--bg-tertiary, #f9fafb);
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.25);
 }
 
 .avatar-circle {
-  border: 2px solid var(--border-color, #e5e7eb);
+  border: 2px solid rgba(255, 255, 255, 0.3);
   flex-shrink: 0;
+  background: linear-gradient(135deg, #00d4ff, #0077ff);
 }
 
 .user-meta {
@@ -470,21 +539,21 @@ onUnmounted(() => {
 }
 
 .user-name {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
-  color: var(--text-primary, #1f2937);
+  color: #ffffff;
   line-height: 1.2;
 }
 
 .user-role {
-  font-size: 12px;
-  color: var(--text-tertiary, #9ca3af);
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.7);
   line-height: 1.2;
 }
 
 .dropdown-arrow {
   font-size: 12px;
-  color: var(--text-tertiary, #9ca3af);
+  color: rgba(255, 255, 255, 0.7);
   flex-shrink: 0;
 }
 
@@ -500,9 +569,9 @@ onUnmounted(() => {
 .sidebar {
   width: 240px;
   background: #ffffff;
-  border-right: 1px solid #e5e7eb;
+  border-right: 1px solid #e4e7ed;
   position: relative;
-  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
   flex-shrink: 0;
   box-shadow: 2px 0 8px rgba(0, 0, 0, 0.04);
@@ -515,88 +584,103 @@ onUnmounted(() => {
 .sidebar-toggle {
   position: absolute;
   right: -12px;
-  top: 24px;
+  top: 16px;
   width: 24px;
   height: 24px;
   background: #ffffff;
-  border: 1px solid #e5e7eb;
+  border: 1px solid #dcdfe6;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   z-index: 10;
-  color: #6b7280;
-  transition: all 0.2s;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  color: #909399;
+  transition: all 0.25s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .sidebar-toggle:hover {
-  background: #f9fafb;
-  color: #409eff;
-  border-color: #409eff;
+  background: linear-gradient(135deg, #00d4ff 0%, #0077ff 100%);
+  color: #ffffff;
+  border-color: #0077ff;
+  transform: scale(1.1);
 }
 
 .sidebar-menu {
-  padding: 16px 12px;
+  padding: 12px 8px;
   height: 100%;
   overflow-y: auto;
+}
+
+.menu-section-title {
+  padding: 8px 16px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #909399;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 8px;
 }
 
 .menu-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
-  border-radius: 10px;
-  color: #4b5563;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  color: #606266;
   cursor: pointer;
   transition: all 0.2s ease;
   font-size: 14px;
   font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
-  margin-bottom: 4px;
-  border: 1px solid transparent;
+  margin-bottom: 2px;
 }
 
 .menu-item:hover {
-  background: #f3f4f6;
+  background: #f5f7fa;
   color: #409eff;
 }
 
 .menu-item.active {
-  background: linear-gradient(135deg, #e6f4ff 0%, #f0f9ff 100%);
+  background: linear-gradient(135deg, #ecf5ff 0%, #d9ecff 100%);
   color: #409eff;
   font-weight: 600;
-  border: 1px solid rgba(64, 158, 255, 0.2);
-  box-shadow: 0 2px 4px rgba(64, 158, 255, 0.08);
+  box-shadow: 0 2px 4px rgba(64, 158, 255, 0.1);
+}
+
+.menu-item.active .menu-icon {
+  color: #409eff;
 }
 
 .menu-item.main-item {
-  background: linear-gradient(135deg, #409eff 0%, #66b1ff 100%);
-  color: white;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e6f4ff 100%);
+  color: #1e3a5f;
   margin-bottom: 12px;
-  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3);
+  border: 1px solid #d9ecff;
 }
 
 .menu-item.main-item:hover {
-  background: linear-gradient(135deg, #66b1ff 0%, #409eff 100%);
-  color: white;
-  transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(64, 158, 255, 0.4);
+  background: linear-gradient(135deg, #e6f4ff 0%, #d9ecff 100%);
+  transform: translateX(2px);
 }
 
 .menu-item.main-item.active {
-  background: linear-gradient(135deg, #66b1ff 0%, #409eff 100%);
-  color: white;
-  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.4);
+  background: linear-gradient(135deg, #409eff 0%, #3a8ee6 100%);
+  color: #ffffff;
+  border-color: #409eff;
+}
+
+.menu-item.main-item.active .menu-icon {
+  color: #ffffff;
 }
 
 .menu-icon {
   font-size: 18px;
   flex-shrink: 0;
-  transition: transform 0.2s;
+  transition: all 0.2s ease;
 }
 
 .menu-item:hover .menu-icon {
@@ -611,14 +695,14 @@ onUnmounted(() => {
 
 .menu-divider {
   height: 1px;
-  background: #e5e7eb;
+  background: linear-gradient(90deg, transparent, #e4e7ed 20%, #e4e7ed 80%, transparent);
   margin: 12px 14px;
 }
 
 /* ===== 内容区 ===== */
 .content-area {
   flex: 1;
-  padding: 24px;
+  padding: 20px;
   overflow-y: auto;
   background: #f5f7fa;
 }
@@ -626,7 +710,7 @@ onUnmounted(() => {
 /* ===== 滚动条 ===== */
 .sidebar-menu::-webkit-scrollbar,
 .content-area::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
 }
 
 .sidebar-menu::-webkit-scrollbar-track,
@@ -636,12 +720,46 @@ onUnmounted(() => {
 
 .sidebar-menu::-webkit-scrollbar-thumb,
 .content-area::-webkit-scrollbar-thumb {
-  background: #d1d5db;
-  border-radius: 3px;
+  background: #dcdfe6;
+  border-radius: 2px;
 }
 
 .sidebar-menu::-webkit-scrollbar-thumb:hover,
 .content-area::-webkit-scrollbar-thumb:hover {
-  background: #9ca3af;
+  background: #c0c4cc;
+}
+
+/* 下拉菜单样式 */
+:deep(.el-dropdown-menu) {
+  background: #ffffff;
+  border: 1px solid #ebeef5;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  padding: 4px;
+}
+
+:deep(.el-dropdown-menu__item) {
+  border-radius: 6px;
+  padding: 10px 16px;
+  font-size: 14px;
+  color: #606266;
+  transition: all 0.2s ease;
+}
+
+:deep(.el-dropdown-menu__item:hover) {
+  background: #f5f7fa;
+  color: #409eff;
+}
+
+:deep(.el-dropdown-menu__item.is-divided) {
+  margin-top: 4px;
+  border-top: 1px solid #ebeef5;
+  padding-top: 10px;
+}
+
+:deep(.el-badge__content) {
+  background: linear-gradient(135deg, #f56c6c 0%, #e64a4a 100%);
+  border: none;
+  box-shadow: 0 2px 4px rgba(245, 108, 108, 0.4);
 }
 </style>

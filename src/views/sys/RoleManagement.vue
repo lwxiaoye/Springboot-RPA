@@ -25,8 +25,16 @@
     </div>
 
     <!-- 角色表格 -->
-    <el-table :data="paginatedTableData" border stripe v-loading="loading" style="width: 100%">
-      <el-table-column type="index" label="序号" width="60" align="center" />
+    <el-table :data="paginatedTableData" border stripe v-loading="loading" style="width: 100%" class="unified-table">
+      <el-table-column type="index" label="序号" width="60" align="center">
+        <template #default="{ $index }">
+          <div class="index-cell">
+            <div class="index-line"></div>
+            <span class="index-number">{{ (pagination.page - 1) * pagination.size + $index + 1 }}</span>
+            <div class="index-line"></div>
+          </div>
+        </template>
+      </el-table-column>
       <el-table-column prop="code" label="角色编码" min-width="120" />
       <el-table-column prop="name" label="角色名称" min-width="120" />
       <el-table-column prop="description" label="描述" min-width="180" show-overflow-tooltip />
@@ -44,15 +52,39 @@
         </template>
       </el-table-column>
       <el-table-column prop="createTime" label="创建时间" min-width="170" />
-      <el-table-column label="操作" fixed="right" width="240" align="center">
+      <el-table-column label="操作" fixed="right" width="220" align="center">
         <template #default="{ row }">
-          <el-button link type="primary" size="small" @click="editRole(row)">编辑</el-button>
-          <el-button link type="primary" size="small" @click="assignPermissions(row)">分配权限</el-button>
-          <el-popconfirm title="确认删除该角色吗？" @confirm="deleteRole(row)">
-            <template #reference>
-              <el-button link type="danger" size="small">删除</el-button>
-            </template>
-          </el-popconfirm>
+          <div class="action-buttons">
+            <el-tooltip content="编辑角色" placement="top" :show-after="300">
+              <el-button link type="primary" size="small" @click="editRole(row)" class="action-btn">
+                <el-icon class="action-icon"><Edit /></el-icon>
+                <span>编辑</span>
+              </el-button>
+            </el-tooltip>
+            <el-tooltip content="分配权限" placement="top" :show-after="300">
+              <el-button link type="success" size="small" @click="assignPermissions(row)" class="action-btn">
+                <el-icon class="action-icon"><Key /></el-icon>
+                <span>权限</span>
+              </el-button>
+            </el-tooltip>
+            <el-tooltip content="删除角色" placement="top" :show-after="300">
+              <el-popconfirm
+                :title="'确定要删除角色「' + row.name + '」吗？'"
+                confirmButtonText="确认删除"
+                cancelButtonText="取消"
+                icon="Delete"
+                iconColor="#f56c6c"
+                @confirm="deleteRole(row)"
+              >
+                <template #reference>
+                  <el-button link type="danger" size="small" class="action-btn danger-btn">
+                    <el-icon class="action-icon"><Delete /></el-icon>
+                    <span>删除</span>
+                  </el-button>
+                </template>
+              </el-popconfirm>
+            </el-tooltip>
+          </div>
         </template>
       </el-table-column>
     </el-table>
@@ -127,8 +159,8 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
+import { Plus, Edit, Delete, Key } from '@element-plus/icons-vue'
 
 import { apiGet, apiPost, apiPut } from '../../utils/api.js'
 
@@ -427,35 +459,203 @@ onMounted(() => { fetchRoleList(); fetchPermissionTree() })
 
 /* 表格 */
 :deep(.el-table) {
-  border-radius: var(--radius-lg, 16px);
+  border-radius: 12px;
   overflow: hidden;
-  border: 1px solid var(--border-color, #e5e7eb);
+  border: none !important;
 }
 
-:deep(.el-table th) {
-  background: var(--bg-tertiary, #f9fafb) !important;
+:deep(.el-table::before) {
+  display: none;
+}
+
+:deep(.el-table__header-wrapper th) {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
   font-weight: 600;
   color: var(--text-primary, #1f2937);
+  border-bottom: 2px solid #e5e7eb !important;
 }
 
-:deep(.el-table td) {
-  border-bottom: 1px solid var(--border-color, #e5e7eb);
+:deep(.el-table__body-wrapper td) {
+  background: #fff;
+  border-bottom: 1px solid #f0f0f0 !important;
+  transition: all 0.2s ease;
+}
+
+:deep(.el-table__row) {
+  transition: all 0.2s ease;
 }
 
 :deep(.el-table__row:hover > td) {
-  background: var(--bg-primary, #f5f7fa) !important;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+:deep(.el-table__row:hover > td) {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%) !important;
+}
+
+/* 统一表格样式 */
+.unified-table :deep(.el-table__header-wrapper th) {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
+  font-weight: 600;
+  color: var(--text-primary, #1f2937);
+  padding: 14px 0;
+  border-bottom: 2px solid #e5e7eb !important;
+}
+
+.unified-table :deep(.el-table__body-wrapper td) {
+  padding: 12px 0;
+  vertical-align: middle;
+  border-bottom: 1px solid #f0f0f0 !important;
+}
+
+.unified-table :deep(.el-table__header-wrapper th .cell),
+.unified-table :deep(.el-table__body-wrapper td .cell) {
+  padding: 0 16px;
+}
+
+.unified-table :deep(.el-table__row) {
+  transition: all 0.2s ease;
+}
+
+.unified-table :deep(.el-table__row:hover > td) {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%) !important;
+}
+
+.unified-table :deep(.el-table) {
+  border: none !important;
+}
+
+.unified-table :deep(.el-table::before) {
+  display: none;
+}
+
+/* 序号单元格动画 */
+.index-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  height: 100%;
+  padding: 4px 0;
+}
+
+.index-number {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text-primary, #1f2937);
+  position: relative;
+  z-index: 1;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.index-line {
+  width: 2px;
+  height: 0;
+  background: linear-gradient(180deg, #00d4ff, #0077ff);
+  border-radius: 1px;
+  transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 0.6;
+}
+
+.unified-table :deep(.el-table__row:hover .index-line) {
+  height: 12px;
+  opacity: 1;
+}
+
+.unified-table :deep(.el-table__row:hover .index-number) {
+  transform: scale(1.1);
+  transition: transform 0.3s ease;
+}
+
+/* 操作按钮 */
+.action-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  font-size: 13px;
+  font-weight: 500;
+  position: relative;
+  overflow: hidden;
+}
+
+.action-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.5) 50%, transparent 100%);
+  transform: translateX(-100%);
+  transition: transform 0.4s ease;
+}
+
+.action-btn:hover::before {
+  transform: translateX(100%);
+}
+
+.action-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.action-icon {
+  font-size: 14px;
+  transition: transform 0.2s ease;
+}
+
+.action-btn:hover .action-icon {
+  transform: scale(1.15);
+}
+
+/* 编辑按钮 */
+.action-btn[type="primary"]:hover {
+  background: linear-gradient(135deg, rgba(64, 158, 255, 0.15) 0%, rgba(64, 158, 255, 0.05) 100%);
+  color: #409eff;
+}
+
+/* 权限按钮 */
+.action-btn[type="success"]:hover {
+  background: linear-gradient(135deg, rgba(103, 194, 58, 0.15) 0%, rgba(103, 194, 58, 0.05) 100%);
+  color: #67c23a;
+}
+
+/* 删除按钮 */
+.danger-btn {
+  background: rgba(245, 108, 108, 0.08);
+  border: none;
+}
+
+.danger-btn:hover {
+  background: linear-gradient(135deg, rgba(245, 108, 108, 0.15) 0%, rgba(245, 108, 108, 0.05) 100%);
+  color: #f56c6c;
 }
 
 /* 分页 */
 .pagination-container {
-  margin-top: 24px;
+  margin-top: 16px;
   display: flex;
   justify-content: flex-end;
   background: var(--bg-secondary, #ffffff);
-  padding: 16px 20px;
-  border-radius: var(--radius-lg, 16px);
+  padding: 12px 16px;
+  border-radius: 10px;
   border: 1px solid var(--border-color, #e5e7eb);
-  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.05));
 }
 
 /* 弹窗 */

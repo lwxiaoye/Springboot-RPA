@@ -4,8 +4,27 @@
     <header class="dashboard-header">
       <div class="header-left">
         <div class="logo-area" @click="goToHome">
-          <div class="logo-icon">RPA</div>
-          <div class="logo-text">RPA运营管理系统</div>
+          <div class="logo-icon">
+            <div class="hexagon">
+              <svg viewBox="0 0 100 100" width="36" height="36">
+                <defs>
+                  <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:#00d4ff;stop-opacity:1" />
+                    <stop offset="50%" style="stop-color:#0077ff;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#0055cc;stop-opacity:1" />
+                  </linearGradient>
+                </defs>
+                <polygon points="50,5 95,27.5 95,72.5 50,95 5,72.5 5,27.5" fill="none" stroke="url(#logoGradient)" stroke-width="3"/>
+                <path d="M30 50 L45 35 L45 45 L70 45 L70 55 L45 55 L45 65 Z" fill="url(#logoGradient)" opacity="0.9"/>
+                <circle cx="70" cy="35" r="4" fill="#00ffcc" opacity="0.8"/>
+              </svg>
+            </div>
+          </div>
+          <div class="logo-text">
+            <span class="logo-title">RPA</span>
+            <span class="logo-subtitle">Enterprise Platform</span>
+          </div>
+          <div class="logo-accent"></div>
         </div>
       </div>
 
@@ -312,108 +331,214 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background: #f5f7fa;
+  background: #f0f2f5;
 }
 
 .dashboard-header {
-  height: 64px;
-  background: #ffffff;
-  border-bottom: 1px solid #e5e7eb;
+  height: 58px;
+  background: linear-gradient(135deg, #1a202c 0%, #2d3748 50%, #1a202c 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 24px;
+  padding: 0 24px 0 0;
   position: sticky;
   top: 0;
   z-index: 100;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 }
 
 .header-left {
   flex-shrink: 0;
-  width: 280px;
-  min-width: 280px;
+  width: 220px;
+  min-width: 220px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.header-left::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(64, 158, 255, 0.15) 0%, transparent 60%);
+  pointer-events: none;
 }
 
 .logo-area {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.logo-area:hover {
+  transform: scale(1.02);
 }
 
 .logo-icon {
-  width: 40px;
-  height: 40px;
-  background: linear-gradient(135deg, #409eff 0%, #66b1ff 100%);
-  border-radius: 10px;
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
-  font-weight: 700;
-  font-size: 14px;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.hexagon {
+  position: relative;
+  animation: logoFloat 3s ease-in-out infinite;
+}
+
+@keyframes logoFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
 }
 
 .logo-text {
-  color: #1f2937;
-  font-weight: 600;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.logo-title {
+  color: white;
+  font-weight: 700;
   font-size: 18px;
+  letter-spacing: 2px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  font-family: 'Orbitron', 'Roboto Mono', monospace;
+}
+
+.logo-subtitle {
+  color: rgba(0, 212, 255, 0.85);
+  font-weight: 500;
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.logo-accent {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #00d4ff, transparent);
+  animation: accentPulse 2s ease-in-out infinite;
+}
+
+@keyframes accentPulse {
+  0%, 100% { opacity: 0.5; width: 60%; }
+  50% { opacity: 1; width: 80%; }
 }
 
 .header-center {
   flex: 1;
   display: flex;
   justify-content: center;
+  padding: 0 20px;
 }
 
 .top-menu {
   background-color: transparent;
   border-bottom: none;
+  height: 58px;
 }
 
-.top-menu .el-menu-item {
-  padding: 0 24px;
-  font-size: 15px;
+.top-menu :deep(.el-menu-item) {
+  padding: 0 20px;
+  font-size: 14px;
   font-weight: 500;
-  color: #6b7280;
-  height: 64px;
-  line-height: 64px;
+  color: rgba(255, 255, 255, 0.7);
+  height: 58px;
+  line-height: 58px;
+  border-bottom: 2px solid transparent;
+  transition: all 0.25s ease;
+  border-radius: 8px 8px 0 0;
+  position: relative;
 }
 
-.top-menu .el-menu-item:hover {
-  color: #409eff;
-  background-color: rgba(64, 158, 255, 0.05);
+.top-menu :deep(.el-menu-item)::before {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #409eff, #66b1ff);
+  transition: width 0.3s ease;
 }
 
-.top-menu .el-menu-item.is-active {
-  color: #409eff;
-  border-bottom-color: #409eff;
+.top-menu :deep(.el-menu-item:hover) {
+  color: rgba(255, 255, 255, 0.95);
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.top-menu :deep(.el-menu-item:hover)::before {
+  width: 60%;
+}
+
+.top-menu :deep(.el-menu-item.is-active) {
+  color: white;
+  background-color: rgba(255, 255, 255, 0.1);
+  font-weight: 600;
+}
+
+.top-menu :deep(.el-menu-item.is-active)::before {
+  width: 80%;
 }
 
 .header-right {
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
+  padding-right: 8px;
 }
 
 .ws-indicator {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: #d1d5db;
+  background: rgba(255, 255, 255, 0.3);
+  transition: background 0.3s ease;
 }
 
 .ws-indicator.connected {
   background: #22c55e;
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
 }
 
 .tool-btn {
   border: none;
-  background: transparent;
-  color: #6b7280;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.75);
   padding: 8px;
+  border-radius: 8px;
+  transition: all 0.25s ease;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tool-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .user-avatar {
@@ -422,22 +547,28 @@ onMounted(() => {
   gap: 10px;
   cursor: pointer;
   padding: 6px 12px 6px 6px;
-  border-radius: 24px;
+  border-radius: 10px;
+  transition: all 0.25s ease;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .user-avatar:hover {
-  background: #f9fafb;
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.18);
 }
 
 .user-name {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
-  color: #1f2937;
+  color: rgba(255, 255, 255, 0.95);
+  line-height: 1.2;
 }
 
 .user-role {
-  font-size: 12px;
-  color: #9ca3af;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.2;
 }
 
 .content-area {
@@ -623,5 +754,54 @@ onMounted(() => {
 @media (max-width: 768px) {
   .stats-grid { grid-template-columns: 1fr; }
   .header-left { width: auto; min-width: auto; }
+}
+
+/* 头像样式 */
+.avatar-circle {
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.dropdown-arrow {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+/* 暗色导航栏下拉菜单覆盖样式 */
+:deep(.el-dropdown-menu) {
+  background: #ffffff;
+  border: 1px solid #e8eaed;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  border-radius: 8px;
+  padding: 6px;
+}
+
+:deep(.el-dropdown-menu__item) {
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: #4b5563;
+  transition: all 0.2s ease;
+}
+
+:deep(.el-dropdown-menu__item:hover) {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  color: #2563eb;
+}
+
+:deep(.el-dropdown-menu__item.is-divided) {
+  margin-top: 6px;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 10px;
+}
+
+/* 暗色主题下的徽章 */
+:deep(.el-badge__content) {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  border: none;
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.4);
 }
 </style>

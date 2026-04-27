@@ -9,33 +9,48 @@
 
       <!-- 统计概览 -->
       <div class="stats-row">
-        <div class="stat-card">
-          <div class="stat-icon primary"><el-icon><Cpu /></el-icon></div>
-          <div class="stat-content">
-            <span class="stat-value">{{ stats.total }}</span>
-            <span class="stat-label">机器人总数</span>
+        <div class="stat-card" @click="goTo('/rpa/tasks')">
+          <div class="stat-icon-wrapper" style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);">
+            <el-icon style="color: #1976d2;"><Monitor /></el-icon>
           </div>
+          <div class="stat-content">
+            <div class="stat-value">{{ stats.total }}</div>
+            <div class="stat-label">机器人总数</div>
+          </div>
+          <div class="stat-arrow"><el-icon><ArrowRight /></el-icon></div>
         </div>
-        <div class="stat-card">
-          <div class="stat-icon success"><el-icon><CircleCheck /></el-icon></div>
-          <div class="stat-content">
-            <span class="stat-value">{{ stats.online }}</span>
-            <span class="stat-label">在线机器人</span>
+        
+        <div class="stat-card" @click="goTo('/rpa/robots?status=online')">
+          <div class="stat-icon-wrapper" style="background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);">
+            <el-icon style="color: #388e3c;"><CircleCheck /></el-icon>
           </div>
+          <div class="stat-content">
+            <div class="stat-value success">{{ stats.online }}</div>
+            <div class="stat-label">在线机器人</div>
+          </div>
+          <div class="stat-arrow"><el-icon><ArrowRight /></el-icon></div>
         </div>
-        <div class="stat-card">
-          <div class="stat-icon warning"><el-icon><Timer /></el-icon></div>
-          <div class="stat-content">
-            <span class="stat-value">{{ stats.busy }}</span>
-            <span class="stat-label">忙碌中</span>
+        
+        <div class="stat-card" @click="goTo('/rpa/robots?status=busy')">
+          <div class="stat-icon-wrapper" style="background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);">
+            <el-icon style="color: #f57c00;"><Timer /></el-icon>
           </div>
+          <div class="stat-content">
+            <div class="stat-value warning">{{ stats.busy }}</div>
+            <div class="stat-label">忙碌中</div>
+          </div>
+          <div class="stat-arrow"><el-icon><ArrowRight /></el-icon></div>
         </div>
-        <div class="stat-card">
-          <div class="stat-icon danger"><el-icon><TrendCharts /></el-icon></div>
-          <div class="stat-content">
-            <span class="stat-value">{{ stats.todayExecutions }}</span>
-            <span class="stat-label">今日执行</span>
+        
+        <div class="stat-card" @click="goTo('/rpa/logs')">
+          <div class="stat-icon-wrapper" style="background: linear-gradient(135deg, #fce4ec 0%, #f8bbd0 100%);">
+            <el-icon style="color: #c2185b;"><TrendCharts /></el-icon>
           </div>
+          <div class="stat-content">
+            <div class="stat-value">{{ stats.todayExecutions }}</div>
+            <div class="stat-label">今日执行</div>
+          </div>
+          <div class="stat-arrow"><el-icon><ArrowRight /></el-icon></div>
         </div>
       </div>
 
@@ -60,46 +75,80 @@
         </el-button>
       </div>
 
-      <el-table :data="paginatedRobots" v-loading="loading" border stripe>
-        <el-table-column type="index" label="序号" width="60" align="center" />
-        <el-table-column prop="name" label="机器人名称" min-width="140" />
-        <el-table-column prop="ip" label="IP地址" min-width="120" />
-        <el-table-column prop="robotCategory" label="分类" width="100" align="center">
+      <el-table :data="paginatedRobots" v-loading="loading" border stripe highlight-current-row class="robots-table">
+        <el-table-column type="index" label="序号" width="60" align="center">
+          <template #default="{ $index }">
+            <div class="index-cell">
+              <div class="index-line"></div>
+              <span class="index-number">{{ (pagination.page - 1) * pagination.size + $index + 1 }}</span>
+              <div class="index-line"></div>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column prop="name" label="机器人名称" min-width="120" align="center" show-overflow-tooltip />
+        <el-table-column prop="ip" label="IP地址" width="110" align="center" />
+        <el-table-column prop="robotCategory" label="分类" width="80" align="center">
           <template #default="{ row }">
-            <el-tag :type="getCategoryType(row.robotCategory)" size="small">
+            <el-tag :type="getCategoryType(row.robotCategory)" size="small" effect="light">
               {{ getCategoryText(row.robotCategory) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="queueName" label="所属队列" width="120" align="center">
+        <el-table-column prop="queueName" label="所属队列" width="90" align="center">
           <template #default="{ row }">
             <span v-if="row.queueName" class="queue-tag">{{ row.queueName }}</span>
             <span v-else class="text-muted">-</span>
           </template>
         </el-table-column>
-        <el-table-column prop="status" label="状态" width="100" align="center">
+        <el-table-column prop="status" label="状态" width="75" align="center">
           <template #default="{ row }">
-            <el-tag :type="getStatusType(row.status)" size="small">
-              {{ getStatusText(row.status) }}
-            </el-tag>
+            <div class="status-cell">
+              <span class="status-dot" :class="row.status"></span>
+              <el-tag :type="getStatusType(row.status)" size="small" effect="light">
+                {{ getStatusText(row.status) }}
+              </el-tag>
+            </div>
           </template>
         </el-table-column>
-        <el-table-column prop="totalExecutions" label="执行次数" width="80" align="center" />
-        <el-table-column prop="successRate" label="成功率" width="80" align="center">
+        <el-table-column prop="totalExecutions" label="执行次数" width="75" align="center" />
+        <el-table-column prop="successRate" label="成功率" width="70" align="center">
           <template #default="{ row }">
-            <span :class="getSuccessRateClass(row)">{{ row.successRate || '0' }}%</span>
+            <div class="rate-cell" :class="getSuccessRateClass(row)">
+              <el-icon v-if="getSuccessRateClass(row) === 'rate-high'"><CircleCheck /></el-icon>
+              <span>{{ row.successRate || '0' }}%</span>
+            </div>
           </template>
         </el-table-column>
-        <el-table-column prop="lastHeartbeat" label="最后心跳" min-width="150" />
-        <el-table-column label="操作" width="180" fixed="right" align="center">
+        <el-table-column prop="lastHeartbeat" label="最后心跳" min-width="140" align="center">
           <template #default="{ row }">
-            <el-button link type="primary" @click="editRobot(row)">编辑</el-button>
-            <el-button link type="primary" @click="viewDetail(row)">详情</el-button>
-            <el-popconfirm title="确认删除该机器人吗？" @confirm="deleteRobot(row)">
-              <template #reference>
-                <el-button link type="danger">删除</el-button>
-              </template>
-            </el-popconfirm>
+            <span v-if="row.lastHeartbeat" class="heartbeat-time">{{ formatHeartbeat(row.lastHeartbeat) }}</span>
+            <span v-else class="text-muted">-</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="150" fixed="right" align="center">
+          <template #default="{ row }">
+            <div class="action-buttons">
+              <el-button link type="primary" @click="editRobot(row)" class="action-btn">
+                <span>编辑</span>
+              </el-button>
+              <el-button link type="primary" @click="viewDetail(row)" class="action-btn">
+                <span>详情</span>
+              </el-button>
+              <el-popconfirm
+                :title="'确定要删除机器人「' + row.name + '」吗？'"
+                confirmButtonText="确认删除"
+                cancelButtonText="取消"
+                icon="Delete"
+                iconColor="#f56c6c"
+                @confirm="deleteRobot(row)"
+              >
+                <template #reference>
+                  <el-button link type="danger" class="action-btn">
+                    <span>删除</span>
+                  </el-button>
+                </template>
+              </el-popconfirm>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -606,7 +655,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Search, Plus, FolderOpened, Cpu, CircleCheck, Timer, TrendCharts, InfoFilled, MagicStick, Document, Edit, Monitor, Connection, More, ArrowLeft } from '@element-plus/icons-vue'
+import { Search, Plus, FolderOpened, Cpu, CircleCheck, Timer, TrendCharts, InfoFilled, MagicStick, Document, Edit, Monitor, Connection, More, ArrowLeft, ArrowRight, View, Delete } from '@element-plus/icons-vue'
 import { apiGet, apiPost, apiPut, apiDelete } from '../../utils/api.js'
 
 const router = useRouter()
@@ -944,6 +993,20 @@ const getSuccessRateClass = (row) => {
   if (rate >= 90) return 'rate-high'
   if (rate >= 70) return 'rate-mid'
   return 'rate-low'
+}
+
+// 格式化心跳时间
+const formatHeartbeat = (time) => {
+  if (!time) return '-'
+  const date = new Date(time)
+
+  return date.toLocaleString('zh-CN', {
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  })
 }
 
 const filteredRobots = computed(() => {
@@ -1384,55 +1447,96 @@ onMounted(() => {
 
 .stat-card {
   background: var(--bg-secondary, #ffffff);
-  padding: 24px;
+  padding: 20px 24px;
   border-radius: 16px;
   display: flex;
   align-items: center;
   gap: 16px;
   border: 1px solid var(--border-color, #e5e7eb);
   box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.05));
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary) 0%, var(--primary-light) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
 .stat-card:hover {
   transform: translateY(-4px);
-  box-shadow: var(--shadow-md, 0 4px 12px rgba(0, 0, 0, 0.1));
+  box-shadow: var(--shadow-md, 0 8px 24px rgba(0, 0, 0, 0.12));
+  border-color: var(--primary, #409eff);
 }
 
-.stat-icon {
-  width: 56px;
-  height: 56px;
+.stat-card:hover::before {
+  opacity: 1;
+}
+
+.stat-icon-wrapper {
+  width: 52px;
+  height: 52px;
   border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 26px;
-  color: white;
+  font-size: 24px;
   flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
 }
 
-.stat-icon.primary { background: linear-gradient(135deg, #409eff, #66b1ff); box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3); }
-.stat-icon.success { background: linear-gradient(135deg, #67c23a, #85ce61); box-shadow: 0 4px 12px rgba(103, 194, 58, 0.3); }
-.stat-icon.warning { background: linear-gradient(135deg, #e6a23c, #ebb563); box-shadow: 0 4px 12px rgba(230, 162, 60, 0.3); }
-.stat-icon.danger { background: linear-gradient(135deg, #f56c6c, #f78989); box-shadow: 0 4px 12px rgba(245, 108, 108, 0.3); }
+.stat-card:hover .stat-icon-wrapper {
+  transform: scale(1.1);
+}
 
 .stat-content {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  flex: 1;
 }
 
 .stat-value {
-  font-size: 32px;
+  font-size: 28px;
   font-weight: 700;
   color: var(--text-primary, #1f2937);
   line-height: 1;
+  letter-spacing: -0.5px;
+}
+
+.stat-value.success {
+  color: #388e3c;
+}
+
+.stat-value.warning {
+  color: #f57c00;
 }
 
 .stat-label {
-  font-size: 14px;
+  font-size: 13px;
   color: var(--text-secondary, #6b7280);
+}
+
+.stat-arrow {
+  opacity: 0;
+  transform: translateX(-8px);
+  transition: all 0.3s ease;
+  color: var(--primary, #409eff);
+}
+
+.stat-card:hover .stat-arrow {
+  opacity: 1;
+  transform: translateX(0);
 }
 
 /* 工具栏 */
@@ -1478,34 +1582,210 @@ onMounted(() => {
 }
 
 /* 表格容器 */
-:deep(.el-table) {
+.robots-table {
   border-radius: 12px;
   overflow: hidden;
   border: 1px solid var(--border-color, #e5e7eb);
 }
 
-:deep(.el-table th) {
-  background: var(--bg-tertiary, #f9fafb) !important;
+:deep(.robots-table) .el-table__header-wrapper th {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
   font-weight: 600;
   color: var(--text-primary, #1f2937);
+  padding: 12px 0;
+  border-bottom: 2px solid #e5e7eb;
 }
 
-:deep(.el-table td) {
-  border-bottom: 1px solid var(--border-color, #e5e7eb);
+:deep(.robots-table) .el-table__body-wrapper td {
+  padding: 10px 0;
+  vertical-align: middle;
 }
 
-:deep(.el-table__row:hover > td) {
-  background: var(--bg-primary, #f5f7fa) !important;
+:deep(.robots-table) .el-table__header-wrapper th .cell,
+:deep(.robots-table) .el-table__body-wrapper td .cell {
+  padding: 0 6px;
+}
+
+:deep(.robots-table .el-table__row) {
+  transition: all 0.2s ease;
+}
+
+:deep(.robots-table .el-table__row:hover > td) {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+:deep(.robots-table .el-table__row.current-row > td) {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%) !important;
+}
+
+/* 序号单元格动画 */
+.index-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  height: 100%;
+  padding: 4px 0;
+}
+
+.index-number {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text-primary, #1f2937);
+  position: relative;
+  z-index: 1;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.index-line {
+  width: 2px;
+  height: 0;
+  background: linear-gradient(180deg, #00d4ff, #0077ff);
+  border-radius: 1px;
+  transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 0.6;
+}
+
+:deep(.robots-table .el-table__row:hover .index-line) {
+  height: 12px;
+  opacity: 1;
+}
+
+:deep(.robots-table .el-table__row:hover .index-number) {
+  transform: scale(1.1);
+  transition: transform 0.3s ease;
+}
+
+/* 状态单元格 */
+.status-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  animation: pulse 2s infinite;
+}
+
+.status-dot.idle {
+  background: #67c23a;
+  box-shadow: 0 0 6px rgba(103, 194, 58, 0.5);
+}
+
+.status-dot.busy {
+  background: #e6a23c;
+  box-shadow: 0 0 6px rgba(230, 162, 60, 0.5);
+}
+
+.status-dot.offline {
+  background: #909399;
+  box-shadow: 0 0 6px rgba(144, 147, 153, 0.5);
+  animation: none;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(103, 194, 58, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(103, 194, 58, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(103, 194, 58, 0);
+  }
+}
+
+/* 成功率单元格 */
+.rate-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+
+.rate-high {
+  color: #67c23a;
+  background: rgba(103, 194, 58, 0.1);
+}
+
+.rate-mid {
+  color: #e6a23c;
+  background: rgba(230, 162, 60, 0.1);
+}
+
+.rate-low {
+  color: #f56c6c;
+  background: rgba(245, 108, 108, 0.1);
+}
+
+:deep(.robots-table .el-table__row:hover .rate-cell) {
+  transform: scale(1.05);
+}
+
+/* 心跳时间 */
+.heartbeat-time {
+  font-size: 12px;
+  color: #606266;
+  font-family: 'Consolas', 'Monaco', monospace;
+  background: rgba(64, 158, 255, 0.08);
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px dashed rgba(64, 158, 255, 0.3);
+  transition: all 0.3s ease;
+}
+
+:deep(.robots-table .el-table__row:hover .heartbeat-time) {
+  background: rgba(64, 158, 255, 0.15);
+  border-color: rgba(64, 158, 255, 0.5);
+  transform: translateX(2px);
+}
+
+/* 操作按钮 */
+.action-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  font-size: 13px;
+}
+
+.action-btn:hover {
+  background: rgba(64, 158, 255, 0.1);
+  transform: translateY(-1px);
 }
 
 /* 分页 */
 .pagination-wrapper {
-  margin-top: 20px;
+  margin-top: 16px;
   display: flex;
   justify-content: flex-end;
   background: var(--bg-secondary, #ffffff);
-  padding: 16px 20px;
-  border-radius: 12px;
+  padding: 12px 16px;
+  border-radius: 10px;
   border: 1px solid var(--border-color, #e5e7eb);
 }
 
@@ -1514,20 +1794,14 @@ onMounted(() => {
   font-size: 13px;
 }
 
-.process-tag {
-  color: var(--primary, #409eff);
-  font-weight: 600;
-}
-
 .queue-tag {
   color: var(--success, #67c23a);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
+  background: rgba(103, 194, 58, 0.08);
+  padding: 2px 8px;
+  border-radius: 4px;
 }
-
-.rate-high { color: var(--success, #67c23a); font-weight: 700; }
-.rate-mid { color: var(--warning, #e6a23c); font-weight: 700; }
-.rate-low { color: var(--danger, #f56c6c); font-weight: 700; }
 
 /* 机器人注册对话框样式 */
 :deep(.robot-dialog) {
@@ -1865,6 +2139,20 @@ onMounted(() => {
 .dialog-footer .el-button {
   min-width: 100px;
   border-radius: 8px;
+}
+
+/* 确认删除弹窗样式 */
+:deep(.el-popover.el-popper) {
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+:deep(.el-popconfirm__main) {
+  padding: 16px;
+}
+
+:deep(.el-popconfirm__main .el-icon) {
+  color: #f56c6c;
 }
 
 /* 响应式适配 */

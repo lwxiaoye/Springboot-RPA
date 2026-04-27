@@ -20,9 +20,17 @@
       </el-button>
     </div>
 
-    <el-table :data="paginatedData" v-loading="loading" border stripe>
-      <el-table-column type="index" label="序号" width="60" align="center" />
-      <el-table-column prop="name" label="解析名称" min-width="160" />
+    <el-table :data="paginatedData" v-loading="loading" border stripe class="unified-table">
+      <el-table-column type="index" label="序号" width="60" align="center">
+        <template #default="{ $index }">
+          <div class="index-cell">
+            <div class="index-line"></div>
+            <span class="index-number">{{ (pagination.page - 1) * pagination.size + $index + 1 }}</span>
+            <div class="index-line"></div>
+          </div>
+        </template>
+      </el-table-column>
+      <el-table-column prop="name" label="解析名称" min-width="160" show-overflow-tooltip />
       <el-table-column prop="parseType" label="解析类型" width="100" align="center" />
       <el-table-column prop="status" label="状态" width="90" align="center">
         <template #default="{ row }">
@@ -39,13 +47,28 @@
       </el-table-column>
       <el-table-column label="操作" width="180" fixed="right" align="center">
         <template #default="{ row }">
-          <el-button link type="primary" @click="runTask(row)">执行</el-button>
-          <el-button link type="primary" @click="editTask(row)">编辑</el-button>
-          <el-popconfirm title="确认删除该解析规则吗？" @confirm="deleteTask(row)">
-            <template #reference>
-              <el-button link type="danger">删除</el-button>
-            </template>
-          </el-popconfirm>
+          <div class="action-buttons">
+            <el-button link type="success" @click="runTask(row)" class="action-btn">
+              <span>执行</span>
+            </el-button>
+            <el-button link type="primary" @click="editTask(row)" class="action-btn">
+              <span>编辑</span>
+            </el-button>
+            <el-popconfirm
+              :title="'确定要删除解析规则「' + row.name + '」吗？'"
+              confirmButtonText="确认删除"
+              cancelButtonText="取消"
+              icon="Delete"
+              iconColor="#f56c6c"
+              @confirm="deleteTask(row)"
+            >
+              <template #reference>
+                <el-button link type="danger" class="action-btn">
+                  <span>删除</span>
+                </el-button>
+              </template>
+            </el-popconfirm>
+          </div>
         </template>
       </el-table-column>
     </el-table>
@@ -286,4 +309,99 @@ onMounted(() => { loadData() })
 .search-box { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #fff; border: 1px solid #d9d9d9; border-radius: 8px; flex: 1; max-width: 320px; }
 .search-box input { border: none; outline: none; flex: 1; background: transparent; }
 .pagination-wrapper { margin-top: 20px; display: flex; justify-content: flex-end; background: #fff; padding: 12px 20px; border-radius: 12px; }
+
+/* 统一表格样式 */
+.unified-table :deep(.el-table__header-wrapper th) {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
+  font-weight: 600;
+  color: var(--text-primary, #1f2937);
+  padding: 12px 0;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.unified-table :deep(.el-table__body-wrapper td) {
+  padding: 10px 0;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
+}
+
+.unified-table :deep(.el-table__header-wrapper th .cell),
+.unified-table :deep(.el-table__body-wrapper td .cell) {
+  padding: 0 6px;
+}
+
+.unified-table :deep(.el-table__row) {
+  transition: all 0.2s ease;
+}
+
+.unified-table :deep(.el-table__row:hover > td) {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* 序号单元格动画 */
+.index-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  height: 100%;
+  padding: 4px 0;
+}
+
+.index-number {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text-primary, #1f2937);
+  position: relative;
+  z-index: 1;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.index-line {
+  width: 2px;
+  height: 0;
+  background: linear-gradient(180deg, #00d4ff, #0077ff);
+  border-radius: 1px;
+  transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 0.6;
+}
+
+.unified-table :deep(.el-table__row:hover .index-line) {
+  height: 12px;
+  opacity: 1;
+}
+
+.unified-table :deep(.el-table__row:hover .index-number) {
+  transform: scale(1.1);
+  transition: transform 0.3s ease;
+}
+
+/* 操作按钮 */
+.action-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  font-size: 13px;
+}
+
+.action-btn:hover {
+  background: rgba(64, 158, 255, 0.1);
+  transform: translateY(-1px);
+}
 </style>
