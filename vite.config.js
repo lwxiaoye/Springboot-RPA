@@ -24,11 +24,11 @@ export default defineConfig({
         secure: false
       },
       '/ws': {
-        target: 'ws://localhost:8080',
+        target: 'http://localhost:8080',
         ws: true
       },
       '/ws/chat': {
-        target: 'ws://localhost:8080',
+        target: 'http://localhost:8080',
         ws: true,
         rewrite: (path) => path
       }

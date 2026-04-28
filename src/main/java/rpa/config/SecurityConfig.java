@@ -119,6 +119,7 @@ public class SecurityConfig {
      *   <li>http://localhost:5173 (Vite开发服务器)</li>
      *   <li>http://localhost:5174 (备用Vite端口)</li>
      *   <li>http://localhost:3000 (备用开发端口)</li>
+     *   <li>http://10.7.54.138:5173 (局域网访问)</li>
      * </ul>
      * 支持GET、POST、PUT、DELETE、OPTIONS方法，允许携带凭证。
      * </p>
@@ -128,7 +129,8 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173", "http://localhost:5174","http://localhost:3000"));
+        // 使用 allowedOriginPatterns 支持更多场景（包括局域网）
+        configuration.setAllowedOriginPatterns(Arrays.asList("*"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);

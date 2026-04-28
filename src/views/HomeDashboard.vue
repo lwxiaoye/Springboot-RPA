@@ -264,12 +264,16 @@ const formatNumber = (num) => {
 }
 
 const handleLogout = () => {
-  ElMessageBox.confirm('确定要退出登录吗？', '提示', { type: 'warning' }).then(() => {
+  ElMessageBox.confirm('确定要退出登录吗？', '提示', {
+    type: 'warning',
+    confirmButtonPosition: 'right',
+    distinguishCancelAndClose: true
+  }).then(() => {
     localStorage.removeItem('token')
     localStorage.removeItem('userInfo')
     ElMessage.success('已退出登录')
     router.push('/login')
-  })
+  }).catch(() => {})
 }
 
 const handleAlert = (alert) => {

@@ -200,7 +200,9 @@ async function validateTaskName(rule, value, callback) {
 }
 
 const filteredTasks = computed(() => {
-  if (!taskSearch.value) return taskList.value
+  if (!taskSearch.value) {
+    return [...taskList.value].sort((a, b) => new Date(b.createTime || 0) - new Date(a.createTime || 0))
+  }
   const kw = taskSearch.value.toLowerCase()
   return taskList.value.filter(t => (t.name || '').toLowerCase().includes(kw))
 })

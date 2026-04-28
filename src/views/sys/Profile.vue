@@ -193,7 +193,6 @@ import { Download, User, Lock, DataAnalysis, ArrowRight, Edit } from '@element-p
 
 import { apiGet, apiPost, apiPut, apiDelete, apiUpload } from '../../utils/api.js'
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'
 
 // 当前用户信息
 const currentUser = ref({
@@ -421,7 +420,7 @@ const handleAvatarChange = async (e) => {
     try {
       const formData = new FormData()
       formData.append('avatar', file)
-      const response = await fetch(`${API_BASE}/user/avatar/${currentUser.value.id}`, { 
+      const response = await fetch(`/api/user/avatar/${currentUser.value.id}`, { 
         method: 'POST', 
         body: formData 
       })
@@ -477,7 +476,7 @@ const getAvatarUrl = (path) => {
     return path
   }
   // 否则拼接 API 基础 URL
-  const fullUrl = `${API_BASE}${path}`
+  const fullUrl = `/api${path}`
   console.log('头像路径处理 - 原始路径:', path, '| 完整 URL:', fullUrl)
   return fullUrl
 }

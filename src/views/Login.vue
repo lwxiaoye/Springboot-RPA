@@ -135,11 +135,10 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
+import { apiPost } from '@/utils/api'
 
 const router = useRouter()
 
-// 后端接口地址
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'
 
 // 响应式数据
 const loading = ref(false)
@@ -191,18 +190,10 @@ const handlePasswordLogin = async () => {
     loading.value = true
 
     try {
-      const response = await fetch(`${API_BASE_URL}/user/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          username: passwordForm.username,
-          password: passwordForm.password
-        })
+      const result = await apiPost('/user/login', {
+        username: passwordForm.username,
+        password: passwordForm.password
       })
-
-      const result = await response.json()
 
       // 后端返回格式: code: 0表示成功, -1表示失败
       if (result.code === 0) {
@@ -292,17 +283,9 @@ const getResetCode = async () => {
 
   try {
     // 调用后端发送验证码接口
-    const response = await fetch(`${API_BASE_URL}/user/send-reset-code`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        account: resetForm.phone
-      })
+    const result = await apiPost('/user/send-reset-code', {
+      account: resetForm.phone
     })
-
-    const result = await response.json()
 
     if (result.code === 0) {
       ElMessage.success(result.message || '验证码已发送')
@@ -349,19 +332,11 @@ const resetPassword = async () => {
   loading.value = true
   try {
     // 调用后端重置密码接口
-    const response = await fetch(`${API_BASE_URL}/user/reset-password-by-code`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        account: resetForm.phone,
-        code: resetForm.code,
-        newPassword: resetForm.newPassword
-      })
+    const result = await apiPost('/user/reset-password-by-code', {
+      account: resetForm.phone,
+      code: resetForm.code,
+      newPassword: resetForm.newPassword
     })
-
-    const result = await response.json()
 
     if (result.code === 0) {
       ElMessage.success('密码重置成功！')

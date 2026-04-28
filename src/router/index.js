@@ -1,51 +1,55 @@
 import { createRouter, createWebHistory } from 'vue-router'
+
+// 公开页面
 import Login from '../views/Login.vue'
-import Dashboard from '../views/Dashboard.vue'
-import RpaLayout from '../views/rpa/RpaLayout.vue'
-import SystemLayout from '../views/sys/SystemLayout.vue'
-import ProfilePage from '../views/sys/Profile.vue'
-import UserManagement from '../views/sys/UserManagement.vue'
-import RoleManagement from '../views/sys/RoleManagement.vue'
-import ResourceManagement from '../views/sys/ResourceManagement.vue'
+
+// 懒加载所有页面组件
+const Dashboard = () => import('../views/Dashboard.vue')
+const RpaLayout = () => import('../views/rpa/RpaLayout.vue')
+const SystemLayout = () => import('../views/sys/SystemLayout.vue')
+const ProfilePage = () => import('../views/sys/Profile.vue')
+const UserManagement = () => import('../views/sys/UserManagement.vue')
+const RoleManagement = () => import('../views/sys/RoleManagement.vue')
+const ResourceManagement = () => import('../views/sys/ResourceManagement.vue')
 
 // RPA运营管理模块页面
-import Tasks from '../views/rpa/Tasks.vue'
-import Robots from '../views/rpa/Robots.vue'
-import RobotDetail from '../views/rpa/RobotDetail.vue'
-import Processes from '../views/rpa/Processes.vue'
-import ProcessDetail from '../views/rpa/ProcessDetail.vue'
-import ProcessDesigner from '../views/rpa/ProcessDesigner.vue'
-import Logs from '../views/rpa/Logs.vue'
-import Notifications from '../views/rpa/Notifications.vue'
-import CollaborationHub from '../views/rpa/CollaborationHub.vue'
-import DataQuery from '../views/rpa/DataQuery.vue'
+const Tasks = () => import('../views/rpa/Tasks.vue')
+const Robots = () => import('../views/rpa/Robots.vue')
+const RobotDetail = () => import('../views/rpa/RobotDetail.vue')
+const Processes = () => import('../views/rpa/Processes.vue')
+const ProcessDetail = () => import('../views/rpa/ProcessDetail.vue')
+const ProcessDesigner = () => import('../views/rpa/ProcessDesigner.vue')
+const Logs = () => import('../views/rpa/Logs.vue')
+const Notifications = () => import('../views/rpa/Notifications.vue')
+const CollaborationHub = () => import('../views/rpa/CollaborationHub.vue')
+const DataQuery = () => import('../views/rpa/DataQuery.vue')
 
 // 新增页面
-import QueueTrigger from '../views/rpa/QueueTrigger.vue'
-import AuditLog from '../views/rpa/AuditLog.vue'
-import CredentialVault from '../views/rpa/CredentialVault.vue'
-import SystemSettings from '../views/rpa/SystemSettings.vue'
-import ReportAnalytics from '../views/rpa/ReportAnalytics.vue'
+const QueueTrigger = () => import('../views/rpa/QueueTrigger.vue')
+const AuditLog = () => import('../views/rpa/AuditLog.vue')
+const CredentialVault = () => import('../views/rpa/CredentialVault.vue')
+const SystemSettings = () => import('../views/rpa/SystemSettings.vue')
+const ReportAnalytics = () => import('../views/rpa/ReportAnalytics.vue')
 
-// 新增独立页面（队列管理、触发器管理、死信队列、机器人健康）
-import Queues from '../views/rpa/Queues.vue'
-import Triggers from '../views/rpa/Triggers.vue'
-import DeadLetterQueue from '../views/rpa/DeadLetterQueue.vue'
-import RobotHealth from '../views/rpa/RobotHealth.vue'
+// 新增独立页面
+const Queues = () => import('../views/rpa/Queues.vue')
+const Triggers = () => import('../views/rpa/Triggers.vue')
+const DeadLetterQueue = () => import('../views/rpa/DeadLetterQueue.vue')
+const RobotHealth = () => import('../views/rpa/RobotHealth.vue')
 
 // 企业级功能页面
-import AiCenter from '../views/rpa/AiCenter.vue'
-import RecordingCenter from '../views/rpa/RecordingCenter.vue'
-import ScriptExecutor from '../views/rpa/ScriptExecutor.vue'
-import DataMasking from '../views/rpa/DataMasking.vue'
-import DistributedLock from '../views/rpa/DistributedLock.vue'
+const AiCenter = () => import('../views/rpa/AiCenter.vue')
+const RecordingCenter = () => import('../views/rpa/RecordingCenter.vue')
+const ScriptExecutor = () => import('../views/rpa/ScriptExecutor.vue')
+const DataMasking = () => import('../views/rpa/DataMasking.vue')
+const DistributedLock = () => import('../views/rpa/DistributedLock.vue')
 
-// 新增：智能录制器和AI助手页面
-import Recorder from '../views/rpa/Recorder.vue'
-import AiAssistant from '../views/rpa/AiAssistant.vue'
+// 智能录制器和AI助手页面
+const Recorder = () => import('../views/rpa/Recorder.vue')
+const AiAssistant = () => import('../views/rpa/AiAssistant.vue')
 
 // 实时监控页面
-import RealTimeMonitor from '../views/rpa/RealTimeMonitor.vue'
+const RealTimeMonitor = () => import('../views/rpa/RealTimeMonitor.vue')
 
 const routes = [
     {

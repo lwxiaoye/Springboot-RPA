@@ -4,12 +4,15 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import rpa.config.JwtUtils;
 import rpa.entity.User;
 import rpa.repository.UserRepository;
+import rpa.service.UserService;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -23,6 +26,55 @@ import java.util.stream.Collectors;
 public class UserController {
 
     private final UserRepository userRepository;
+    private final UserService userService;
+    private final JwtUtils jwtUtils;
+
+    /**
+     * 用户登录
+     */
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody Map<String, String> loginData) {
+        try {
+            String username = loginData.get("username");
+            String password = loginData.get("password");
+
+            if (username == null || username.isEmpty() || password == null || password.isEmpty()) {
+                return ResponseEntity.ok(Map.of("code", 1, "message", "用户名和密码不能为空"));
+            }
+
+            Optional<User> userOpt = userService.login(username, password);
+
+            if (userOpt.isEmpty()) {
+                return ResponseEntity.ok(Map.of("code", 1, "message", "用户名或密码错误"));
+            }
+
+            User user = userOpt.get();
+
+            // 生成 JWT token
+            String token = jwtUtils.generateToken(user.getUsername(), user.getRole());
+
+            // 构建返回数据
+            Map<String, Object> result = new HashMap<>();
+            result.put("code", 0);
+            result.put("message", "登录成功");
+            result.put("data", Map.of(
+                "id", user.getId(),
+                "username", user.getUsername(),
+                "realName", user.getRealName() != null ? user.getRealName() : user.getUsername(),
+                "email", user.getEmail() != null ? user.getEmail() : "",
+                "phone", user.getPhone() != null ? user.getPhone() : "",
+                "role", user.getRole() != null ? user.getRole() : 0,
+                "status", user.getStatus() != null ? user.getStatus() : 1,
+                "avatar", user.getAvatar() != null ? user.getAvatar() : "",
+                "token", token
+            ));
+
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("登录失败", e);
+            return ResponseEntity.ok(Map.of("code", 1, "message", e.getMessage()));
+        }
+    }
 
     /**
      * 获取所有用户列表

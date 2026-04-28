@@ -6,20 +6,7 @@
       <div class="header-left">
         <div class="logo-area" @click="goToDashboard">
           <div class="logo-icon">
-            <div class="hexagon">
-              <svg viewBox="0 0 100 100" width="36" height="36">
-                <defs>
-                  <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" style="stop-color:#00d4ff;stop-opacity:1" />
-                    <stop offset="50%" style="stop-color:#0077ff;stop-opacity:1" />
-                    <stop offset="100%" style="stop-color:#0055cc;stop-opacity:1" />
-                  </linearGradient>
-                </defs>
-                <polygon points="50,5 95,27.5 95,72.5 50,95 5,72.5 5,27.5" fill="none" stroke="url(#logoGradient)" stroke-width="3"/>
-                <path d="M30 50 L45 35 L45 45 L70 45 L70 55 L45 55 L45 65 Z" fill="url(#logoGradient)" opacity="0.9"/>
-                <circle cx="70" cy="35" r="4" fill="#00ffcc" opacity="0.8"/>
-              </svg>
-            </div>
+            <img src="/title.png" alt="logo" style="width:36px;height:36px;" />
           </div>
           <div class="logo-text">
             <span class="logo-title">RPA</span>
@@ -425,12 +412,16 @@ const goToProfile = () => {
 
 // 退出登录
 const handleLogout = () => {
-  ElMessageBox.confirm('确定要退出登录吗？', '提示', { type: 'warning' }).then(() => {
+  ElMessageBox.confirm('确定要退出登录吗？', '提示', {
+    type: 'warning',
+    confirmButtonPosition: 'right',
+    distinguishCancelAndClose: true
+  }).then(() => {
     localStorage.removeItem('token')
     localStorage.removeItem('userInfo')
     ElMessage.success('已退出登录')
     router.push('/login')
-  })
+  }).catch(() => {})
 }
 
 // 加载未读消息数
@@ -446,13 +437,12 @@ const loadUnreadCount = async () => {
   }
 }
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'
 
 // 获取头像完整 URL
 const getAvatarUrl = (path) => {
   if (!path) return null
   if (path.startsWith('http://') || path.startsWith('https://')) return path
-  return `${API_BASE}${path}`
+  return path
 }
 
 // 处理头像加载失败
