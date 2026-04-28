@@ -35,6 +35,6 @@ export default defineConfig({
     }
   },
   optimizeDeps: {
-    include: ['element-plus', 'vue', 'vue-router', 'echarts', 'vue-echarts', 'sockjs-client', 'stompjs']
+    include: ['element-plus', 'vue', 'vue-router', 'echarts', 'vue-echarts', 'sockjs-client', '@stomp/stompjs']
   }
 })

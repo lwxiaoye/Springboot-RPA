@@ -33,6 +33,12 @@ public class ChatService {
     private final ApplicationEventPublisher eventPublisher;
     private final ObjectMapper objectMapper;
     private final UserRepository userRepository;
+    private ChatWebSocketService chatWebSocketService;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public void setChatWebSocketService(ChatWebSocketService chatWebSocketService) {
+        this.chatWebSocketService = chatWebSocketService;
+    }
 
     // ==================== 会话管理 ====================
 
@@ -150,11 +156,11 @@ public class ChatService {
         return conversations.stream().map(conv -> {
             Map<String, Object> result = new HashMap<>();
             result.put("conversation", conv);
-            
+
             Optional<ChatParticipant> participant = participantRepository.findByConversationIdAndUserId(conv.getId(), userId);
             result.put("unreadCount", participant.map(ChatParticipant::getUnreadCount).orElse(0));
             result.put("isPinned", participant.map(ChatParticipant::getIsPinned).orElse(0));
-            
+
             if ("private".equals(conv.getType())) {
                 List<ChatParticipant> participants = participantRepository.findByConversationId(conv.getId());
                 for (ChatParticipant p : participants) {
@@ -166,13 +172,15 @@ public class ChatService {
                             Optional<User> user = userRepository.findById(p.getUserId());
                             if (user.isPresent()) {
                                 displayName = user.get().getRealName() != null ? user.get().getRealName() : user.get().getUsername();
+                                // 添加头像
+                                result.put("otherUserAvatar", user.get().getAvatar());
                             }
                         }
                         result.put("otherUserName", displayName != null ? displayName : "未知用户");
                     }
                 }
             }
-            
+
             return result;
         }).collect(Collectors.toList());
     }
@@ -206,6 +214,18 @@ public class ChatService {
         updateConversationLastMessage(conversationId, message);
         participantRepository.incrementUnreadCount(conversationId, senderId);
         logAudit(senderId, "SEND_MESSAGE", "发送消息", message.getId(), conversationId, null);
+
+        // 通过WebSocket推送消息到会话
+        if (chatWebSocketService != null) {
+            chatWebSocketService.sendMessageToConversation(conversationId, message);
+            // 给其他参与者发送未读更新
+            List<ChatParticipant> participants = participantRepository.findByConversationId(conversationId);
+            for (ChatParticipant p : participants) {
+                if (!p.getUserId().equals(senderId)) {
+                    chatWebSocketService.sendUnreadCountUpdate(p.getUserId(), p.getUnreadCount() + 1);
+                }
+            }
+        }
 
         // 发布消息事件
         eventPublisher.publishEvent(new ChatMessageEvent(this, message, "NEW_MESSAGE"));
@@ -283,7 +303,7 @@ public class ChatService {
     @Transactional
     public void recallMessage(Long messageId, Long userId) {
         ChatMessage message = messageRepository.findById(messageId).orElseThrow(() -> new RuntimeException("消息不存在"));
-        
+
         if (!message.getSenderId().equals(userId)) {
             throw new RuntimeException("只能撤回自己的消息");
         }
@@ -297,6 +317,59 @@ public class ChatService {
         logAudit(userId, "RECALL_MESSAGE", "撤回消息", messageId, message.getConversationId(), null);
 
         eventPublisher.publishEvent(new ChatMessageEvent(this, message, "MESSAGE_RECALLED"));
+    }
+
+    /**
+     * 标记会话已读
+     * @return 更新后的未读消息数量
+     */
+    @Transactional
+    public int markAsRead(Long conversationId, Long userId) {
+        // 先获取当前的 participant
+        ChatParticipant participant = participantRepository.findByConversationIdAndUserId(conversationId, userId).orElse(null);
+        if (participant == null) {
+            return 0;
+        }
+
+        // 获取最后一条已读时间（如果没有，则使用当前时间之前的某个时间点）
+        LocalDateTime lastReadTime = participant.getLastReadTime();
+        LocalDateTime now = LocalDateTime.now();
+
+        // 如果没有已读时间，说明之前没有任何阅读记录
+        // 我们需要获取该会话的第一条消息的时间作为基准
+        if (lastReadTime == null) {
+            // 获取该会话最早的消息时间
+            lastReadTime = messageRepository.findFirstByConversationIdOrderByCreatedAtAsc(conversationId)
+                    .map(ChatMessage::getCreatedAt)
+                    .orElse(now);
+        }
+
+        // 计算从最后阅读时间到现在有多少条未读消息（排除自己发的消息）
+        long unreadCount = messageRepository.countUnreadMessages(conversationId, lastReadTime, userId);
+
+        // 更新已读时间和未读数
+        participant.setLastReadTime(now);
+        participant.setUnreadCount((int) unreadCount);
+        participantRepository.save(participant);
+
+        logAudit(userId, "MARK_READ", "标记会话已读", null, conversationId, null);
+
+        return (int) unreadCount;
+    }
+
+    /**
+     * 获取用户所有会话的未读消息总数
+     */
+    public int getTotalUnreadCount(Long userId) {
+        List<ChatConversation> conversations = conversationRepository.findUserConversations(userId);
+        int totalUnread = 0;
+        for (ChatConversation conv : conversations) {
+            Optional<ChatParticipant> participant = participantRepository.findByConversationIdAndUserId(conv.getId(), userId);
+            if (participant.isPresent()) {
+                totalUnread += participant.get().getUnreadCount();
+            }
+        }
+        return totalUnread;
     }
 
     // ==================== RPA深度集成 ====================

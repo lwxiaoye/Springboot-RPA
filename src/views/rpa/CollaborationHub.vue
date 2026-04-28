@@ -49,8 +49,8 @@
           @click="selectConversation(conv)"
         >
           <div class="conv-avatar">
-            <el-avatar :size="44">
-              {{ conv.otherUserName?.charAt(0) || conv.conversation?.name?.charAt(0) || '?' }}
+            <el-avatar :size="44" :src="getOtherUserAvatar(conv)">
+              {{ getOtherUserAvatar(conv) ? '' : (conv.otherUserName?.charAt(0) || conv.conversation?.name?.charAt(0) || '?') }}
             </el-avatar>
             <span v-if="conv.unreadCount > 0" class="unread-badge">
               {{ conv.unreadCount > 99 ? '99+' : conv.unreadCount }}
@@ -210,6 +210,7 @@
 
           <div class="input-wrapper">
             <el-input
+              ref="messageInputRef"
               v-model="inputMessage"
               type="textarea"
               :rows="3"
@@ -220,7 +221,7 @@
           </div>
 
           <div class="input-footer">
-            <span class="input-hint">Enter 发送</span>
+            <span class="input-hint">Enter 发送 | Shift+Enter 换行</span>
             <el-button type="primary" :disabled="!inputMessage.trim() && !selectedFile" @click="sendMessage" :loading="sending">
               <el-icon v-if="!sending"><Promotion /></el-icon>
               发送
@@ -231,7 +232,7 @@
           <div v-if="selectedFile" class="file-preview">
             <el-icon><Document /></el-icon>
             <span>{{ selectedFile.name }}</span>
-            <el-icon class="remove-file" @click="selectedFile = null"><Close /></el-icon>
+            <el-icon class="remove-file" @click="removeFile"><Close /></el-icon>
           </div>
 
           <input type="file" ref="fileInput" style="display:none" @change="handleFileSelect" />
@@ -263,7 +264,7 @@
             <ul>
               <li><el-icon><Timer /></el-icon> 任务状态实时推送</li>
               <li><el-icon><Cpu /></el-icon> 机器人状态卡片</li>
-              <li><el-icon><MagicStick /></el-icon> AI智能助手</li>
+              <li><el-icon><ChatLineSquare /></el-icon> 团队实时协作</li>
               <li><el-icon><Document /></el-icon> 日志一键分享</li>
             </ul>
           </div>
@@ -440,13 +441,14 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, nextTick, reactive } from 'vue'
+import { ref, computed, onMounted, onUnmounted, onActivated, onDeactivated, nextTick, reactive } from 'vue'
 import { ElMessage } from 'element-plus'
 import {
   Plus, ChatLineSquare, ChatDotRound, Search, UserFilled, FolderOpened,
-  Grid, Document, Timer, Cpu, MagicStick, Refresh, ArrowRight,
+  Grid, Document, Timer, Cpu, Refresh, ArrowRight,
   Promotion, Warning, Avatar, Loading, Check, MoreFilled, InfoFilled, CaretRight, Close
 } from '@element-plus/icons-vue'
+import { connect, disconnect, subscribeConversation, unsubscribe, isConnected } from '../../utils/stomp.js'
 
 // API工具
 const getAuthHeaders = () => {
@@ -517,16 +519,10 @@ const loadingMessages = ref(false)
 const sending = ref(false)
 const showNewChat = ref(false)
 const showNewGroup = ref(false)
-const showAIAssistant = ref(false)
 const showRPAPanel = ref(false)
 const showConvInfo = ref(false)
 const userSearchKeyword = ref('')
 const memberSearchKeyword = ref('')
-
-// AI助手状态
-const aiInput = ref('')
-const aiMessages = ref([])
-const currentSuggestions = ref([])
 
 // 用户相关状态
 const allUsers = ref([])
@@ -559,6 +555,10 @@ const filterUsers = () => {
 const messageAreaRef = ref(null)
 const aiMessagesRef = ref(null)
 const fileInput = ref(null)
+const messageInputRef = ref(null)
+
+// 待创建的群组（发送消息时才真正创建）
+const pendingGroup = ref(null)
 
 // 文件相关
 const selectedFile = ref(null)
@@ -634,79 +634,95 @@ const inputPlaceholder = computed(() => {
   return '输入消息... (Ctrl+Enter 发送)'
 })
 
-// WebSocket连接 - 使用原生WebSocket
+// WebSocket/STOMP连接
+let currentConvSubscription = null
+
 const connectWebSocket = () => {
-  const wsUrl = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws/chat`
-
-  try {
-    socket.value = new WebSocket(wsUrl)
-
-    socket.value.onopen = () => {
-      console.log('WebSocket connected')
-      wsConnected.value = true
-
-      // 发送加入消息
-      socket.value.send(JSON.stringify({
-        type: 'join',
-        userId: currentUserId.value
-      }))
-    }
-
-    socket.value.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data)
-        handleNewMessage(data)
-      } catch (e) {
-        console.warn('Failed to parse message:', e)
-      }
-    }
-
-    socket.value.onclose = () => {
-      console.log('WebSocket disconnected')
-      wsConnected.value = false
-      // 5秒后重连
-      setTimeout(connectWebSocket, 5000)
-    }
-
-    socket.value.onerror = (error) => {
-      console.error('WebSocket error:', error)
-      wsConnected.value = false
-    }
-
-  } catch (e) {
-    console.error('Failed to connect WebSocket:', e)
-    setTimeout(connectWebSocket, 5000)
+  if (isConnected()) {
+    console.log('STOMP already connected')
+    wsConnected.value = true
+    return
   }
+
+  // 使用 http/https 协议，SockJS 会自动处理 WebSocket 升级
+  const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:'
+
+  connect({
+    url: `${protocol}//${window.location.host}/ws/chat`,
+    onConnect: () => {
+      console.log('STOMP connected')
+      wsConnected.value = true
+    },
+    onDisconnect: () => {
+      console.log('STOMP disconnected')
+      wsConnected.value = false
+    },
+    onError: (error) => {
+      console.error('STOMP error:', error)
+      wsConnected.value = false
+    }
+  })
 }
 
-const subscribeConversation = (conversationId) => {
-  if (socket.value && socket.value.readyState === WebSocket.OPEN) {
-    socket.value.send(JSON.stringify({
-      type: 'subscribe',
-      conversationId: conversationId
-    }))
+const subscribeToConversation = (conversationId) => {
+  // 取消之前的订阅
+  if (currentConvSubscription) {
+    unsubscribe(currentConvSubscription)
+    currentConvSubscription = null
   }
+  
+  // 订阅新会话
+  currentConvSubscription = subscribeConversation(conversationId, (message) => {
+    handleNewMessage(message)
+  })
 }
 
 const handleNewMessage = (msg) => {
-  // 根据消息类型处理
-  if (msg.type === 'new_message' || msg.type === 'message') {
-    const message = msg.message || msg
-    // 如果是当前会话的消息，添加到列表
-    if (message.conversationId === currentConvId.value) {
-      messages.value.push(message)
-      scrollToBottom()
-      // 当前会话收到消息，自动标记已读
-      markAsRead(message.conversationId)
-    } else {
-      // 非当前会话的消息才增加未读数（只有他人发消息才显示红点）
-      const conv = conversations.value.find(c => c.conversation?.id === message.conversationId)
-      if (conv) {
-        conv.unreadCount = (conv.unreadCount || 0) + 1
+  // 处理 ChatMessage 实体
+  const message = msg.message || msg
+
+  // 如果是当前会话的消息，添加到列表
+  if (message.conversationId === currentConvId.value) {
+    // 检查是否已经存在（避免重复）
+    const exists = messages.value.some(m => m.id === message.id)
+    if (!exists) {
+      // 检查是否是本地发送的消息（发送者是自己）
+      // 如果是发送者自己发的消息，且本地已经有这条消息，则不重复添加
+      const localExists = messages.value.some(m =>
+        m.content === message.content &&
+        m.senderId === message.senderId &&
+        (m.id + '').startsWith('temp_')
+      )
+      if (!localExists) {
+        messages.value.push(message)
       }
+      // 按时间正序排列
+      messages.value.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+      scrollToBottom()
     }
-  } else if (msg.type === 'unread_update') {
-    updateUnreadCount(msg.conversationId, msg.unreadCount)
+    // 注意：不在这里自动标记已读，已读应该在用户选择会话时或点击已读按钮时处理
+  } else {
+    // 非当前会话的消息才增加未读数（只有他人发消息才显示红点）
+    const conv = conversations.value.find(c => c.conversation?.id === message.conversationId)
+    if (conv) {
+      conv.unreadCount = (conv.unreadCount || 0) + 1
+      // 更新最后消息
+      conv.conversation.lastMessageContent = message.content
+      conv.conversation.lastMessageTime = message.createdAt
+      // 如果会话不在列表顶部，移动到顶部
+      moveConversationToTop(message.conversationId)
+    }
+    // 更新全局未读数
+    dispatchChatUnreadUpdate()
+  }
+}
+
+// 将会话移动到列表顶部
+const moveConversationToTop = (conversationId) => {
+  const convIndex = conversations.value.findIndex(c => c.conversation?.id === conversationId)
+  if (convIndex > 0) {
+    const conv = conversations.value.splice(convIndex, 1)[0]
+    conversations.value.unshift(conv)
   }
 }
 
@@ -715,6 +731,25 @@ const updateUnreadCount = (conversationId, count) => {
   if (conv) {
     conv.unreadCount = count
   }
+}
+
+// 派发全局未读数更新事件
+const dispatchChatUnreadUpdate = () => {
+  // 计算当前所有会话的未读数总和
+  const totalUnread = conversations.value.reduce((sum, conv) => sum + (conv.unreadCount || 0), 0)
+  // 发送到全局
+  window.dispatchEvent(new CustomEvent('chatUnreadUpdated', {
+    detail: { unread: totalUnread }
+  }))
+  // 同时发送到 SystemLayout
+  window.dispatchEvent(new CustomEvent('syncChatUnread', {
+    detail: { unread: totalUnread }
+  }))
+}
+
+// 更新全局未读数显示
+const updateGlobalUnreadCount = () => {
+  dispatchChatUnreadUpdate()
 }
 
 // 方法
@@ -742,6 +777,8 @@ const loadConversations = async () => {
     const res = await apiGet(`/chat/conversations?userId=${currentUserId.value}`)
     if (res.code === 0) {
       conversations.value = res.data || []
+      // 同步全局未读数
+      updateGlobalUnreadCount()
     } else {
       conversations.value = []
     }
@@ -760,7 +797,10 @@ const loadMessages = async () => {
     const res = await apiGet(`/chat/${currentConvId.value}/messages?page=0&size=50`)
     if (res.code === 0) {
       messages.value = res.data || []
-      scrollToBottom()
+      // 按时间正序排列（最新消息在下面）
+      messages.value.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+      // 滚动到底部
+      nextTick(() => scrollToBottom())
     } else {
       messages.value = []
     }
@@ -781,17 +821,21 @@ const selectConversation = (conv) => {
     }))
   }
 
+  const previousConvId = currentConvId.value
   currentConvId.value = conv.conversation?.id
   currentConversation.value = conv.conversation
   otherUserName.value = conv.otherUserName || ''
 
   // 订阅新会话
-  subscribeConversation(conv.conversation?.id)
+  subscribeToConversation(conv.conversation?.id)
 
-  // 清零当前会话未读数
+  // 清零当前会话未读数（立即更新UI）
   if (conv.unreadCount > 0) {
     conv.unreadCount = 0
+    // 异步调用后端标记已读
     markAsRead(conv.conversation?.id)
+    // 同步更新全局未读数
+    updateGlobalUnreadCount()
   }
 
   loadMessages()
@@ -827,15 +871,26 @@ const openNewChatDialog = async () => {
 }
 
 const markAsRead = async (conversationId) => {
+  if (!conversationId) return
   try {
-    await apiPost('/chat/mark-read', { conversationId, userId: currentUserId.value })
+    const res = await apiPost('/chat/mark-read', { conversationId, userId: currentUserId.value })
+    if (res.code === 0) {
+      // 无论后端返回什么值，都确保未读数为0（因为用户已经看到这条消息了）
+      const conv = conversations.value.find(c => c.conversation?.id === conversationId)
+      if (conv) {
+        conv.unreadCount = 0
+      }
+      // 同步全局未读数
+      updateGlobalUnreadCount()
+    }
   } catch (e) {
-    // ignore
+    console.error('标记已读失败:', e)
   }
 }
 
+// 发送消息 - 本地添加后立即显示
 const sendMessage = async () => {
-  if (!inputMessage.value.trim()) return
+  if (!inputMessage.value.trim() && !selectedFile.value) return
 
   if (inputMessage.value.startsWith('/')) {
     await executeCommand(inputMessage.value)
@@ -843,38 +898,111 @@ const sendMessage = async () => {
     return
   }
 
+  // 检查是否有待创建的群组
+  if (pendingGroup.value && !currentConvId.value) {
+    try {
+      const res = await apiPost('/chat/conversation/group', {
+        ownerId: pendingGroup.value.ownerId,
+        name: pendingGroup.value.name,
+        description: pendingGroup.value.description,
+        memberIds: pendingGroup.value.memberIds
+      })
+
+      if (res.code === 0) {
+        // 创建成功，更新会话ID
+        currentConvId.value = res.data.id
+        currentConversation.value = res.data
+
+        // 添加到会话列表
+        const newConv = {
+          conversation: res.data,
+          otherUserName: pendingGroup.value.name,
+          unreadCount: 0
+        }
+        conversations.value.unshift(newConv)
+
+        // 订阅新会话
+        subscribeToConversation(res.data.id)
+
+        // 清空待创建状态
+        pendingGroup.value = null
+
+        ElMessage.success('群聊已创建')
+      }
+    } catch (error) {
+      ElMessage.error('创建群聊失败')
+      return
+    }
+  }
+
+  if (!currentConvId.value) {
+    ElMessage.warning('请先选择一个会话')
+    return
+  }
+
   // 先本地添加消息，立即显示
   const tempMessage = {
-    id: Date.now(),
+    id: 'temp_' + Date.now(),  // 使用临时ID避免与后端返回的ID冲突
     conversationId: currentConvId.value,
     senderId: currentUserId.value,
     senderName: currentUserName.value,
     content: inputMessage.value,
     type: 'text',
-    timestamp: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
     status: 'sending'
   }
   messages.value.push(tempMessage)
+  // 按时间正序排列（最新消息在下面）
+  messages.value.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
   const inputText = inputMessage.value
   inputMessage.value = ''
   scrollToBottom()
 
   sending.value = true
   try {
-    const res = await apiPost('/chat/send', {
-      conversationId: currentConvId.value,
-      senderId: currentUserId.value,
-      senderName: currentUserName.value,
-      content: inputText,
-      type: 'text'
-    })
+    let res
+    if (selectedFile.value) {
+      // 文件发送
+      const formData = new FormData()
+      formData.append('file', selectedFile.value)
+      formData.append('conversationId', currentConvId.value)
+      formData.append('senderId', currentUserId.value)
+      formData.append('senderName', currentUserName.value)
+      formData.append('content', inputText || selectedFile.value.name)
+
+      const token = localStorage.getItem('token')
+      const response = await fetch('/api/chat/send/file', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData
+      })
+      res = await response.json()
+      selectedFile.value = null
+    } else {
+      // 文本消息
+      res = await apiPost('/chat/send', {
+        conversationId: currentConvId.value,
+        senderId: currentUserId.value,
+        senderName: currentUserName.value,
+        content: inputText,
+        type: 'text'
+      })
+    }
 
     if (res.code === 0) {
       // 替换临时消息为真实消息
       const index = messages.value.findIndex(m => m.id === tempMessage.id)
       if (index > -1) {
-        messages.value.splice(index, 1, res.data)
+        // 确保消息唯一：如果后端返回的消息已存在，则删除临时消息
+        const existsIndex = messages.value.findIndex(m => m.id === res.data.id && m.id !== tempMessage.id)
+        if (existsIndex > -1) {
+          messages.value.splice(index, 1)  // 删除临时消息
+        } else {
+          messages.value.splice(index, 1, res.data)  // 替换为真实消息
+        }
       }
+      // 按时间正序排列
+      messages.value.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
       // 更新会话列表最后消息
       const conv = conversations.value.find(c => c.conversation?.id === currentConvId.value)
       if (conv) {
@@ -1021,25 +1149,34 @@ const createGroup = async () => {
   if (!newGroupName.value || selectedMembers.value.length === 0) return
 
   try {
-    const res = await apiPost('/chat/conversation/group', {
-      ownerId: currentUserId.value,
+    showNewGroup.value = false
+
+    // 暂存群信息（不立即创建会话）
+    const tempGroup = {
+      id: 'temp_' + Date.now(),
       name: newGroupName.value,
       description: newGroupDesc.value,
-      memberIds: selectedMembers.value
-    })
-
-    if (res.code === 0) {
-      showNewGroup.value = false
-      newGroupName.value = ''
-      newGroupDesc.value = ''
-      selectedMembers.value = []
-      memberSearchKeyword.value = ''
-      await loadConversations()
-
-      const newConv = conversations.value.find(c => c.conversation?.id === res.data.id)
-      if (newConv) selectConversation(newConv)
-      ElMessage.success('群聊已创建')
+      memberIds: [...selectedMembers.value],
+      ownerId: currentUserId.value,
+      isPending: true  // 标记为待创建
     }
+
+    // 清空表单
+    newGroupName.value = ''
+    newGroupDesc.value = ''
+    selectedMembers.value = []
+    memberSearchKeyword.value = ''
+
+    // 保存到临时群组（用于发送消息时创建）
+    pendingGroup.value = tempGroup
+
+    // 提示用户可以开始发送消息了
+    ElMessage.info('请在下方输入消息，发送后将自动创建群聊')
+
+    // 聚焦到输入框
+    nextTick(() => {
+      messageInputRef.value?.focus()
+    })
   } catch (error) {
     ElMessage.error('创建群聊失败')
   }
@@ -1078,6 +1215,13 @@ const handleFileSelect = (event) => {
   }
 }
 
+const removeFile = () => {
+  selectedFile.value = null
+  if (fileInput.value) {
+    fileInput.value.value = ''
+  }
+}
+
 // 工具方法
 const scrollToBottom = () => {
   nextTick(() => {
@@ -1104,6 +1248,15 @@ const getCardTitle = (cardType) => {
   return titles[cardType] || 'RPA卡片'
 }
 
+// 获取对方用户头像
+const getOtherUserAvatar = (conv) => {
+  if (!conv.otherUserAvatar) return null
+  if (conv.otherUserAvatar.startsWith('http') || conv.otherUserAvatar.startsWith('/')) {
+    return conv.otherUserAvatar
+  }
+  return '/' + conv.otherUserAvatar
+}
+
 // 生命周期
 onMounted(async () => {
   await loadAllUsers()
@@ -1111,15 +1264,20 @@ onMounted(async () => {
   connectWebSocket()
 })
 
+// 每次进入聊天中枢时刷新会话列表（获取最新未读状态）
+onActivated(async () => {
+  await loadConversations()
+  // 同步全局未读数
+  updateGlobalUnreadCount()
+})
+
 onUnmounted(() => {
-  // 发送离开消息
-  if (socket.value) {
-    socket.value.send(JSON.stringify({
-      type: 'leave',
-      userId: currentUserId.value
-    }))
-    socket.value.close()
+  // 取消订阅
+  if (currentConvSubscription) {
+    unsubscribe(currentConvSubscription)
   }
+  // 断开STOMP连接
+  disconnect()
 })
 </script>
 
@@ -1249,55 +1407,6 @@ onUnmounted(() => {
 .conv-time {
   font-size: 11px;
   color: #ccc;
-}
-
-/* AI入口 */
-.ai-entry {
-  display: flex;
-  align-items: center;
-  padding: 16px;
-  margin: 12px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 14px;
-  color: white;
-  cursor: pointer;
-  transition: all 0.3s;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-}
-
-.ai-entry:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
-}
-
-.ai-icon {
-  width: 44px;
-  height: 44px;
-  background: rgba(255,255,255,0.2);
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 12px;
-}
-
-.ai-info {
-  flex: 1;
-}
-
-.ai-title {
-  display: block;
-  font-weight: 600;
-  margin-bottom: 2px;
-}
-
-.ai-desc {
-  font-size: 12px;
-  opacity: 0.8;
-}
-
-.ai-arrow {
-  opacity: 0.8;
 }
 
 /* 主聊天区域 */
@@ -1472,18 +1581,41 @@ onUnmounted(() => {
 }
 
 .message-bubble {
-  padding: 12px 16px;
+  padding: 10px 14px;
   border-radius: 12px;
-  background: white;
+  background: #ffffff;
   line-height: 1.6;
   word-break: break-word;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  position: relative;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 
 .message-self .message-bubble {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  background: #95EC91;
+  color: #1a1a1a;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.message-other .message-bubble {
+  background: #ffffff;
+}
+
+.message-self .message-bubble::after {
+  content: '';
+  position: absolute;
+  right: -10px;
+  top: 12px;
+  border: 6px solid transparent;
+  border-left-color: #95EC91;
+}
+
+.message-other .message-bubble::before {
+  content: '';
+  position: absolute;
+  left: -10px;
+  top: 12px;
+  border: 6px solid transparent;
+  border-right-color: #ffffff;
 }
 
 .rpa-card-wrapper {
@@ -1620,80 +1752,6 @@ onUnmounted(() => {
 .feature-list li .el-icon {
   color: #409eff;
   font-size: 18px;
-}
-
-/* AI对话框 */
-.ai-chat-container {
-  height: 400px;
-  display: flex;
-  flex-direction: column;
-}
-
-.ai-messages {
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px;
-  background: #f8f9fa;
-  border-radius: 12px;
-  margin-bottom: 16px;
-}
-
-.ai-message {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 16px;
-  align-items: flex-start;
-}
-
-.ai-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.ai-message-user .ai-avatar {
-  background: #409eff;
-}
-
-.ai-message-content {
-  flex: 1;
-  padding: 12px 16px;
-  background: white;
-  border-radius: 12px;
-  white-space: pre-wrap;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-}
-
-.ai-message-user .ai-message-content {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-}
-
-.ai-suggestions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.suggestions-label {
-  font-size: 12px;
-  color: #999;
-}
-
-.suggestion-tag {
-  cursor: pointer;
-}
-
-.ai-input-wrapper {
-  display: flex;
-  gap: 12px;
 }
 
 /* 快速发起会话面板 */

@@ -42,6 +42,14 @@
 
       <!-- 右侧工具栏 -->
       <div class="header-right">
+        <!-- 聊天消息按钮 -->
+        <el-badge :value="chatUnreadCount" :hidden="chatUnreadCount === 0" class="tool-badge" :max="99">
+          <el-button class="tool-btn" @click="goToCollaboration">
+            <el-icon><ChatLineSquare /></el-icon>
+          </el-button>
+        </el-badge>
+
+        <!-- 通知按钮 -->
         <el-badge :value="unreadCount" :hidden="unreadCount === 0" class="tool-badge">
           <el-button class="tool-btn" @click="goToNotifications">
             <el-icon><Bell /></el-icon>
@@ -331,6 +339,7 @@ const showDataSubmenu = ref(true)
 const activeTopMenu = ref('rpa')
 const activeMenu = ref('tasks')
 const unreadCount = ref(0)
+const chatUnreadCount = ref(0)
 
 const currentUser = ref({
   id: 1,
@@ -396,8 +405,15 @@ const goToDashboard = () => {
 }
 
 // 跳转到协作中枢
-const goToNotifications = () => {
+// 跳转到协作中枢
+const goToCollaboration = () => {
+  switchMenu('collaboration')
   router.push('/rpa/collaboration')
+}
+
+// 跳转到通知页面
+const goToNotifications = () => {
+  router.push('/rpa/notifications')
 }
 
 // 展开/收起数据管理子菜单
@@ -430,10 +446,13 @@ const loadUnreadCount = async () => {
     const { apiGet } = await import('../../utils/api.js')
     const result = await apiGet('/chat/conversations?userId=1')
     if (result?.code === 0 && result.data) {
-      unreadCount.value = result.data.reduce((sum, c) => sum + (c.unreadCount || 0), 0)
+      const totalUnread = result.data.reduce((sum, c) => sum + (c.unreadCount || 0), 0)
+      unreadCount.value = totalUnread
+      chatUnreadCount.value = totalUnread  // 同步更新聊天未读数
     }
   } catch (e) {
     unreadCount.value = 0
+    chatUnreadCount.value = 0
   }
 }
 
@@ -475,6 +494,13 @@ onMounted(() => {
   // 监听自定义的头像更新事件
   window.addEventListener('avatarUpdated', () => {
     loadUserInfo()
+  })
+
+  // 监听聊天未读数更新事件（来自 CollaborationHub）
+  window.addEventListener('chatUnreadUpdated', (e) => {
+    chatUnreadCount.value = e.detail?.unread || 0
+    // 同时更新未读通知数
+    unreadCount.value = e.detail?.unread || 0
   })
 
   // 根据当前路由设置激活菜单

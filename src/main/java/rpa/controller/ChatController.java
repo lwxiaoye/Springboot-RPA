@@ -140,6 +140,36 @@ public class ChatController {
     }
 
     /**
+     * 标记消息已读
+     */
+    @PostMapping("/mark-read")
+    public ResponseEntity<?> markRead(@RequestBody Map<String, Long> params) {
+        try {
+            Long conversationId = params.get("conversationId");
+            Long userId = params.get("userId");
+            int unreadCount = chatService.markAsRead(conversationId, userId);
+            return ResponseEntity.ok(Map.of("code", 0, "message", "已标记为已读", "data", Map.of("unreadCount", unreadCount)));
+        } catch (Exception e) {
+            log.error("标记已读失败", e);
+            return ResponseEntity.ok(Map.of("code", 1, "message", e.getMessage()));
+        }
+    }
+
+    /**
+     * 获取用户未读消息总数
+     */
+    @GetMapping("/unread/total")
+    public ResponseEntity<?> getTotalUnread(@RequestParam(defaultValue = "1") Long userId) {
+        try {
+            int totalUnread = chatService.getTotalUnreadCount(userId);
+            return ResponseEntity.ok(Map.of("code", 0, "data", Map.of("totalUnread", totalUnread)));
+        } catch (Exception e) {
+            log.error("获取未读数失败", e);
+            return ResponseEntity.ok(Map.of("code", 1, "message", e.getMessage()));
+        }
+    }
+
+    /**
      * 撤回消息
      */
     @PostMapping("/recall")

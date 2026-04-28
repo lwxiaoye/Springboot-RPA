@@ -41,7 +41,7 @@
 
       <!-- 右侧工具栏 -->
       <div class="header-right">
-        <el-badge :value="unreadCount" :hidden="unreadCount === 0" class="tool-badge">
+        <el-badge :value="unreadCount + chatUnreadCount" :hidden="unreadCount + chatUnreadCount === 0" class="tool-badge">
           <el-button class="tool-btn" @click="goToNotifications">
             <el-icon><Bell /></el-icon>
           </el-button>
@@ -195,6 +195,7 @@ const sidebarCollapsed = ref(false)
 const activeTopMenu = ref('system')
 const activeLeftMenu = ref('/system/profile')
 const unreadCount = ref(0)
+const chatUnreadCount = ref(0)
 
 const currentUser = ref({
   id: 1,
@@ -247,7 +248,7 @@ const goToProfile = () => {
 }
 
 const goToNotifications = () => {
-  router.push('/rpa/notifications')
+  router.push('/rpa/collaboration')
 }
 
 const handleLogout = () => {
@@ -299,6 +300,36 @@ const loadUnreadCount = async () => {
   } catch (e) {}
 }
 
+// 监听聊天未读数更新事件
+const handleChatUnreadUpdate = (event) => {
+  // 收到聊天未读更新时，只在非聊天中枢页面显示
+  // 进入聊天中枢后，由路由监听器处理
+}
+
+// 监听聊天未读数同步（来自聊天中枢）
+const handleSyncChatUnread = (event) => {
+  // 更新全局未读数
+  chatUnreadCount.value = event.detail.unread
+}
+
+// 监听路由变化，当进入聊天中枢时重置未读数
+watch(
+  () => route.path,
+  (newPath) => {
+    if (newPath.includes('/collaboration')) {
+      // 进入聊天中枢，重置未读数（因为聊天中枢有自己的未读显示）
+      unreadCount.value = 0
+      chatUnreadCount.value = 0
+    } else {
+      // 离开聊天中枢，显示系统通知和聊天未读的总和
+      loadUnreadCount()
+      if (chatUnreadCount.value > 0) {
+        unreadCount.value += chatUnreadCount.value
+      }
+    }
+  }
+)
+
 onMounted(() => {
   loadUserInfo()
   loadUnreadCount()
@@ -314,12 +345,19 @@ onMounted(() => {
   window.addEventListener('avatarUpdated', () => {
     loadUserInfo()
   })
+
+  // 监听聊天未读数更新事件
+  window.addEventListener('chatUnreadUpdated', handleChatUnreadUpdate)
+  // 监听聊天未读数同步（来自聊天中枢）
+  window.addEventListener('syncChatUnread', handleSyncChatUnread)
 })
 
 // 组件卸载时移除事件监听
 onUnmounted(() => {
   window.removeEventListener('storage', loadUserInfo)
   window.removeEventListener('avatarUpdated', loadUserInfo)
+  window.removeEventListener('chatUnreadUpdated', handleChatUnreadUpdate)
+  window.removeEventListener('syncChatUnread', handleSyncChatUnread)
 })
 </script>
 

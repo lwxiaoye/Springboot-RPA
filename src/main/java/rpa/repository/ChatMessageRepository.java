@@ -36,6 +36,11 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
     Optional<ChatMessage> findFirstByConversationIdOrderByCreatedAtDesc(Long conversationId);
 
     /**
+     * 获取会话最早消息
+     */
+    Optional<ChatMessage> findFirstByConversationIdOrderByCreatedAtAsc(Long conversationId);
+
+    /**
      * 获取未读消息数量
      */
     @Query("SELECT COUNT(m) FROM ChatMessage m WHERE m.conversationId = :conversationId AND m.createdAt > :lastReadTime AND m.senderId != :userId")
