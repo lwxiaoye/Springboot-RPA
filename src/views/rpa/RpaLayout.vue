@@ -177,23 +177,7 @@
             <span class="menu-text" v-if="!sidebarCollapsed">AI能力</span>
           </div>
 
-          <!-- 智能录制器 -->
-          <div class="menu-item"
-            :class="{ active: activeMenu === 'recorder' }"
-            @click="switchMenu('recorder')"
-          >
-            <el-icon class="menu-icon"><VideoPlay /></el-icon>
-            <span class="menu-text" v-if="!sidebarCollapsed">智能录制</span>
-          </div>
 
-          <!-- 录屏管理 -->
-          <div class="menu-item"
-            :class="{ active: activeMenu === 'recording' }"
-            @click="switchMenu('recording')"
-          >
-            <el-icon class="menu-icon"><VideoCamera /></el-icon>
-            <span class="menu-text" v-if="!sidebarCollapsed">录屏管理</span>
-          </div>
 
           <!-- 脚本执行器 -->
           <div class="menu-item"
@@ -314,11 +298,9 @@ import {
   Tools,
   Timer,
   MagicStick,
-  VideoCamera,
   Promotion,
   View,
   Unlock,
-  VideoPlay,
   Odometer,
   SwitchButton
 } from '@element-plus/icons-vue'
@@ -381,11 +363,9 @@ const routeMap = {
   dataQuery: '/rpa/data-query',
   invoice: '/rpa/invoice',
   ai: '/rpa/ai',
-  recording: '/rpa/recording',
   script: '/rpa/script',
   masking: '/rpa/masking',
-  locks: '/rpa/locks',
-  recorder: '/rpa/recorder'
+  locks: '/rpa/locks'
 }
   router.push(routeMap[menu])
 }
@@ -503,8 +483,6 @@ onMounted(() => {
   else if (path.includes('/rpa/data-process')) activeMenu.value = 'dataProcess'
   else if (path.includes('/rpa/data-query')) activeMenu.value = 'dataQuery'
   else if (path.includes('/rpa/invoice')) activeMenu.value = 'invoice'
-
-  else if (path.includes('/rpa/recorder')) activeMenu.value = 'recorder'
 
   // 加载未读通知数
   loadUnreadCount()

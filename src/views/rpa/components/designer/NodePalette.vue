@@ -286,28 +286,7 @@
           </div>
         </el-collapse-item>
 
-        <!-- 智能录制分类 -->
-        <el-collapse-item title="智能录制" name="recorder">
-          <template #title>
-            <div class="category-title">
-              <span class="category-icon">🎬</span>
-              <span>智能录制</span>
-              <el-tag size="small" type="success">NEW</el-tag>
-            </div>
-          </template>
-          <div class="node-list">
-            <div
-              v-for="node in getFilteredNodes('recorder')"
-              :key="node.type"
-              class="palette-node"
-              draggable="true"
-              @dragstart="onDragStart($event, node)"
-            >
-              <span class="node-icon">{{ node.icon }}</span>
-              <span class="node-name">{{ node.name }}</span>
-            </div>
-          </div>
-        </el-collapse-item>
+
       </el-collapse>
     </div>
 
@@ -340,8 +319,7 @@ const nodeCategories = {
   logic: '逻辑控制',
   script: '脚本代码',
   communication: '通信工具',
-  vision: '图像识别',
-  recorder: '智能录制'
+  vision: '图像识别'
 }
 
 // 活动节点定义
@@ -459,15 +437,7 @@ const allNodes = [
   { type: 'vision_wait', name: '等待图像', icon: '⏳', category: 'vision', description: '等待图像出现在屏幕上' },
   { type: 'vision_screenshot', name: '屏幕截图', icon: '📸', category: 'vision', description: '截取屏幕或区域图像' },
   { type: 'vision_capture', name: '截取模板', icon: '🎯', category: 'vision', description: '截取图像区域作为模板' },
-  { type: 'vision_exists', name: '图像存在', icon: '❓', category: 'vision', description: '检查图像是否存在于屏幕' },
-
-  // 智能录制
-  { type: 'recorder_start', name: '开始录制', icon: '🎬', category: 'recorder', description: '开始录制用户操作' },
-  { type: 'recorder_stop', name: '停止录制', icon: '⏹️', category: 'recorder', description: '停止录制并生成脚本' },
-  { type: 'recorder_pause', name: '暂停录制', icon: '⏸️', category: 'recorder', description: '暂停录制操作' },
-  { type: 'recorder_resume', name: '恢复录制', icon: '▶️', category: 'recorder', description: '恢复录制操作' },
-  { type: 'recorder_anchor', name: '添加锚点', icon: '📍', category: 'recorder', description: '在录制中添加位置标注' },
-  { type: 'recorder_import', name: '导入脚本', icon: '📥', category: 'recorder', description: '导入录制生成的脚本' }
+  { type: 'vision_exists', name: '图像存在', icon: '❓', category: 'vision', description: '检查图像是否存在于屏幕' }
 ]
 
 // 计算属性

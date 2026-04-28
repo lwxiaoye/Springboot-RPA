@@ -4,7 +4,6 @@ import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
-import rpa.recording.ScreenRecorder;
 import rpa.security.CredentialVault;
 import rpa.security.DataMaskingService;
 
@@ -16,7 +15,7 @@ import java.util.stream.Collectors;
 /**
  * 企业级特性控制器
  * 
- * 提供录屏、数据脱敏、凭据管理等企业级功能的API
+ * 提供数据脱敏、凭据管理等企业级功能的API
  */
 @Slf4j
 @RestController
@@ -25,100 +24,8 @@ import java.util.stream.Collectors;
 @CrossOrigin
 public class EnterpriseController {
 
-    private final ScreenRecorder screenRecorder;
     private final DataMaskingService dataMaskingService;
     private final CredentialVault credentialVault;
-
-    // ==================== 录屏相关 ====================
-
-    /**
-     * 开始录屏
-     */
-    @PostMapping("/recording/start")
-    public Map<String, Object> startRecording(@RequestBody RecordingStartRequest request) {
-        Map<String, Object> response = new HashMap<>();
-        ScreenRecorder.RecordingRequest recordRequest = new ScreenRecorder.RecordingRequest();
-        recordRequest.setRobotId(request.getRobotId());
-        recordRequest.setTaskId(request.getTaskId());
-        recordRequest.setMonitorIndex(request.getMonitorIndex());
-        
-        ScreenRecorder.RecordingResult result = screenRecorder.startRecording(recordRequest);
-        response.put("code", 0);
-        response.put("data", convertRecordingResult(result));
-        return response;
-    }
-
-    /**
-     * 暂停录屏
-     */
-    @PostMapping("/recording/pause/{sessionId}")
-    public Map<String, Object> pauseRecording(@PathVariable String sessionId) {
-        Map<String, Object> response = new HashMap<>();
-        ScreenRecorder.RecordingResult result = screenRecorder.pauseRecording(sessionId);
-        response.put("code", 0);
-        response.put("data", convertRecordingResult(result));
-        return response;
-    }
-
-    /**
-     * 恢复录屏
-     */
-    @PostMapping("/recording/resume/{sessionId}")
-    public Map<String, Object> resumeRecording(@PathVariable String sessionId) {
-        Map<String, Object> response = new HashMap<>();
-        ScreenRecorder.RecordingResult result = screenRecorder.resumeRecording(sessionId);
-        response.put("code", 0);
-        response.put("data", convertRecordingResult(result));
-        return response;
-    }
-
-    /**
-     * 停止录屏
-     */
-    @PostMapping("/recording/stop/{sessionId}")
-    public Map<String, Object> stopRecording(@PathVariable String sessionId) {
-        Map<String, Object> response = new HashMap<>();
-        ScreenRecorder.RecordingResult result = screenRecorder.stopRecording(sessionId);
-        response.put("code", 0);
-        response.put("data", convertRecordingResult(result));
-        return response;
-    }
-
-    /**
-     * 获取录屏状态
-     */
-    @GetMapping("/recording/status/{sessionId}")
-    public Map<String, Object> getRecordingStatus(@PathVariable String sessionId) {
-        Map<String, Object> response = new HashMap<>();
-        ScreenRecorder.RecordingSession session = screenRecorder.getSessionStatus(sessionId);
-        response.put("code", 0);
-        response.put("data", convertRecordingSession(session));
-        return response;
-    }
-
-    /**
-     * 获取活跃录屏会话
-     */
-    @GetMapping("/recording/active")
-    public Map<String, Object> getActiveSessions() {
-        Map<String, Object> response = new HashMap<>();
-        List<ScreenRecorder.RecordingSession> sessions = screenRecorder.getActiveSessions();
-        response.put("code", 0);
-        response.put("data", sessions.stream().map(this::convertRecordingSession).collect(Collectors.toList()));
-        return response;
-    }
-
-    /**
-     * 录制动作
-     */
-    @PostMapping("/recording/action")
-    public Map<String, Object> recordAction(@RequestBody RecordActionRequest request) {
-        Map<String, Object> response = new HashMap<>();
-        screenRecorder.recordAction(request.getSessionId(), request.getAction(), request.getMetadata());
-        response.put("code", 0);
-        response.put("message", "动作已录制");
-        return response;
-    }
 
     // ==================== 数据脱敏相关 ====================
 
@@ -325,30 +232,6 @@ public class EnterpriseController {
 
     // ==================== 转换方法 ====================
 
-    private Map<String, Object> convertRecordingResult(ScreenRecorder.RecordingResult result) {
-        Map<String, Object> map = new HashMap<>();
-        map.put("success", result.isSuccess());
-        map.put("sessionId", result.getSessionId());
-        map.put("videoPath", result.getVideoPath());
-        map.put("duration", result.getDuration());
-        map.put("frameCount", result.getFrameCount());
-        map.put("message", result.getMessage());
-        return map;
-    }
-
-    private Map<String, Object> convertRecordingSession(ScreenRecorder.RecordingSession session) {
-        if (session == null) return null;
-        Map<String, Object> map = new HashMap<>();
-        map.put("sessionId", session.getSessionId());
-        map.put("robotId", session.getRobotId());
-        map.put("taskId", session.getTaskId());
-        map.put("status", session.getStatus() != null ? session.getStatus().name() : null);
-        map.put("startTime", session.getStartTime());
-        map.put("endTime", session.getEndTime());
-        map.put("frameCount", session.getFrameCount());
-        return map;
-    }
-
     private Map<String, Object> convertCredentialResult(CredentialVault.CredentialResult result) {
         Map<String, Object> map = new HashMap<>();
         map.put("credentialName", result.getCredentialName());
@@ -377,20 +260,6 @@ public class EnterpriseController {
     }
 
     // ==================== 请求类 ====================
-
-    @Data
-    public static class RecordingStartRequest {
-        private String robotId;
-        private String taskId;
-        private int monitorIndex = 0;
-    }
-
-    @Data
-    public static class RecordActionRequest {
-        private String sessionId;
-        private String action;
-        private Map<String, Object> metadata;
-    }
 
     @Data
     public static class MaskRequest {
