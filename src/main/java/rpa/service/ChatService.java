@@ -431,7 +431,6 @@ public class ChatService {
 
         List<RPACardData.CardAction> actions = new ArrayList<>();
         actions.add(new RPACardData.CardAction("view_detail", "查看详情", null, "View"));
-        actions.add(new RPACardData.CardAction("share_recording", "分享录屏", null, "VideoCamera"));
 
         return sendRPACard(conversationId, senderId, senderName, cardData, actions);
     }

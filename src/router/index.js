@@ -39,16 +39,11 @@ const RobotHealth = () => import('../views/rpa/RobotHealth.vue')
 
 // 企业级功能页面
 const AiCenter = () => import('../views/rpa/AiCenter.vue')
-const RecordingCenter = () => import('../views/rpa/RecordingCenter.vue')
 const ScriptExecutor = () => import('../views/rpa/ScriptExecutor.vue')
 const DataMasking = () => import('../views/rpa/DataMasking.vue')
 const DistributedLock = () => import('../views/rpa/DistributedLock.vue')
 
-// 智能录制器和AI助手页面
-const Recorder = () => import('../views/rpa/Recorder.vue')
-const AiAssistant = () => import('../views/rpa/AiAssistant.vue')
-
-// 实时监控页面
+// 工作台页面
 const RealTimeMonitor = () => import('../views/rpa/RealTimeMonitor.vue')
 
 const routes = [
@@ -90,12 +85,9 @@ const routes = [
             { path: 'data-query', name: 'DataQuery', component: DataQuery },
             // 企业级功能
             { path: 'ai', name: 'AiCenter', component: AiCenter },
-            { path: 'recording', name: 'RecordingCenter', component: RecordingCenter },
             { path: 'script', name: 'ScriptExecutor', component: ScriptExecutor },
             { path: 'masking', name: 'DataMasking', component: DataMasking },
             { path: 'locks', name: 'DistributedLock', component: DistributedLock },
-            // 智能录制器
-            { path: 'recorder', name: 'Recorder', component: Recorder },
             // 工作台 - 使用实时监控页面
             { path: 'workbench', name: 'Workbench', component: RealTimeMonitor }
         ]
