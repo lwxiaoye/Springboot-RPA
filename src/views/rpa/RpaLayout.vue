@@ -442,7 +442,12 @@ const loadUnreadCount = async () => {
 const getAvatarUrl = (path) => {
   if (!path) return null
   if (path.startsWith('http://') || path.startsWith('https://')) return path
-  return path
+  // 修复旧的头像路径格式（去掉开头的 /api）
+  if (path.startsWith('/api/')) {
+    path = path.replace('/api/', '/')
+  }
+  // 拼接 API 基础 URL
+  return `/api${path}`
 }
 
 // 处理头像加载失败

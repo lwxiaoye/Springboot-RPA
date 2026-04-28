@@ -156,16 +156,6 @@
               <el-icon class="menu-icon"><FolderOpened /></el-icon>
               <span class="menu-text">资源管理</span>
             </div>
-            <div class="menu-divider"></div>
-            <div class="menu-section-title">应用设置</div>
-            <div class="menu-item" :class="{ active: activeLeftMenu === '/rpa/settings' }" @click="switchMenu('/rpa/settings')">
-              <el-icon class="menu-icon"><Tools /></el-icon>
-              <span class="menu-text">系统设置</span>
-            </div>
-            <div class="menu-item" :class="{ active: activeLeftMenu === '/rpa/notifications' }" @click="switchMenu('/rpa/notifications')">
-              <el-icon class="menu-icon"><Bell /></el-icon>
-              <span class="menu-text">通知管理</span>
-            </div>
           </template>
         </nav>
       </aside>
@@ -268,7 +258,12 @@ const handleLogout = () => {
 const getAvatarUrl = (path) => {
   if (!path) return null
   if (path.startsWith('http://') || path.startsWith('https://')) return path
-  return path
+  // 修复旧的头像路径格式（去掉开头的 /api）
+  if (path.startsWith('/api/')) {
+    path = path.replace('/api/', '/')
+  }
+  // 拼接 API 基础 URL
+  return `/api${path}`
 }
 
 // 处理头像加载失败
