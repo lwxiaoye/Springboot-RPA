@@ -208,21 +208,29 @@
             </el-button>
           </div>
 
+          <!-- 敏感词提示 -->
+          <div v-if="detectedSensitiveWords.length > 0" class="sensitive-warning">
+            <el-icon><WarningFilled /></el-icon>
+            <span>检测到敏感词：{{ detectedSensitiveWords.join('、') }}</span>
+            <el-button size="small" text type="danger" @click="clearSensitiveWords">清除</el-button>
+          </div>
+
           <div class="input-wrapper">
             <el-input
               ref="messageInputRef"
               v-model="inputMessage"
               type="textarea"
               :rows="3"
-              placeholder="输入消息... (Enter发送, Shift+Enter换行)"
+              :placeholder="inputPlaceholder"
               @keydown.enter.exact.prevent="sendMessage"
+              @input="checkSensitiveWords"
               resize="none"
             />
           </div>
 
           <div class="input-footer">
             <span class="input-hint">Enter 发送 | Shift+Enter 换行</span>
-            <el-button type="primary" :disabled="!inputMessage.trim() && !selectedFile" @click="sendMessage" :loading="sending">
+            <el-button type="primary" :disabled="(!inputMessage.trim() && !selectedFile) || detectedSensitiveWords.length > 0" @click="sendMessage" :loading="sending">
               <el-icon v-if="!sending"><Promotion /></el-icon>
               发送
             </el-button>
@@ -446,7 +454,8 @@ import { ElMessage } from 'element-plus'
 import {
   Plus, ChatLineSquare, ChatDotRound, Search, UserFilled, FolderOpened,
   Grid, Document, Timer, Cpu, Refresh, ArrowRight,
-  Promotion, Warning, Avatar, Loading, Check, MoreFilled, InfoFilled, CaretRight, Close
+  Promotion, Warning, Avatar, Loading, Check, MoreFilled, InfoFilled, CaretRight, Close,
+  WarningFilled
 } from '@element-plus/icons-vue'
 import { connect, disconnect, subscribeConversation, unsubscribe, isConnected } from '../../utils/stomp.js'
 
@@ -563,6 +572,64 @@ const pendingGroup = ref(null)
 // 文件相关
 const selectedFile = ref(null)
 
+// 敏感词检测
+const detectedSensitiveWords = ref([])
+const sensitiveWordPatterns = [
+  // 金融敏感词
+  /银行|账户|密码|验证码|转账|汇款|支付|红包|余额|利率|利息|本金|贷款|信用卡|借记卡|社保|医保|公积金|投资|理财|基金|股票|证券|期货|保险|理赔|赔付/g,
+  // 身份敏感词
+  /身份证|护照|驾照|户口|社保卡|医保卡|工号|学号|姓名|性别|年龄|生日|籍贯|民族|学历|学位/g,
+  // 联系方式敏感词
+  /手机号|手机|电话|邮箱|地址|门牌|邮编|QQ号|QQ|微信号|微信/g,
+  // 账号敏感词
+  /账号|用户名|登录名|登录|注册|找回密码|安全问题/g,
+  // 企业敏感词
+  /公司|法人|营业执照|税务|发票|合同|协议|公章/g,
+  // 金额敏感词
+  /\d{4,}/g,  // 4位及以上纯数字
+  /\d{16,19}/g,  // 16-19位数字（疑似卡号）
+  // 其他敏感词
+  /秘密|机密|隐私|泄露|盗用|诈骗|钓鱼|病毒|木马/g,
+]
+
+// 检测敏感词
+const checkSensitiveWords = () => {
+  const content = inputMessage.value
+  if (!content || !content.trim()) {
+    detectedSensitiveWords.value = []
+    return
+  }
+  
+  const found = []
+  for (const pattern of sensitiveWordPatterns) {
+    // 重置正则表达式的 lastIndex
+    pattern.lastIndex = 0
+    const matches = content.match(pattern)
+    if (matches) {
+      // 去重
+      for (const match of matches) {
+        const cleanMatch = match.trim()
+        if (cleanMatch && !found.includes(cleanMatch)) {
+          found.push(cleanMatch)
+        }
+      }
+    }
+  }
+  
+  detectedSensitiveWords.value = found.slice(0, 5)  // 最多显示5个
+  
+  // 调试日志
+  if (found.length > 0) {
+    console.log('检测到敏感词:', found)
+  }
+}
+
+// 清除敏感词内容
+const clearSensitiveWords = () => {
+  inputMessage.value = ''
+  detectedSensitiveWords.value = []
+}
+
 // 计算属性
 const filteredConversations = computed(() => {
   let result = conversations.value
@@ -630,12 +697,16 @@ const filteredGroupMembers = computed(() => {
 })
 
 const inputPlaceholder = computed(() => {
+  if (detectedSensitiveWords.value.length > 0) {
+    return '请修改内容后再发送...'
+  }
   if (inputMessage.value.startsWith('/')) return '输入 / 查看可用指令...'
   return '输入消息... (Ctrl+Enter 发送)'
 })
 
 // WebSocket/STOMP连接
 let currentConvSubscription = null
+let globalSubscription = null  // 全局消息订阅
 
 const connectWebSocket = () => {
   if (isConnected()) {
@@ -652,6 +723,8 @@ const connectWebSocket = () => {
     onConnect: () => {
       console.log('STOMP connected')
       wsConnected.value = true
+      // 连接成功后，订阅全局消息通知
+      subscribeGlobalNotifications()
     },
     onDisconnect: () => {
       console.log('STOMP disconnected')
@@ -662,6 +735,54 @@ const connectWebSocket = () => {
       wsConnected.value = false
     }
   })
+}
+
+// 订阅全局消息通知（用于更新会话列表）
+const subscribeGlobalNotifications = () => {
+  import('../../utils/stomp.js').then(({ subscribe }) => {
+    // 订阅所有会话更新通知（用户级别）
+    globalSubscription = subscribe('/topic/conversations/updates', (notification) => {
+      console.log('收到会话更新通知:', notification)
+      // 处理会话列表更新通知
+      if (notification.type === 'conversation_update') {
+        // 检查是否需要刷新会话列表
+        // 只有当通知包含当前用户相关的信息时才刷新
+        // 这里直接刷新会话列表以确保数据最新
+        loadConversationsSilent()
+      }
+    })
+  })
+}
+
+// 静默刷新会话列表（不显示loading状态）
+const loadConversationsSilent = async () => {
+  try {
+    const res = await apiGet(`/chat/conversations?userId=${currentUserId.value}`)
+    if (res.code === 0) {
+      // 保留未读数状态，只更新会话数据
+      const oldUnreadMap = new Map()
+      conversations.value.forEach(c => {
+        if (c.conversation?.id) {
+          oldUnreadMap.set(c.conversation.id, c.unreadCount)
+        }
+      })
+      
+      conversations.value = res.data || []
+      
+      // 恢复未读数状态（只恢复非当前会话的未读数）
+      conversations.value.forEach(c => {
+        const convId = c.conversation?.id
+        if (convId && convId !== currentConvId.value) {
+          c.unreadCount = oldUnreadMap.get(convId) || 0
+        }
+      })
+      
+      // 更新全局未读数
+      updateGlobalUnreadCount()
+    }
+  } catch (error) {
+    console.error('静默刷新会话失败:', error)
+  }
 }
 
 const subscribeToConversation = (conversationId) => {
@@ -678,8 +799,21 @@ const subscribeToConversation = (conversationId) => {
 }
 
 const handleNewMessage = (msg) => {
-  // 处理 ChatMessage 实体
-  const message = msg.message || msg
+  // 统一处理：支持新旧两种消息格式
+  // 新格式: { type, message, conversationId }
+  // 旧格式: 直接是 ChatMessage 对象
+  let message
+  let conversationId
+  
+  if (msg.message) {
+    // 新格式
+    message = msg.message
+    conversationId = msg.conversationId || msg.message.conversationId
+  } else {
+    // 旧格式，直接是消息对象
+    message = msg
+    conversationId = msg.conversationId
+  }
 
   // 如果是当前会话的消息，添加到列表
   if (message.conversationId === currentConvId.value) {
@@ -890,11 +1024,21 @@ const markAsRead = async (conversationId) => {
 
 // 发送消息 - 本地添加后立即显示
 const sendMessage = async () => {
-  if (!inputMessage.value.trim() && !selectedFile.value) return
+  // 清理输入内容（移除首尾空格，但保留中间的内容）
+  const cleanContent = inputMessage.value.trim()
+  
+  if (!cleanContent && !selectedFile.value) return
 
-  if (inputMessage.value.startsWith('/')) {
-    await executeCommand(inputMessage.value)
+  if (cleanContent.startsWith('/')) {
+    await executeCommand(cleanContent)
     inputMessage.value = ''
+    detectedSensitiveWords.value = []  // 清除敏感词提示
+    return
+  }
+
+  // 如果有敏感词，不允许发送
+  if (detectedSensitiveWords.value.length > 0) {
+    ElMessage.warning('请先修改敏感词内容后再发送')
     return
   }
 
@@ -940,13 +1084,13 @@ const sendMessage = async () => {
     return
   }
 
-  // 先本地添加消息，立即显示
+  // 先本地添加消息，立即显示（使用清理后的内容）
   const tempMessage = {
     id: 'temp_' + Date.now(),  // 使用临时ID避免与后端返回的ID冲突
     conversationId: currentConvId.value,
     senderId: currentUserId.value,
     senderName: currentUserName.value,
-    content: inputMessage.value,
+    content: cleanContent,  // 使用清理后的内容
     type: 'text',
     createdAt: new Date().toISOString(),
     status: 'sending'
@@ -954,7 +1098,7 @@ const sendMessage = async () => {
   messages.value.push(tempMessage)
   // 按时间正序排列（最新消息在下面）
   messages.value.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
-  const inputText = inputMessage.value
+  const inputText = cleanContent  // 保存清理后的内容
   inputMessage.value = ''
   scrollToBottom()
 
@@ -1275,6 +1419,9 @@ onUnmounted(() => {
   // 取消订阅
   if (currentConvSubscription) {
     unsubscribe(currentConvSubscription)
+  }
+  if (globalSubscription) {
+    unsubscribe(globalSubscription)
   }
   // 断开STOMP连接
   disconnect()
@@ -1658,6 +1805,46 @@ onUnmounted(() => {
 .input-hint {
   font-size: 12px;
   color: #999;
+}
+
+/* 敏感词提示 */
+.sensitive-warning {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #fef0f0;
+  border: 1px solid #fde2e2;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  color: #f56c6c;
+  font-size: 13px;
+  animation: slideDown 0.3s ease-out;
+}
+
+.sensitive-warning .el-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.sensitive-warning span {
+  flex: 1;
+}
+
+.sensitive-warning .el-button {
+  padding: 2px 8px;
+  font-size: 12px;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .file-preview {

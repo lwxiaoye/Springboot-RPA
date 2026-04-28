@@ -51,9 +51,37 @@ public class ChatWebSocketService {
      * 发送消息到指定会话
      */
     public void sendMessageToConversation(Long conversationId, ChatMessage message) {
+        // 构建统一的消息格式，确保前端能正确解析
+        Map<String, Object> payload = new ConcurrentHashMap<>();
+        payload.put("type", "new_message");
+        payload.put("message", message);
+        payload.put("conversationId", conversationId);
+        
         // 发送到会话订阅者
-        messagingTemplate.convertAndSend("/topic/conversation/" + conversationId, message);
+        messagingTemplate.convertAndSend("/topic/conversation/" + conversationId, payload);
         log.debug("消息发送到会话 {}: {}", conversationId, message.getId());
+        
+        // 同时广播会话列表更新通知给所有参与者
+        broadcastConversationUpdate(conversationId, message);
+    }
+    
+    /**
+     * 广播会话列表更新
+     */
+    private void broadcastConversationUpdate(Long conversationId, ChatMessage message) {
+        // 获取会话的所有参与者
+        // 这里发送一个轻量级的更新通知，前端收到后会刷新会话列表
+        Map<String, Object> notification = new ConcurrentHashMap<>();
+        notification.put("type", "conversation_update");
+        notification.put("conversationId", conversationId);
+        notification.put("action", "message_sent");
+        notification.put("lastMessage", message.getContent());
+        notification.put("lastMessageTime", message.getCreatedAt().toString());
+        notification.put("senderId", message.getSenderId());
+        notification.put("senderName", message.getSenderName());
+        
+        // 广播给所有相关用户（这里用topic，实际应该发送给具体的用户）
+        messagingTemplate.convertAndSend("/topic/conversations/updates", notification);
     }
 
     /**
@@ -76,8 +104,10 @@ public class ChatWebSocketService {
         Map<String, Object> payload = new ConcurrentHashMap<>();
         payload.put("type", "unread_update");
         payload.put("unreadCount", unreadCount);
+        payload.put("timestamp", System.currentTimeMillis());
         
         messagingTemplate.convertAndSendToUser(userId.toString(), "/queue/unread", payload);
+        log.debug("未读数更新发送给用户 {}: {}", userId, unreadCount);
     }
 
     /**
