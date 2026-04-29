@@ -1,5 +1,8 @@
 <template>
   <div class="rpa-layout">
+    <!-- 全局水印层 -->
+    <WatermarkOverlay ref="watermarkRef" />
+
     <!-- 顶部导航栏 -->
     <header class="dashboard-header">
       <!-- Logo区域 -->
@@ -50,7 +53,7 @@
         </el-badge>
 
         <!-- 通知按钮 -->
-        <el-badge :value="unreadCount" :hidden="unreadCount === 0" class="tool-badge">
+        <el-badge :value="notificationCount" :hidden="notificationCount === 0" class="tool-badge" :max="99">
           <el-button class="tool-btn" @click="goToNotifications">
             <el-icon><Bell /></el-icon>
           </el-button>
@@ -260,6 +263,16 @@
             <span class="menu-text" v-if="!sidebarCollapsed">系统设置</span>
           </div>
 
+          <!-- 水印管理（管理员专用） -->
+          <div class="menu-item"
+            v-if="isAdmin"
+            :class="{ active: activeMenu === 'watermark' }"
+            @click="switchMenu('watermark')"
+          >
+            <el-icon class="menu-icon"><Key /></el-icon>
+            <span class="menu-text" v-if="!sidebarCollapsed">水印管理</span>
+          </div>
+
           <!-- 协作中枢 -->
           <div class="menu-item"
             :class="{ active: activeMenu === 'collaboration' }"
@@ -280,9 +293,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, onUnmounted } from 'vue'
+import { ref, onMounted, computed, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import WatermarkOverlay from '../../components/watermark/WatermarkOverlay.vue'
 import {
   DataLine,
   Monitor,
@@ -310,17 +324,20 @@ import {
   View,
   Unlock,
   Odometer,
-  SwitchButton
+  SwitchButton,
+  Key as WatermarkIcon
 } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const route = useRoute()
+const watermarkRef = ref(null)
 
 const sidebarCollapsed = ref(false)
 const showDataSubmenu = ref(true)
 const activeTopMenu = ref('rpa')
 const activeMenu = ref('tasks')
 const unreadCount = ref(0)
+const notificationCount = ref(0)
 const chatUnreadCount = ref(0)
 
 const currentUser = ref({
@@ -333,6 +350,7 @@ const currentUser = ref({
 
 const userName = computed(() => currentUser.value.realName || currentUser.value.username)
 const userRole = computed(() => currentUser.value.role === 1 ? '管理员' : '普通用户')
+const isAdmin = computed(() => currentUser.value.role === 1)
 const userInitial = computed(() => {
   const name = userName.value
   return name ? name.charAt(0).toUpperCase() : 'U'
@@ -374,7 +392,8 @@ const routeMap = {
   ai: '/rpa/ai',
   script: '/rpa/script',
   masking: '/rpa/masking',
-  locks: '/rpa/locks'
+  locks: '/rpa/locks',
+  watermark: '/rpa/watermark-settings'
 }
   router.push(routeMap[menu])
 }
@@ -424,16 +443,78 @@ const handleLogout = () => {
 const loadUnreadCount = async () => {
   try {
     const { apiGet } = await import('../../utils/api.js')
-    const result = await apiGet('/chat/conversations?userId=1')
-    if (result?.code === 0 && result.data) {
-      const totalUnread = result.data.reduce((sum, c) => sum + (c.unreadCount || 0), 0)
-      unreadCount.value = totalUnread
-      chatUnreadCount.value = totalUnread  // 同步更新聊天未读数
+
+    // 获取当前用户ID
+    const user = JSON.parse(localStorage.getItem('userInfo') || '{}')
+    const userId = user.id || 1
+
+    // 获取公告未读数（来自新公告系统）
+    const announcementResult = await apiGet('/announcement/list')
+    if (announcementResult?.code === 0 && announcementResult.data) {
+      // 过滤出未读的公告
+      const unreadAnnouncements = announcementResult.data.filter(a => a.status === 'unread')
+      notificationCount.value = unreadAnnouncements.length
+      console.log('[RpaLayout] 公告未读数:', notificationCount.value, '总计:', announcementResult.data.length)
+    }
+
+    // 获取聊天未读数
+    const chatResult = await apiGet(`/chat/conversations?userId=${userId}`)
+    if (chatResult?.code === 0 && chatResult.data) {
+      const totalUnread = chatResult.data.reduce((sum, c) => sum + (c.unreadCount || 0), 0)
+      chatUnreadCount.value = totalUnread
     }
   } catch (e) {
-    unreadCount.value = 0
+    console.error('[RpaLayout] 加载未读数失败:', e)
+    notificationCount.value = 0
     chatUnreadCount.value = 0
   }
+}
+
+// 监听聊天未读数更新事件
+const handleChatUnreadUpdate = (event) => {
+  chatUnreadCount.value = event.detail?.unread || 0
+}
+
+// 监听通知未读数更新事件
+const handleNotificationUpdate = (event) => {
+  notificationCount.value = event.detail?.count || 0
+}
+
+// 监听路由变化
+watch(
+  () => route.path,
+  (newPath, oldPath) => {
+    if (newPath.includes('/collaboration')) {
+      // 进入聊天中枢，重置聊天未读数
+      chatUnreadCount.value = 0
+    } else if (newPath.includes('/notifications')) {
+      // 进入通知页面，强制重新加载未读数以获取最新状态
+      setTimeout(() => loadUnreadCount(), 100)
+    } else if (oldPath?.includes('/notifications') || oldPath?.includes('/collaboration')) {
+      // 从通知/聊天页面离开，重新加载未读数
+      loadUnreadCount()
+    }
+  }
+)
+
+// 监听来自通知页面的已读更新事件
+const handleAnnouncementReadUpdate = () => {
+  // 当通知页面标记已读后，通知布局刷新未读数
+  loadUnreadCount()
+}
+
+// 监听来自水印设置页面的水印状态变化
+const handleWatermarkStatusChange = (event) => {
+  console.log('[RpaLayout] 水印状态变化:', event.detail)
+
+  // 只有明确的水印启用/禁用操作才刷新未读数，公告操作不需要
+  if (event.detail && event.detail.type === 'announcement') {
+    // 公告相关操作不需要刷新未读数（已经在Notifications中处理了）
+    return
+  }
+
+  // 刷新未读数
+  loadUnreadCount()
 }
 
 
@@ -468,6 +549,7 @@ const loadUserInfo = () => {
 
 onMounted(() => {
   loadUserInfo()
+  loadUnreadCount()
 
   // 监听 storage 事件，当其他页面修改 userInfo 时同步更新
   window.addEventListener('storage', (e) => {
@@ -481,12 +563,17 @@ onMounted(() => {
     loadUserInfo()
   })
 
-  // 监听聊天未读数更新事件（来自 CollaborationHub）
-  window.addEventListener('chatUnreadUpdated', (e) => {
-    chatUnreadCount.value = e.detail?.unread || 0
-    // 同时更新未读通知数
-    unreadCount.value = e.detail?.unread || 0
-  })
+  // 监听聊天未读数更新事件
+  window.addEventListener('chatUnreadUpdated', handleChatUnreadUpdate)
+
+  // 监听通知未读数更新事件
+  window.addEventListener('notificationUpdated', handleNotificationUpdate)
+
+  // 监听公告已读更新事件
+  window.addEventListener('announcementReadUpdated', handleAnnouncementReadUpdate)
+
+  // 监听水印状态变化事件
+  window.addEventListener('watermarkStatusChanged', handleWatermarkStatusChange)
 
   // 根据当前路由设置激活菜单
   const path = route.path
@@ -509,15 +596,22 @@ onMounted(() => {
   else if (path.includes('/rpa/data-process')) activeMenu.value = 'dataProcess'
   else if (path.includes('/rpa/data-query')) activeMenu.value = 'dataQuery'
   else if (path.includes('/rpa/invoice')) activeMenu.value = 'invoice'
-
-  // 加载未读通知数
-  loadUnreadCount()
+  else if (path.includes('/rpa/watermark')) activeMenu.value = 'watermark'
 })
 
 // 组件卸载时移除事件监听
 onUnmounted(() => {
   window.removeEventListener('storage', loadUserInfo)
   window.removeEventListener('avatarUpdated', loadUserInfo)
+  window.removeEventListener('chatUnreadUpdated', handleChatUnreadUpdate)
+  window.removeEventListener('notificationUpdated', handleNotificationUpdate)
+  window.removeEventListener('announcementReadUpdated', handleAnnouncementReadUpdate)
+  window.removeEventListener('watermarkStatusChanged', handleWatermarkStatusChange)
+
+  // 销毁水印
+  if (watermarkRef.value) {
+    watermarkRef.value.destroyWatermark()
+  }
 })
 </script>
 

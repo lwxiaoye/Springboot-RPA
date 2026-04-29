@@ -63,7 +63,10 @@ public class User {
     
     /** 头像URL */
     private String avatar;
-    
+
+    /** 部门 */
+    private String department;
+
     /** 创建时间 */
     private LocalDateTime createTime = LocalDateTime.now();
     

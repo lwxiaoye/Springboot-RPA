@@ -1,17 +1,21 @@
 <template>
   <div class="system-layout">
+    <!-- 全局水印层 -->
+    <WatermarkOverlay ref="watermarkRef" />
+
     <!-- 顶部导航栏 -->
     <header class="dashboard-header">
       <!-- Logo区域 -->
       <div class="header-left">
         <div class="logo-area" @click="router.push('/rpa/collaboration')">
           <div class="logo-icon">
-            <img src="/title.png" alt="logo" style="width:32px;height:32px;" />
+            <img src="/title.png" alt="logo" style="width:36px;height:36px;" />
           </div>
           <div class="logo-text">
             <span class="logo-title">RPA</span>
-            <span class="logo-subtitle">Enterprise</span>
+            <span class="logo-subtitle">Enterprise Platform</span>
           </div>
+          <div class="logo-accent"></div>
         </div>
       </div>
 
@@ -41,7 +45,15 @@
 
       <!-- 右侧工具栏 -->
       <div class="header-right">
-        <el-badge :value="unreadCount + chatUnreadCount" :hidden="unreadCount + chatUnreadCount === 0" class="tool-badge">
+        <!-- 聊天消息按钮 -->
+        <el-badge :value="chatUnreadCount" :hidden="chatUnreadCount === 0" class="tool-badge" :max="99">
+          <el-button class="tool-btn" @click="goToCollaboration">
+            <el-icon><ChatLineSquare /></el-icon>
+          </el-button>
+        </el-badge>
+
+        <!-- 通知按钮 -->
+        <el-badge :value="notificationCount" :hidden="notificationCount === 0" class="tool-badge" :max="99">
           <el-button class="tool-btn" @click="goToNotifications">
             <el-icon><Bell /></el-icon>
           </el-button>
@@ -49,10 +61,10 @@
 
         <el-dropdown trigger="click">
           <div class="user-avatar">
-            <el-avatar :size="34" class="avatar-circle" v-if="!currentUser.avatar">
+            <el-avatar :size="36" class="avatar-circle" v-if="!currentUser.avatar">
               {{ userInitial }}
             </el-avatar>
-            <el-avatar :size="34" class="avatar-circle" v-else :src="getAvatarUrl(currentUser.avatar)" @error="handleAvatarError" />
+            <el-avatar :size="36" class="avatar-circle" v-else :src="getAvatarUrl(currentUser.avatar)" @error="handleAvatarError" />
             <div class="user-meta">
               <div class="user-name">{{ userName }}</div>
               <div class="user-role">{{ userRole }}</div>
@@ -172,19 +184,21 @@
 import { ref, watch, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import WatermarkOverlay from '../../components/watermark/WatermarkOverlay.vue'
 import {
   Odometer, VideoCamera, Setting, User, Bell, ArrowDown, SwitchButton,
   DataLine, List, Monitor, Document, Operation, Timer, Tickets, Key, DataBoard,
-  UserFilled, Management, FolderOpened, Tools
+  UserFilled, Management, FolderOpened, Tools, ChatLineSquare
 } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const route = useRoute()
+const watermarkRef = ref(null)
 
 const sidebarCollapsed = ref(false)
 const activeTopMenu = ref('system')
 const activeLeftMenu = ref('/system/profile')
-const unreadCount = ref(0)
+const notificationCount = ref(0)
 const chatUnreadCount = ref(0)
 
 const currentUser = ref({
@@ -238,6 +252,11 @@ const goToProfile = () => {
 }
 
 const goToNotifications = () => {
+  router.push('/rpa/notifications')
+}
+
+// 跳转到协作中枢
+const goToCollaboration = () => {
   router.push('/rpa/collaboration')
 }
 
@@ -287,40 +306,54 @@ const loadUserInfo = () => {
 const loadUnreadCount = async () => {
   try {
     const { apiGet } = await import('../../utils/api.js')
-    const result = await apiGet('/notification/stats')
-    if (result?.code === 0 && result.data?.unreads) {
-      const unreads = result.data.unreads
-      unreadCount.value = (unreads.collect || 0) + (unreads.temp || 0) + (unreads.user || 0)
+
+    // 获取公告未读数（来自新公告系统）
+    const announcementResult = await apiGet('/announcement/list')
+    if (announcementResult?.code === 0 && announcementResult.data) {
+      const unreadCount = announcementResult.data.filter(a => a.status === 'unread').length
+      notificationCount.value = unreadCount
     }
-  } catch (e) {}
+
+    // 获取聊天未读数
+    const chatResult = await apiGet('/chat/conversations?userId=1')
+    if (chatResult?.code === 0 && chatResult.data) {
+      const totalUnread = chatResult.data.reduce((sum, c) => sum + (c.unreadCount || 0), 0)
+      chatUnreadCount.value = totalUnread
+    }
+  } catch (e) {
+    notificationCount.value = 0
+    chatUnreadCount.value = 0
+  }
 }
 
 // 监听聊天未读数更新事件
 const handleChatUnreadUpdate = (event) => {
-  // 收到聊天未读更新时，只在非聊天中枢页面显示
-  // 进入聊天中枢后，由路由监听器处理
+  chatUnreadCount.value = event.detail?.unread || 0
 }
 
 // 监听聊天未读数同步（来自聊天中枢）
 const handleSyncChatUnread = (event) => {
-  // 更新全局未读数
   chatUnreadCount.value = event.detail.unread
 }
 
-// 监听路由变化，当进入聊天中枢时重置未读数
+// 监听通知未读数更新事件
+const handleNotificationUpdate = (event) => {
+  notificationCount.value = event.detail?.count || 0
+}
+
+// 监听路由变化
 watch(
   () => route.path,
   (newPath) => {
     if (newPath.includes('/collaboration')) {
-      // 进入聊天中枢，重置未读数（因为聊天中枢有自己的未读显示）
-      unreadCount.value = 0
+      // 进入聊天中枢，重置聊天未读数
       chatUnreadCount.value = 0
+    } else if (newPath.includes('/notifications')) {
+      // 进入通知页面，重置通知未读数
+      notificationCount.value = 0
     } else {
-      // 离开聊天中枢，显示系统通知和聊天未读的总和
+      // 离开这些页面，重新加载未读数
       loadUnreadCount()
-      if (chatUnreadCount.value > 0) {
-        unreadCount.value += chatUnreadCount.value
-      }
     }
   }
 )
@@ -345,6 +378,8 @@ onMounted(() => {
   window.addEventListener('chatUnreadUpdated', handleChatUnreadUpdate)
   // 监听聊天未读数同步（来自聊天中枢）
   window.addEventListener('syncChatUnread', handleSyncChatUnread)
+  // 监听通知未读数更新事件
+  window.addEventListener('notificationUpdated', handleNotificationUpdate)
 })
 
 // 组件卸载时移除事件监听
@@ -353,6 +388,12 @@ onUnmounted(() => {
   window.removeEventListener('avatarUpdated', loadUserInfo)
   window.removeEventListener('chatUnreadUpdated', handleChatUnreadUpdate)
   window.removeEventListener('syncChatUnread', handleSyncChatUnread)
+  window.removeEventListener('notificationUpdated', handleNotificationUpdate)
+
+  // 销毁水印
+  if (watermarkRef.value) {
+    watermarkRef.value.destroyWatermark()
+  }
 })
 </script>
 
@@ -363,75 +404,85 @@ onUnmounted(() => {
   flex-direction: column;
   height: 100vh;
   width: 100%;
-  background: #f5f7fa;
+  background: var(--bg-primary, #f0f2f5);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
 }
 
-/* ===== 顶部导航栏 ===== */
+/* ===== 顶部导航栏 - 深色主题 ===== */
 .dashboard-header {
-  height: 56px;
-  background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  height: 58px;
+  background: linear-gradient(135deg, #1a202c 0%, #2d3748 50%, #1a202c 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   display: flex;
   align-items: center;
-  padding: 0 16px;
+  justify-content: space-between;
+  padding: 0 20px 0 0;
   position: sticky;
   top: 0;
   z-index: 100;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .header-left {
   flex-shrink: 0;
   width: 220px;
+  min-width: 220px;
   height: 100%;
   display: flex;
   align-items: center;
-  padding-left: 16px;
-  background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
+  justify-content: center;
+  background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.2);
   position: relative;
+  overflow: hidden;
+}
+
+.header-left::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(64, 158, 255, 0.15) 0%, transparent 60%);
+  pointer-events: none;
 }
 
 .header-left::after {
   content: '';
   position: absolute;
+  top: 0;
+  left: 0;
   right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 1px;
-  height: 32px;
-  background: rgba(255, 255, 255, 0.15);
+  bottom: 0;
+  background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, transparent 50%);
+  pointer-events: none;
 }
 
 .logo-area {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   cursor: pointer;
   transition: all 0.3s ease;
+  position: relative;
+  z-index: 1;
 }
 
 .logo-area:hover {
-  transform: translateX(2px);
+  transform: scale(1.02);
 }
 
 .logo-icon {
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-}
-
-.hexagon {
   position: relative;
-  animation: logoFloat 3s ease-in-out infinite;
-}
-
-@keyframes logoFloat {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-2px); }
 }
 
 .logo-text {
@@ -441,67 +492,100 @@ onUnmounted(() => {
 }
 
 .logo-title {
-  color: #ffffff;
+  color: white;
   font-weight: 700;
   font-size: 18px;
   letter-spacing: 2px;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
   font-family: 'Orbitron', 'Roboto Mono', monospace;
 }
 
 .logo-subtitle {
-  color: rgba(0, 212, 255, 0.9);
+  color: rgba(0, 212, 255, 0.85);
   font-weight: 500;
-  font-size: 11px;
+  font-size: 10px;
   letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.logo-accent {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #00d4ff, transparent);
+  animation: accentPulse 2s ease-in-out infinite;
+}
+
+@keyframes accentPulse {
+  0%, 100% { opacity: 0.5; width: 60%; }
+  50% { opacity: 1; width: 80%; }
 }
 
 .header-center {
   flex: 1;
   display: flex;
   justify-content: center;
+  min-width: 0;
   padding: 0 20px;
 }
 
 .top-menu {
   background-color: transparent;
   border-bottom: none;
-  height: 56px;
+  height: 60px;
 }
 
-.top-menu :deep(.el-menu-item) {
-  padding: 0 20px;
+.top-menu .el-menu-item {
+  padding: 0 20px 0 14px;
+  margin-left: 4px;
   font-size: 14px;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.8);
-  height: 56px;
-  line-height: 56px;
-  border-bottom: 3px solid transparent;
+  color: rgba(255, 255, 255, 0.7);
+  height: 60px;
+  line-height: 60px;
+  border-bottom: 2px solid transparent;
   transition: all 0.25s ease;
+  border-radius: 8px 8px 0 0;
   position: relative;
 }
 
-.top-menu :deep(.el-menu-item:hover) {
-  color: #ffffff;
-  background-color: rgba(255, 255, 255, 0.1);
+.top-menu .el-menu-item::before {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #409eff, #66b1ff);
+  transition: width 0.3s ease;
 }
 
-.top-menu :deep(.el-menu-item.is-active) {
-  color: #ffffff;
-  background-color: rgba(255, 255, 255, 0.15);
+.top-menu .el-menu-item:hover {
+  color: rgba(255, 255, 255, 0.95);
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.top-menu .el-menu-item:hover::before {
+  width: 60%;
+}
+
+.top-menu .el-menu-item.is-active {
+  color: white;
+  background-color: rgba(255, 255, 255, 0.1);
   font-weight: 600;
 }
 
-.top-menu :deep(.el-menu-item.is-active)::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 60%;
-  height: 3px;
-  background: linear-gradient(90deg, #00d4ff, #0077ff);
-  border-radius: 3px 3px 0 0;
+.top-menu .el-menu-item.is-active::before {
+  width: 80%;
+}
+
+.top-menu .el-menu-item .el-icon {
+  margin-right: 6px;
+  font-size: 16px;
 }
 
 .header-right {
@@ -509,7 +593,8 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding-left: 16px;
+  min-width: auto;
+  padding-right: 8px;
 }
 
 .tool-badge {
@@ -518,18 +603,20 @@ onUnmounted(() => {
 
 .tool-btn {
   border: none;
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.75);
   padding: 8px;
   border-radius: 8px;
   transition: all 0.25s ease;
+  backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .tool-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
-  color: #ffffff;
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
   border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
 }
 
 .user-avatar {
@@ -537,21 +624,23 @@ onUnmounted(() => {
   align-items: center;
   gap: 10px;
   cursor: pointer;
-  padding: 4px 12px 4px 4px;
-  border-radius: 24px;
+  padding: 6px 12px 6px 6px;
+  border-radius: 10px;
   transition: all 0.25s ease;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .user-avatar:hover {
-  background: rgba(255, 255, 255, 0.18);
-  border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.18);
+  transform: translateY(-1px);
 }
 
 .avatar-circle {
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 2px solid rgba(255, 255, 255, 0.2);
   flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   background: linear-gradient(135deg, #00d4ff, #0077ff);
 }
 
@@ -564,20 +653,25 @@ onUnmounted(() => {
 .user-name {
   font-size: 13px;
   font-weight: 600;
-  color: #ffffff;
+  color: rgba(255, 255, 255, 0.95);
   line-height: 1.2;
 }
 
 .user-role {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 0.6);
   line-height: 1.2;
 }
 
 .dropdown-arrow {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 0.5);
   flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.user-avatar:hover .dropdown-arrow {
+  transform: translateY(1px);
 }
 
 /* ===== 主内容区域 ===== */
@@ -592,12 +686,12 @@ onUnmounted(() => {
 .sidebar {
   width: 240px;
   background: #ffffff;
-  border-right: 1px solid #e4e7ed;
+  border-right: 1px solid #e8eaed;
   position: relative;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
   flex-shrink: 0;
-  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.04);
+  box-shadow: 4px 0 16px rgba(0, 0, 0, 0.06);
 }
 
 .sidebar.collapsed {
@@ -607,31 +701,32 @@ onUnmounted(() => {
 .sidebar-toggle {
   position: absolute;
   right: -12px;
-  top: 16px;
+  top: 24px;
   width: 24px;
   height: 24px;
   background: #ffffff;
-  border: 1px solid #dcdfe6;
+  border: 1px solid #e0e3e8;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   z-index: 10;
-  color: #909399;
+  color: #6b7280;
   transition: all 0.25s ease;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .sidebar-toggle:hover {
-  background: linear-gradient(135deg, #00d4ff 0%, #0077ff 100%);
-  color: #ffffff;
-  border-color: #0077ff;
+  background: linear-gradient(135deg, #409eff 0%, #3178c6 100%);
+  color: white;
+  border-color: #409eff;
   transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.35);
 }
 
 .sidebar-menu {
-  padding: 12px 8px;
+  padding: 16px 12px;
   height: 100%;
   overflow-y: auto;
 }
@@ -649,10 +744,10 @@ onUnmounted(() => {
 .menu-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
+  gap: 12px;
+  padding: 11px 14px;
   border-radius: 8px;
-  color: #606266;
+  color: #4b5563;
   cursor: pointer;
   transition: all 0.2s ease;
   font-size: 14px;
@@ -660,54 +755,56 @@ onUnmounted(() => {
   white-space: nowrap;
   overflow: hidden;
   margin-bottom: 2px;
+  border: 1px solid transparent;
 }
 
 .menu-item:hover {
-  background: #f5f7fa;
-  color: #409eff;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  color: #2563eb;
+  border-color: #e2e8f0;
 }
 
 .menu-item.active {
-  background: linear-gradient(135deg, #ecf5ff 0%, #d9ecff 100%);
-  color: #409eff;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  color: #2563eb;
   font-weight: 600;
-  box-shadow: 0 2px 4px rgba(64, 158, 255, 0.1);
+  border: 1px solid #bfdbfe;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.1);
 }
 
 .menu-item.active .menu-icon {
-  color: #409eff;
+  color: #2563eb;
 }
 
 .menu-item.main-item {
-  background: linear-gradient(135deg, #f0f9ff 0%, #e6f4ff 100%);
-  color: #1e3a5f;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  color: #374151;
   margin-bottom: 12px;
-  border: 1px solid #d9ecff;
+  border: 1px solid #e5e7eb;
 }
 
 .menu-item.main-item:hover {
-  background: linear-gradient(135deg, #e6f4ff 0%, #d9ecff 100%);
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  color: #1f2937;
   transform: translateX(2px);
+  border-color: #d1d5db;
 }
 
 .menu-item.main-item.active {
-  background: linear-gradient(135deg, #409eff 0%, #3a8ee6 100%);
-  color: #ffffff;
-  border-color: #409eff;
-}
-
-.menu-item.main-item.active .menu-icon {
-  color: #ffffff;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  color: #2563eb;
+  border-color: #93c5fd;
 }
 
 .menu-icon {
-  font-size: 18px;
+  font-size: 17px;
   flex-shrink: 0;
   transition: all 0.2s ease;
 }
 
 .menu-item:hover .menu-icon {
-  transform: scale(1.1);
+  transform: scale(1.08);
+  color: #2563eb;
 }
 
 .menu-text {
@@ -718,22 +815,22 @@ onUnmounted(() => {
 
 .menu-divider {
   height: 1px;
-  background: linear-gradient(90deg, transparent, #e4e7ed 20%, #e4e7ed 80%, transparent);
+  background: linear-gradient(90deg, transparent, #e5e7eb 20%, #e5e7eb 80%, transparent);
   margin: 12px 14px;
 }
 
 /* ===== 内容区 ===== */
 .content-area {
   flex: 1;
-  padding: 20px;
+  padding: 24px;
   overflow-y: auto;
-  background: #f5f7fa;
+  background: linear-gradient(180deg, #f0f2f5 0%, #e8eaed 100%);
 }
 
 /* ===== 滚动条 ===== */
 .sidebar-menu::-webkit-scrollbar,
 .content-area::-webkit-scrollbar {
-  width: 4px;
+  width: 5px;
 }
 
 .sidebar-menu::-webkit-scrollbar-track,
@@ -743,46 +840,46 @@ onUnmounted(() => {
 
 .sidebar-menu::-webkit-scrollbar-thumb,
 .content-area::-webkit-scrollbar-thumb {
-  background: #dcdfe6;
-  border-radius: 2px;
+  background: #d1d5db;
+  border-radius: 3px;
 }
 
 .sidebar-menu::-webkit-scrollbar-thumb:hover,
 .content-area::-webkit-scrollbar-thumb:hover {
-  background: #c0c4cc;
+  background: #9ca3af;
 }
 
 /* 下拉菜单样式 */
 :deep(.el-dropdown-menu) {
   background: #ffffff;
-  border: 1px solid #ebeef5;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e8eaed;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
   border-radius: 8px;
-  padding: 4px;
+  padding: 6px;
 }
 
 :deep(.el-dropdown-menu__item) {
   border-radius: 6px;
-  padding: 10px 16px;
-  font-size: 14px;
-  color: #606266;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: #4b5563;
   transition: all 0.2s ease;
 }
 
 :deep(.el-dropdown-menu__item:hover) {
-  background: #f5f7fa;
-  color: #409eff;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  color: #2563eb;
 }
 
 :deep(.el-dropdown-menu__item.is-divided) {
-  margin-top: 4px;
-  border-top: 1px solid #ebeef5;
+  margin-top: 6px;
+  border-top: 1px solid #e5e7eb;
   padding-top: 10px;
 }
 
 :deep(.el-badge__content) {
-  background: linear-gradient(135deg, #f56c6c 0%, #e64a4a 100%);
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
   border: none;
-  box-shadow: 0 2px 4px rgba(245, 108, 108, 0.4);
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.4);
 }
 </style>

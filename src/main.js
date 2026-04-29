@@ -20,4 +20,21 @@ for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
 
 app.use(router)
 app.use(ElementPlus)
+
+// 全局水印管理器（仅在非登录页面初始化）
+import globalWatermarkManager from './utils/watermark/GlobalWatermarkManager.js'
+
 app.mount('#app')
+
+// 应用挂载后初始化水印系统
+router.isReady().then(() => {
+  // 检查是否登录页面
+  const isLoginPage = router.currentRoute.value.path === '/login'
+
+  if (!isLoginPage) {
+    // 延迟初始化，确保所有组件已加载
+    setTimeout(() => {
+      globalWatermarkManager.init()
+    }, 100)
+  }
+})

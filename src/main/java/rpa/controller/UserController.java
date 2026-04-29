@@ -294,4 +294,58 @@ public class UserController {
             return ResponseEntity.ok(Map.of("code", 1, "message", e.getMessage()));
         }
     }
+
+    /**
+     * 获取用户列表（供公告发布选择人员使用）
+     */
+    @GetMapping("/list")
+    public ResponseEntity<?> getUserList(@RequestParam(required = false) String keyword) {
+        try {
+            List<User> users;
+            if (keyword != null && !keyword.isEmpty()) {
+                users = userRepository.searchUsers(keyword);
+            } else {
+                users = userRepository.findByStatus(1);
+            }
+
+            List<Map<String, Object>> result = users.stream()
+                    .filter(u -> u.getStatus() == 1)
+                    .map(u -> {
+                        Map<String, Object> map = new HashMap<>();
+                        map.put("id", u.getId());
+                        map.put("username", u.getUsername());
+                        map.put("realName", u.getRealName() != null ? u.getRealName() : u.getUsername());
+                        map.put("avatar", u.getAvatar());
+                        map.put("department", u.getDepartment() != null ? u.getDepartment() : "");
+                        map.put("email", u.getEmail());
+                        map.put("phone", u.getPhone());
+                        return map;
+                    })
+                    .collect(Collectors.toList());
+            return ResponseEntity.ok(Map.of("code", 0, "data", result));
+        } catch (Exception e) {
+            log.error("获取用户列表失败", e);
+            return ResponseEntity.ok(Map.of("code", 1, "message", e.getMessage()));
+        }
+    }
+
+    /**
+     * 获取所有部门列表
+     */
+    @GetMapping("/departments")
+    public ResponseEntity<?> getDepartments() {
+        try {
+            List<User> users = userRepository.findByStatus(1);
+            List<String> departments = users.stream()
+                    .map(User::getDepartment)
+                    .filter(d -> d != null && !d.isEmpty())
+                    .distinct()
+                    .sorted()
+                    .collect(Collectors.toList());
+            return ResponseEntity.ok(Map.of("code", 0, "data", departments));
+        } catch (Exception e) {
+            log.error("获取部门列表失败", e);
+            return ResponseEntity.ok(Map.of("code", 1, "message", e.getMessage()));
+        }
+    }
 }

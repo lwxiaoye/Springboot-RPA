@@ -42,6 +42,7 @@ const AiCenter = () => import('../views/rpa/AiCenter.vue')
 const ScriptExecutor = () => import('../views/rpa/ScriptExecutor.vue')
 const DataMasking = () => import('../views/rpa/DataMasking.vue')
 const DistributedLock = () => import('../views/rpa/DistributedLock.vue')
+const WatermarkSettings = () => import('../views/rpa/WatermarkSettings.vue')
 
 // 工作台页面
 const RealTimeMonitor = () => import('../views/rpa/RealTimeMonitor.vue')
@@ -88,6 +89,8 @@ const routes = [
             { path: 'script', name: 'ScriptExecutor', component: ScriptExecutor },
             { path: 'masking', name: 'DataMasking', component: DataMasking },
             { path: 'locks', name: 'DistributedLock', component: DistributedLock },
+            // 水印管理
+            { path: 'watermark-settings', name: 'WatermarkSettings', component: WatermarkSettings },
             // 工作台 - 使用实时监控页面
             { path: 'workbench', name: 'Workbench', component: RealTimeMonitor }
         ]

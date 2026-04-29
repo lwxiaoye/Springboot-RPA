@@ -65,13 +65,24 @@ public class SecurityConfig {
             .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             .and()
             .authorizeRequests()
+                // 登录注册相关 - 公开
                 .antMatchers("/api/user/login", "/api/user/register", "/login",
                     "/api/user/send-reset-code", "/api/user/reset-password-by-code",
                     "/api/user/avatar/**").permitAll()
+                // 公告相关 - 公开
+                .antMatchers("/api/announcement/**").permitAll()
+                // 水印相关 - 公开
+                .antMatchers("/api/watermark/**").permitAll()
+                // 聊天相关 - 公开
+                .antMatchers("/api/chat/**").permitAll()
+                // 其他 RPA API - 公开（开发阶段）
                 .antMatchers("/api/robot/**", "/api/process/**", "/api/task/**",
                     "/api/log/**", "/api/notification/**", "/api/user/**",
                     "/api/dataCollect/**", "/api/dataParse/**", "/api/dataProcess/**", "/api/dataQuery/**",
                     "/api/invoice/**", "/api/enterprise/**", "/api/ai/**", "/credential/**").permitAll()
+                // WebSocket - 公开
+                .antMatchers("/ws/**").permitAll()
+                // 其他请求需要认证
                 .antMatchers("/api/**").authenticated()
                 .anyRequest().permitAll()
             .and()
@@ -129,11 +140,29 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // 使用 allowedOriginPatterns 支持更多场景（包括局域网）
+        // 允许所有来源（开发环境使用 *，生产环境建议改为具体域名）
         configuration.setAllowedOriginPatterns(Arrays.asList("*"));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        // 允许所有常用方法
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"));
+        // 允许所有请求头
         configuration.setAllowedHeaders(Arrays.asList("*"));
+        // 允许携带凭证（Cookie、Authorization header等）
         configuration.setAllowCredentials(true);
+        // 暴露响应头，让前端可以访问
+        configuration.setExposedHeaders(Arrays.asList(
+            "Authorization",
+            "Content-Type",
+            "X-Requested-With",
+            "Accept",
+            "Origin",
+            "Access-Control-Request-Method",
+            "Access-Control-Request-Headers",
+            "Access-Control-Allow-Origin",
+            "Access-Control-Allow-Credentials"
+        ));
+        // 缓存预检请求结果时间
+        configuration.setMaxAge(3600L);
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;

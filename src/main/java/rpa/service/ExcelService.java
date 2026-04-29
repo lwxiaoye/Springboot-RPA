@@ -2,6 +2,7 @@ package rpa.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
@@ -506,5 +507,231 @@ public class ExcelService {
         private String name;
         private int rowCount;
         private int columnCount;
+    }
+
+    // ==================== 水印导出功能 ====================
+
+    /**
+     * 导出带水印的Excel
+     *
+     * @param headers 表头
+     * @param data 数据
+     * @param sheetName Sheet名称
+     * @param userName 当前用户名
+     * @param phoneMasked 脱敏手机号
+     * @param timestamp 导出时间戳
+     * @return 生成的文件路径
+     */
+    public String writeWithWatermark(List<String> headers, List<List<Object>> data,
+                                     String sheetName, String userName,
+                                     String phoneMasked, String timestamp) {
+        String fileName = "watermark_export_" + new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()) + ".xlsx";
+        Path savePath = Paths.get(DEFAULT_SAVE_PATH, fileName);
+
+        try {
+            Files.createDirectories(savePath.getParent());
+
+            try (SXSSFWorkbook workbook = new SXSSFWorkbook(STREAMING_ROW_WINDOW)) {
+                // 创建水印Sheet
+                Sheet watermarkSheet = workbook.createSheet("水印说明");
+                createWatermarkSheet(watermarkSheet, userName, phoneMasked, timestamp);
+
+                // 创建数据Sheet
+                Sheet dataSheet = workbook.createSheet(sheetName);
+
+                // 写入表头
+                Row headerRow = dataSheet.createRow(0);
+                for (int i = 0; i < headers.size(); i++) {
+                    Cell cell = headerRow.createCell(i);
+                    cell.setCellValue(headers.get(i));
+                }
+
+                // 写入数据
+                int rowNum = 1;
+                for (List<Object> rowData : data) {
+                    Row row = dataSheet.createRow(rowNum++);
+                    for (int col = 0; col < rowData.size(); col++) {
+                        Cell cell = row.createCell(col);
+                        setCellValue(cell, rowData.get(col));
+                    }
+                }
+
+                // 添加页眉水印信息
+                addWatermarkFooter(dataSheet, data.size() + 1, userName, phoneMasked, timestamp);
+
+                // 写入文件
+                try (FileOutputStream fos = new FileOutputStream(savePath.toFile())) {
+                    workbook.write(fos);
+                }
+
+                workbook.dispose();
+            }
+
+            log.info("带水印导出完成: {}", savePath);
+            return savePath.toString();
+
+        } catch (Exception e) {
+            log.error("带水印导出失败", e);
+            return null;
+        }
+    }
+
+    /**
+     * 创建水印说明Sheet
+     */
+    private void createWatermarkSheet(Sheet sheet, String userName, String phoneMasked, String timestamp) {
+        // 设置列宽
+        sheet.setColumnWidth(0, 4000);
+        sheet.setColumnWidth(1, 8000);
+
+        // 标题行
+        Row titleRow = sheet.createRow(0);
+        titleRow.setHeight((short) 500);
+        Cell titleCell = titleRow.createCell(0);
+        titleCell.setCellValue("【重要】数据安全声明");
+        CellStyle titleStyle = sheet.getWorkbook().createCellStyle();
+        Font titleFont = sheet.getWorkbook().createFont();
+        titleFont.setBold(true);
+        titleFont.setFontHeightInPoints((short) 14);
+        titleStyle.setFont(titleFont);
+        titleStyle.setFillForegroundColor(IndexedColors.LIGHT_YELLOW.getIndex());
+        titleStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        titleCell.setCellStyle(titleStyle);
+
+        // 水印信息
+        String[] watermarkLines = {
+            "本文件包含敏感数据，受银保监会数据安全法规保护。",
+            "",
+            "数据水印信息：",
+            "├─ 导出自: " + userName,
+            "├─ 身份标识: " + phoneMasked,
+            "├─ 导出时间: " + timestamp,
+            "├─ 版权声明: 仅限授权使用",
+            "└─ 违规责任: 未经授权的复制、传播将承担法律责任"
+        };
+
+        for (int i = 0; i < watermarkLines.length; i++) {
+            Row row = sheet.createRow(i + 1);
+            Cell cell = row.createCell(0);
+            cell.setCellValue(watermarkLines[i]);
+
+            CellStyle infoStyle = sheet.getWorkbook().createCellStyle();
+            Font infoFont = sheet.getWorkbook().createFont();
+            infoFont.setFontHeightInPoints((short) 10);
+            if (watermarkLines[i].startsWith("本文件") || watermarkLines[i].startsWith("数据水印")) {
+                infoFont.setBold(true);
+            }
+            infoStyle.setFont(infoFont);
+            cell.setCellStyle(infoStyle);
+        }
+
+        // 警告信息
+        Row warningRow = sheet.createRow(watermarkLines.length + 2);
+        Cell warningCell = warningRow.createCell(0);
+        warningCell.setCellValue("⚠️ 警告：本文件已添加不可见数字水印，任何篡改行为均可被追溯！");
+        CellStyle warningStyle = sheet.getWorkbook().createCellStyle();
+        Font warningFont = sheet.getWorkbook().createFont();
+        warningFont.setBold(true);
+        warningFont.setColor(IndexedColors.RED.getIndex());
+        warningFont.setFontHeightInPoints((short) 11);
+        warningStyle.setFont(warningFont);
+        warningCell.setCellStyle(warningStyle);
+    }
+
+    /**
+     * 添加页脚水印信息
+     */
+    private void addWatermarkFooter(Sheet sheet, int lastRow, String userName, String phoneMasked, String timestamp) {
+        // 在最后添加水印信息行
+        Row watermarkRow = sheet.createRow(lastRow);
+        watermarkRow.setHeight((short) 300);
+
+        Cell watermarkCell = watermarkRow.createCell(0);
+        String watermarkText = String.format("[水印: %s %s %s] - 本数据受银保监会数据安全法规保护",
+            userName, phoneMasked, timestamp);
+        watermarkCell.setCellValue(watermarkText);
+
+        CellStyle style = sheet.getWorkbook().createCellStyle();
+        Font font = sheet.getWorkbook().createFont();
+        font.setFontHeightInPoints((short) 8);
+        font.setColor(IndexedColors.GREY_50_PERCENT.getIndex());
+        style.setFont(font);
+        watermarkCell.setCellStyle(style);
+
+        // 合并单元格
+        int lastCellNum = sheet.getRow(0) != null ? (int)sheet.getRow(0).getLastCellNum() : 10;
+        if (sheet instanceof org.apache.poi.xssf.usermodel.XSSFSheet) {
+            ((org.apache.poi.xssf.usermodel.XSSFSheet) sheet).addMergedRegion(
+                new CellRangeAddress(lastRow, lastRow, 0, Math.max(0, lastCellNum - 1)));
+        } else if (sheet instanceof org.apache.poi.hssf.usermodel.HSSFSheet) {
+            ((org.apache.poi.hssf.usermodel.HSSFSheet) sheet).addMergedRegion(
+                new CellRangeAddress(lastRow, lastRow, 0, Math.max(0, lastCellNum - 1)));
+        }
+    }
+
+    /**
+     * 流式导出带水印的大文件Excel
+     */
+    public String writeStreamingWithWatermark(String sheetName, Iterator<List<Object>> dataIterator,
+                                              List<String> headers, String userName,
+                                              String phoneMasked, String timestamp) {
+        String fileName = "watermark_streaming_" + new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()) + ".xlsx";
+        Path savePath = Paths.get(DEFAULT_SAVE_PATH, fileName);
+
+        try {
+            Files.createDirectories(savePath.getParent());
+
+            try (SXSSFWorkbook workbook = new SXSSFWorkbook(STREAMING_ROW_WINDOW)) {
+                // 创建水印Sheet
+                Sheet watermarkSheet = workbook.createSheet("水印说明");
+                createWatermarkSheet(watermarkSheet, userName, phoneMasked, timestamp);
+
+                // 创建数据Sheet
+                Sheet dataSheet = workbook.createSheet(sheetName);
+
+                // 写入表头
+                Row headerRow = dataSheet.createRow(0);
+                for (int i = 0; i < headers.size(); i++) {
+                    Cell cell = headerRow.createCell(i);
+                    cell.setCellValue(headers.get(i));
+                }
+
+                // 流式写入数据
+                int rowNum = 1;
+                while (dataIterator.hasNext()) {
+                    List<Object> rowData = dataIterator.next();
+                    Row row = dataSheet.createRow(rowNum++);
+                    for (int col = 0; col < rowData.size(); col++) {
+                        Cell cell = row.createCell(col);
+                        setCellValue(cell, rowData.get(col));
+                    }
+                }
+
+                // 添加水印页脚
+                addWatermarkFooter(dataSheet, rowNum, userName, phoneMasked, timestamp);
+
+                // 写入文件
+                try (FileOutputStream fos = new FileOutputStream(savePath.toFile())) {
+                    workbook.write(fos);
+                }
+
+                workbook.dispose();
+            }
+
+            log.info("流式带水印导出完成: {}", savePath);
+            return savePath.toString();
+
+        } catch (Exception e) {
+            log.error("流式带水印导出失败", e);
+            return null;
+        }
+    }
+
+    /**
+     * 生成CSV导出水印内容（用于CSV导出）
+     */
+    public String generateCsvWatermarkContent(String userName, String phoneMasked, String timestamp) {
+        return String.format("# [水印: %s %s %s] - 本数据受银保监会数据安全法规保护",
+            userName, phoneMasked, timestamp);
     }
 }
