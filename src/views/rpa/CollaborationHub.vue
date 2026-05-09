@@ -3,27 +3,27 @@
     <!-- 左侧会话列表 -->
     <aside class="chat-sidebar">
       <div class="sidebar-header">
-        <h2>协作中枢</h2>
+        <h2>{{ t('collaboration.title') }}</h2>
         <div class="header-actions">
-          <el-button circle size="small" type="primary" @click="openNewChatDialog" title="发起会话">
+          <el-button circle size="small" type="primary" @click="openNewChatDialog" :title="t('collaboration.startConversation')">
             <el-icon><Plus /></el-icon>
           </el-button>
-          <el-button circle size="small" type="primary" @click="showNewGroup = true" title="创建群聊">
+          <el-button circle size="small" type="primary" @click="showNewGroup = true" :title="t('collaboration.createGroup')">
             <el-icon><UserFilled /></el-icon>
           </el-button>
         </div>
       </div>
 
       <div class="search-box">
-        <el-input v-model="searchKeyword" placeholder="搜索会话..." prefix-icon="Search" clearable size="large" />
+        <el-input v-model="searchKeyword" :placeholder="t('collaboration.searchConversation')" prefix-icon="Search" clearable size="large" />
       </div>
 
       <!-- 会话分类 -->
       <div class="conversation-tabs">
         <el-radio-group v-model="activeTab" size="small">
-          <el-radio-button value="all">全部</el-radio-button>
-          <el-radio-button value="private">单聊</el-radio-button>
-          <el-radio-button value="group">群聊</el-radio-button>
+          <el-radio-button value="all">{{ t('collaboration.all') }}</el-radio-button>
+          <el-radio-button value="private">{{ t('collaboration.private') }}</el-radio-button>
+          <el-radio-button value="group">{{ t('collaboration.group') }}</el-radio-button>
         </el-radio-group>
       </div>
 
@@ -31,13 +31,13 @@
       <div class="conversation-list">
         <div v-if="loading" class="loading-state">
           <el-icon class="is-loading"><Loading /></el-icon>
-          <span>加载中...</span>
+          <span>{{ t('collaboration.loading') }}</span>
         </div>
 
         <div v-else-if="filteredConversations.length === 0" class="empty-state">
           <el-icon :size="48"><ChatDotRound /></el-icon>
-          <p>暂无会话</p>
-          <el-button type="primary" size="small" @click="openNewChatDialog">开始聊天</el-button>
+          <p>{{ t('collaboration.noConversation') }}</p>
+          <el-button type="primary" size="small" @click="openNewChatDialog">{{ t('collaboration.startChat') }}</el-button>
         </div>
 
         <div
@@ -58,11 +58,11 @@
           </div>
           <div class="conv-info">
             <div class="conv-name">
-              {{ conv.otherUserName || conv.conversation?.name || '未命名会话' }}
-              <el-tag v-if="conv.conversation?.type === 'group'" size="small" type="success">群</el-tag>
-              <el-tag v-if="conv.conversation?.type === 'temporary'" size="small" type="warning">临时</el-tag>
+              {{ conv.otherUserName || conv.conversation?.name || t('collaboration.noConversation') }}
+              <el-tag v-if="conv.conversation?.type === 'group'" size="small" type="success">{{ t('collaboration.group') }}</el-tag>
+              <el-tag v-if="conv.conversation?.type === 'temporary'" size="small" type="warning">{{ t('collaboration.temporaryGroup') }}</el-tag>
             </div>
-            <div class="conv-preview">{{ conv.conversation?.lastMessageContent || '暂无消息' }}</div>
+            <div class="conv-preview">{{ conv.conversation?.lastMessageContent || t('collaboration.noConversation') }}</div>
           </div>
           <div class="conv-meta">
             <div class="conv-time">{{ formatTime(conv.conversation?.lastMessageTime) }}</div>
@@ -85,26 +85,26 @@
               <h3>{{ otherUserName || currentConversation.name }}</h3>
               <span class="subtitle">
                 <template v-if="currentConversation.type === 'group'">
-                  {{ currentConversation.memberCount || 0 }} 人
+                  {{ currentConversation.memberCount || 0 }} {{ t('collaboration.memberUnit') }}
                 </template>
-                <template v-else>在线</template>
+                <template v-else>{{ t('collaboration.online') }}</template>
               </span>
             </div>
           </div>
           <div class="chat-status">
             <span class="ws-status" :class="{ connected: wsConnected }">
               <span class="status-dot"></span>
-              {{ wsConnected ? '已连接' : '连接中...' }}
+              {{ wsConnected ? t('collaboration.connected') : t('collaboration.connecting') }}
             </span>
           </div>
           <div class="chat-actions">
-            <el-button circle @click="showConvInfo = true" title="会话详情">
+            <el-button circle @click="showConvInfo = true" :title="t('collaboration.conversationDetail')">
               <el-icon><InfoFilled /></el-icon>
             </el-button>
-            <el-button circle @click="generateSummary" title="生成摘要">
+            <el-button circle @click="generateSummary" :title="t('collaboration.generateSummary')">
               <el-icon><Document /></el-icon>
             </el-button>
-            <el-button circle @click="refreshMessages" title="刷新">
+            <el-button circle @click="refreshMessages" :title="t('collaboration.refresh')">
               <el-icon><Refresh /></el-icon>
             </el-button>
           </div>
@@ -118,8 +118,8 @@
 
           <div v-else-if="messages.length === 0" class="empty-messages">
             <div class="empty-icon"><el-icon :size="64"><ChatLineSquare /></el-icon></div>
-            <p>开始聊天吧</p>
-            <span class="empty-hint">发送消息开始沟通</span>
+            <p>{{ t('collaboration.startChatNow') }}</p>
+            <span class="empty-hint">{{ t('collaboration.sendToStart') }}</span>
           </div>
 
           <div v-else class="message-list">
@@ -168,7 +168,7 @@
                         <span>{{ getCardTitle(msg.cardType) }}</span>
                       </div>
                       <div class="card-body">
-                        <div class="card-content">{{ msg.cardData || 'RPA卡片内容' }}</div>
+                        <div class="card-content">{{ msg.cardData || t('collaboration.rpaCardDefault') }}</div>
                       </div>
                     </div>
                   </div>
@@ -186,8 +186,8 @@
                     <el-icon><MoreFilled /></el-icon>
                     <template #dropdown>
                       <el-dropdown-menu>
-                        <el-dropdown-item @click="recallMessage(msg)">撤回</el-dropdown-item>
-                        <el-dropdown-item @click="copyMessage(msg)">复制</el-dropdown-item>
+                        <el-dropdown-item @click="recallMessage(msg)">{{ t('collaboration.recall') }}</el-dropdown-item>
+                        <el-dropdown-item @click="copyMessage(msg)">{{ t('collaboration.copy') }}</el-dropdown-item>
                       </el-dropdown-menu>
                     </template>
                   </el-dropdown>
@@ -201,18 +201,18 @@
         <div class="input-area">
           <div class="input-toolbar">
             <el-button size="small" text @click="triggerFileUpload">
-              <el-icon><FolderOpened /></el-icon> 文件
+              <el-icon><FolderOpened /></el-icon> {{ t('collaboration.file') }}
             </el-button>
             <el-button size="small" text @click="showRPAPanel = true">
-              <el-icon><Grid /></el-icon> RPA卡片
+              <el-icon><Grid /></el-icon> {{ t('collaboration.rpaCard') }}
             </el-button>
           </div>
 
           <!-- 敏感词提示 -->
           <div v-if="detectedSensitiveWords.length > 0" class="sensitive-warning">
             <el-icon><WarningFilled /></el-icon>
-            <span>检测到敏感词：{{ detectedSensitiveWords.join('、') }}</span>
-            <el-button size="small" text type="danger" @click="clearSensitiveWords">清除</el-button>
+            <span>{{ t('collaboration.sensitiveWarning') }}：{{ detectedSensitiveWords.join('、') }}</span>
+            <el-button size="small" text type="danger" @click="clearSensitiveWords">{{ t('collaboration.clearSensitive') }}</el-button>
           </div>
 
           <div class="input-wrapper">
@@ -229,10 +229,10 @@
           </div>
 
           <div class="input-footer">
-            <span class="input-hint">Enter 发送 | Shift+Enter 换行</span>
+            <span class="input-hint">{{ t('collaboration.enterSend') }}</span>
             <el-button type="primary" :disabled="(!inputMessage.trim() && !selectedFile) || detectedSensitiveWords.length > 0" @click="sendMessage" :loading="sending">
               <el-icon v-if="!sending"><Promotion /></el-icon>
-              发送
+              {{ t('collaboration.send') }}
             </el-button>
           </div>
 
@@ -253,41 +253,40 @@
           <div class="welcome-icon">
             <el-icon :size="80"><ChatLineSquare /></el-icon>
           </div>
-          <h2>欢迎使用 RPA 协作中枢</h2>
-          <p>选择左侧会话开始聊天，或创建新会话</p>
+          <h2>{{ t('collaboration.welcomeRPA') }}</h2>
+          <p>{{ t('collaboration.selectConversation') }}</p>
 
           <div class="quick-start">
             <el-button type="primary" size="large" @click="openNewChatDialog">
               <el-icon><ChatDotRound /></el-icon>
-              发起会话
+              {{ t('collaboration.startConversation') }}
             </el-button>
             <el-button size="large" @click="showNewGroup = true">
               <el-icon><UserFilled /></el-icon>
-              创建群聊
+              {{ t('collaboration.createGroup') }}
             </el-button>
           </div>
 
           <div class="feature-list">
-            <h4>核心功能</h4>
+            <h4>{{ t('collaboration.coreFunctions') }}</h4>
             <ul>
-              <li><el-icon><Timer /></el-icon> 任务状态实时推送</li>
-              <li><el-icon><Cpu /></el-icon> 机器人状态卡片</li>
-              <li><el-icon><ChatLineSquare /></el-icon> 团队实时协作</li>
-              <li><el-icon><Document /></el-icon> 日志一键分享</li>
+              <li><el-icon><Timer /></el-icon> {{ t('collaboration.taskStatusPush') }}</li>
+              <li><el-icon><Cpu /></el-icon> {{ t('collaboration.robotStatusCard') }}</li>
+              <li><el-icon><ChatLineSquare /></el-icon> {{ t('collaboration.teamCollaboration') }}</li>
+              <li><el-icon><Document /></el-icon> {{ t('collaboration.logSharing') }}</li>
             </ul>
           </div>
         </div>
       </div>
     </main>
 
-    <!-- 新建会话对话框 - 优化版：直接显示用户列表，点击即可发起会话 -->
-    <el-dialog v-model="showNewChat" title="发起会话" width="520px">
+    <!-- 新建会话对话框 -->
+    <el-dialog v-model="showNewChat" :title="t('collaboration.startConversation')" width="520px">
       <div class="quick-chat-panel">
-        <!-- 搜索框 -->
         <div class="quick-search">
           <el-input
             v-model="userSearchKeyword"
-            placeholder="搜索用户姓名..."
+            :placeholder="t('collaboration.searchUser')"
             prefix-icon="Search"
             clearable
             size="large"
@@ -295,17 +294,16 @@
           />
         </div>
 
-        <!-- 用户列表 - 直接展示，点击即可发起会话 -->
         <div class="quick-user-list">
           <div v-if="userLoading" class="loading-users">
             <el-icon class="is-loading"><Loading /></el-icon>
-            <span>加载中...</span>
+            <span>{{ t('collaboration.loading') }}</span>
           </div>
 
           <div v-else-if="filteredQuickUsers.length === 0" class="no-users">
             <el-icon :size="40"><Search /></el-icon>
-            <p v-if="userSearchKeyword">未找到用户 "{{ userSearchKeyword }}"</p>
-            <p v-else>暂无用户</p>
+            <p v-if="userSearchKeyword">{{ t('collaboration.notFoundUser') }} "{{ userSearchKeyword }}"</p>
+            <p v-else>{{ t('collaboration.noUsers') }}</p>
           </div>
 
           <div
@@ -321,8 +319,8 @@
             <div class="quick-user-info">
               <div class="quick-user-name">{{ user.realName || user.username }}</div>
               <div class="quick-user-meta">
-                <el-tag v-if="user.role === 1" size="small" type="danger">管理员</el-tag>
-                <el-tag v-else size="small" type="success">用户</el-tag>
+                <el-tag v-if="user.role === 1" size="small" type="danger">{{ t('collaboration.admin') }}</el-tag>
+                <el-tag v-else size="small" type="success">{{ t('collaboration.user') }}</el-tag>
                 <span v-if="user.email" class="quick-user-email">{{ user.email }}</span>
               </div>
             </div>
@@ -333,28 +331,26 @@
     </el-dialog>
 
     <!-- 新建群聊对话框 -->
-    <el-dialog v-model="showNewGroup" title="创建群聊" width="600px">
+    <el-dialog v-model="showNewGroup" :title="t('collaboration.createGroup')" width="600px">
       <el-form label-width="80px">
-        <el-form-item label="群名称" required>
-          <el-input v-model="newGroupName" placeholder="请输入群名称" />
+        <el-form-item :label="t('collaboration.groupName')" required>
+          <el-input v-model="newGroupName" :placeholder="t('collaboration.groupNamePlaceholder')" />
         </el-form-item>
-        <el-form-item label="群描述">
-          <el-input v-model="newGroupDesc" type="textarea" :rows="2" placeholder="请输入群描述（可选）" />
+        <el-form-item :label="t('collaboration.groupDesc')">
+          <el-input v-model="newGroupDesc" type="textarea" :rows="2" :placeholder="t('collaboration.groupDescPlaceholder')" />
         </el-form-item>
-        <el-form-item label="群成员" required>
+        <el-form-item :label="t('collaboration.groupMembers')" required>
           <div class="group-member-select">
-            <!-- 成员搜索 -->
             <div class="member-search-mini">
               <el-input
                 v-model="memberSearchKeyword"
-                placeholder="搜索成员..."
+                :placeholder="t('collaboration.searchMembers')"
                 prefix-icon="Search"
                 clearable
                 size="small"
               />
             </div>
 
-            <!-- 成员列表 -->
             <div class="group-member-list">
               <div
                 v-for="user in filteredGroupMembers"
@@ -371,76 +367,75 @@
               </div>
             </div>
 
-            <!-- 已选成员 -->
             <div v-if="selectedMembers.length > 0" class="selected-members">
-              <span class="count">已选 {{ selectedMembers.length }} 人</span>
-              <el-button size="small" text type="danger" @click="selectedMembers = []">清空</el-button>
+              <span class="count">{{ t('collaboration.selected') }} {{ selectedMembers.length }} {{ t('collaboration.memberUnit') }}</span>
+              <el-button size="small" text type="danger" @click="selectedMembers = []">{{ t('collaboration.clear') }}</el-button>
             </div>
           </div>
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="showNewGroup = false">取消</el-button>
-        <el-button type="primary" @click="createGroup" :disabled="!newGroupName || selectedMembers.length === 0">创建</el-button>
+        <el-button @click="showNewGroup = false">{{ t('collaboration.cancel') }}</el-button>
+        <el-button type="primary" @click="createGroup" :disabled="!newGroupName || selectedMembers.length === 0">{{ t('collaboration.create') }}</el-button>
       </template>
     </el-dialog>
 
     <!-- 会话详情对话框 -->
-    <el-dialog v-model="showConvInfo" :title="currentConversation?.name || '会话详情'" width="400px">
+    <el-dialog v-model="showConvInfo" :title="currentConversation?.name || t('collaboration.conversationDetail')" width="400px">
       <div class="conv-info-content">
         <div class="info-item">
-          <span class="info-label">类型</span>
+          <span class="info-label">{{ t('collaboration.type') }}</span>
           <el-tag :type="currentConversation?.type === 'group' ? 'success' : 'primary'">
-            {{ currentConversation?.type === 'group' ? '群聊' : currentConversation?.type === 'temporary' ? '临时群' : '单聊' }}
+            {{ currentConversation?.type === 'group' ? t('collaboration.groupChat') : currentConversation?.type === 'temporary' ? t('collaboration.temporaryGroup') : t('collaboration.privateChat') }}
           </el-tag>
         </div>
         <div class="info-item">
-          <span class="info-label">成员数</span>
-          <span>{{ currentConversation?.memberCount || 0 }} 人</span>
+          <span class="info-label">{{ t('collaboration.memberCount') }}</span>
+          <span>{{ currentConversation?.memberCount || 0 }} {{ t('collaboration.memberUnit') }}</span>
         </div>
         <div class="info-item">
-          <span class="info-label">创建时间</span>
+          <span class="info-label">{{ t('collaboration.createTime') }}</span>
           <span>{{ formatTime(currentConversation?.createdAt) }}</span>
         </div>
         <div class="info-item" v-if="currentConversation?.description">
-          <span class="info-label">描述</span>
+          <span class="info-label">{{ t('collaboration.description') }}</span>
           <span>{{ currentConversation.description }}</span>
         </div>
       </div>
     </el-dialog>
 
     <!-- RPA卡片面板 -->
-    <el-drawer v-model="showRPAPanel" title="发送RPA卡片" direction="rtl" size="400px">
+    <el-drawer v-model="showRPAPanel" :title="t('collaboration.sendRPACard')" direction="rtl" size="400px">
       <div class="rpa-card-panel">
         <div class="rpa-card-item" @click="sendTaskCard">
           <div class="card-icon task"><el-icon><Timer /></el-icon></div>
           <div class="card-info">
-            <h4>任务卡片</h4>
-            <p>分享任务执行状态</p>
+            <h4>{{ t('collaboration.taskCard') }}</h4>
+            <p>{{ t('collaboration.taskCardDesc') }}</p>
           </div>
         </div>
 
         <div class="rpa-card-item" @click="sendRobotCard">
           <div class="card-icon robot"><el-icon><Cpu /></el-icon></div>
           <div class="card-info">
-            <h4>机器人卡片</h4>
-            <p>分享机器人运行状态</p>
+            <h4>{{ t('collaboration.robotCard') }}</h4>
+            <p>{{ t('collaboration.robotCardDesc') }}</p>
           </div>
         </div>
 
         <div class="rpa-card-item" @click="sendLogCard">
           <div class="card-icon log"><el-icon><Document /></el-icon></div>
           <div class="card-info">
-            <h4>日志卡片</h4>
-            <p>分享执行日志</p>
+            <h4>{{ t('collaboration.logCard') }}</h4>
+            <p>{{ t('collaboration.logCardDesc') }}</p>
           </div>
         </div>
 
         <div class="rpa-card-item" @click="sendAlertCard">
           <div class="card-icon alert"><el-icon><Warning /></el-icon></div>
           <div class="card-info">
-            <h4>告警卡片</h4>
-            <p>发送系统告警通知</p>
+            <h4>{{ t('collaboration.alertCard') }}</h4>
+            <p>{{ t('collaboration.alertCardDesc') }}</p>
           </div>
         </div>
       </div>
@@ -450,6 +445,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, onActivated, onDeactivated, nextTick, reactive } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import {
   Plus, ChatLineSquare, ChatDotRound, Search, UserFilled, FolderOpened,
@@ -458,6 +454,8 @@ import {
   WarningFilled
 } from '@element-plus/icons-vue'
 import { connect, disconnect, subscribeConversation, unsubscribe, isConnected } from '../../utils/stomp.js'
+
+const { t } = useI18n()
 
 // API工具
 const getAuthHeaders = () => {
@@ -494,7 +492,7 @@ const getCurrentUserId = () => {
       return user.id || 1
     }
   } catch (e) {
-    console.error('解析用户信息失败:', e)
+    console.error(t('collaboration.parseUserInfoFailed'), e)
   }
   return 1
 }
@@ -504,12 +502,12 @@ const getCurrentUserName = () => {
     const userInfo = localStorage.getItem('userInfo')
     if (userInfo) {
       const user = JSON.parse(userInfo)
-      return user.realName || user.username || '用户'
+      return user.realName || user.username || t('collaboration.defaultUser')
     }
   } catch (e) {
-    console.error('解析用户信息失败:', e)
+    console.error(t('collaboration.parseUserInfoFailed'), e)
   }
-  return '用户'
+'用户'
 }
 
 // 状态
@@ -658,7 +656,7 @@ const memberGroups = computed(() => {
 
   users.forEach(user => {
     // 按角色分组
-    const role = user.role === 1 ? '管理员' : '用户'
+    const role = user.role === 1 ? t('collaboration.admin') : t('collaboration.user')
     if (!groups[role]) {
       groups[role] = { dept: role, members: [], expanded: true }
     }
@@ -698,10 +696,10 @@ const filteredGroupMembers = computed(() => {
 
 const inputPlaceholder = computed(() => {
   if (detectedSensitiveWords.value.length > 0) {
-    return '请修改内容后再发送...'
+    return t('collaboration.modifySensitive')
   }
-  if (inputMessage.value.startsWith('/')) return '输入 / 查看可用指令...'
-  return '输入消息... (Ctrl+Enter 发送)'
+  if (inputMessage.value.startsWith('/')) return t('collaboration.inputCommand')
+  return t('collaboration.enterSendShortcut')
 })
 
 // WebSocket/STOMP连接
@@ -1038,7 +1036,7 @@ const sendMessage = async () => {
 
   // 如果有敏感词，不允许发送
   if (detectedSensitiveWords.value.length > 0) {
-    ElMessage.warning('请先修改敏感词内容后再发送')
+    ElMessage.warning(t('collaboration.sendFailedPleaseCheck'))
     return
   }
 
@@ -1071,16 +1069,16 @@ const sendMessage = async () => {
         // 清空待创建状态
         pendingGroup.value = null
 
-        ElMessage.success('群聊已创建')
+        ElMessage.success(t('collaboration.groupCreated'))
       }
     } catch (error) {
-      ElMessage.error('创建群聊失败')
+      ElMessage.error(t('collaboration.createGroupFailed'))
       return
     }
   }
 
   if (!currentConvId.value) {
-    ElMessage.warning('请先选择一个会话')
+    ElMessage.warning(t('collaboration.selectConversationFirst'))
     return
   }
 
@@ -1154,7 +1152,7 @@ const sendMessage = async () => {
         conv.conversation.lastMessageTime = new Date().toISOString()
       }
     } else {
-      ElMessage.error(res.message || '发送失败')
+      ElMessage.error(t('collaboration.sendFailed') + ' - ' + (res.message || ''))
       // 标记发送失败
       const index = messages.value.findIndex(m => m.id === tempMessage.id)
       if (index > -1) {
@@ -1162,7 +1160,7 @@ const sendMessage = async () => {
       }
     }
   } catch (error) {
-    ElMessage.error('发送失败，请检查网络')
+    ElMessage.error(t('collaboration.sendFailedCheck'))
     const index = messages.value.findIndex(m => m.id === tempMessage.id)
     if (index > -1) {
       messages.value[index].status = 'failed'
@@ -1175,26 +1173,26 @@ const executeCommand = async (cmd) => {
   try {
     const res = await apiPost('/chat/command', { command: cmd, userId: currentUserId.value })
     if (res.code === 0) {
-      ElMessage.success(res.data?.result || '命令已执行')
+      ElMessage.success(t('collaboration.commandExecuted'))
     }
   } catch (error) {
-    ElMessage.error('命令执行失败')
+    ElMessage.error(t('collaboration.commandFailed'))
   }
 }
 
 const recallMessage = async (msg) => {
   try {
     await apiPost('/chat/recall', { messageId: msg.id, userId: currentUserId.value })
-    msg.content = '[此消息已被撤回]'
-    ElMessage.success('已撤回')
+    msg.content = t('collaboration.messageRecalled')
+    ElMessage.success(t('collaboration.recalled'))
   } catch (error) {
-    ElMessage.error('撤回失败')
+    ElMessage.error(t('collaboration.recallFailed'))
   }
 }
 
 const copyMessage = (msg) => {
   navigator.clipboard.writeText(msg.content)
-  ElMessage.success('已复制')
+  ElMessage.success(t('collaboration.copied'))
 }
 
 const generateSummary = async () => {
@@ -1202,10 +1200,10 @@ const generateSummary = async () => {
   try {
     const res = await apiPost('/chat/summary', { conversationId: currentConvId.value })
     if (res.code === 0) {
-      ElMessage.success('已生成摘要')
+      ElMessage.success(t('collaboration.summaryGenerated'))
     }
   } catch (error) {
-    ElMessage.error('生成摘要失败')
+    ElMessage.error(t('collaboration.generateSummaryFailed'))
   }
 }
 
@@ -1225,7 +1223,7 @@ const startChatWithUser = async (user) => {
     if (existingConv) {
       // 已存在会话，直接选中
       selectConversation(existingConv)
-      ElMessage.success(`已与 ${user.realName || user.username} 开始会话`)
+      ElMessage.success(t('collaboration.sentTo', { name: user.realName || user.username }))
     } else {
       // 不存在，创建新会话
       const res = await apiPost('/chat/conversation/private', {
@@ -1253,13 +1251,13 @@ const startChatWithUser = async (user) => {
           newConv.otherUserId = user.id
         }
         selectConversation(newConv)
-        ElMessage.success(`已与 ${user.realName || user.username} 开始会话`)
+        ElMessage.success(t('collaboration.sentTo', { name: user.realName || user.username }))
       } else {
-        ElMessage.error(res.message || '创建会话失败')
+        ElMessage.error(res.message || t('collaboration.createConversationFailed'))
       }
     }
   } catch (error) {
-    ElMessage.error('创建会话失败')
+    ElMessage.error(ElMessage.error(t('collaboration.createConversationFailed')))
   }
 }
 
@@ -1285,7 +1283,7 @@ const createPrivateChat = async () => {
       ElMessage.success('会话已创建')
     }
   } catch (error) {
-    ElMessage.error('创建会话失败')
+    ElMessage.error(ElMessage.error(t('collaboration.createConversationFailed')))
   }
 }
 
@@ -1315,7 +1313,7 @@ const createGroup = async () => {
     pendingGroup.value = tempGroup
 
     // 提示用户可以开始发送消息了
-    ElMessage.info('请在下方输入消息，发送后将自动创建群聊')
+    ElMessage.info(t('collaboration.autoCreateGroup'))
 
     // 聚焦到输入框
     nextTick(() => {
@@ -1329,22 +1327,22 @@ const createGroup = async () => {
 // RPA卡片
 const sendTaskCard = () => {
   showRPAPanel.value = false
-  ElMessage.info('请在任务管理中选择任务发送卡片')
+  ElMessage.info(t('collaboration.selectTask'))
 }
 
 const sendRobotCard = () => {
   showRPAPanel.value = false
-  ElMessage.info('请在机器人管理中选择机器人发送卡片')
+  ElMessage.info(t('collaboration.selectRobot'))
 }
 
 const sendLogCard = () => {
   showRPAPanel.value = false
-  ElMessage.info('请在日志管理中选择日志发送卡片')
+  ElMessage.info(t('collaboration.selectLog'))
 }
 
 const sendAlertCard = () => {
   showRPAPanel.value = false
-  ElMessage.info('请输入告警内容')
+  ElMessage.info(t('collaboration.inputAlert'))
 }
 
 // 文件处理
@@ -1381,15 +1379,21 @@ const formatTime = (time) => {
   const now = new Date()
   const diff = now - date
 
-  if (diff < 60000) return '刚刚'
-  if (diff < 3600000) return Math.floor(diff / 60000) + '分钟前'
+  if (diff < 60000) return t('collaboration.justNow')
+  if (diff < 3600000) return Math.floor(diff / 60000) + t('collaboration.minutesAgo')
   if (diff < 86400000) return date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
   return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })
 }
 
 const getCardTitle = (cardType) => {
-  const titles = { TASK: '任务卡片', ROBOT: '机器人卡片', FLOW: '流程卡片', LOG: '日志卡片', ALERT: '告警卡片' }
-  return titles[cardType] || 'RPA卡片'
+  const titles = {
+    TASK: t('collaboration.taskCardTitle'),
+    ROBOT: t('collaboration.robotCardTitle'),
+    FLOW: t('collaboration.flowCardTitle'),
+    LOG: t('collaboration.logCardTitle'),
+    ALERT: t('collaboration.alertCardTitle')
+  }
+  return titles[cardType] || t('collaboration.rpaCardDefault')
 }
 
 // 获取对方用户头像

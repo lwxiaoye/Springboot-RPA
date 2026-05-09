@@ -1,8 +1,8 @@
 <template>
   <div class="ai-page">
     <div class="page-header">
-      <h2>AI 能力中心</h2>
-      <p class="page-desc">内置OCR识别、NLP处理等AI能力，提升RPA自动化效率</p>
+      <h2>{{ t('ai.title') }}</h2>
+      <p class="page-desc">{{ t('ai.subtitle') }}</p>
     </div>
 
     <!-- AI能力卡片 -->
@@ -13,42 +13,12 @@
             <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-4 6H9V7h6v2zm-4 4H9v-2h6v2zm4 4H9v-2h6v2z"/>
           </svg>
         </div>
-        <h3>文字识别 (OCR)</h3>
-        <p>通用文字识别，支持多种语言和字体</p>
+        <h3>{{ t('ai.ocr') }}</h3>
+        <p>{{ t('ai.ocrDesc') }}</p>
         <div class="cap-tags">
-          <el-tag size="small">身份证</el-tag>
-          <el-tag size="small">发票</el-tag>
-          <el-tag size="small">银行卡</el-tag>
-        </div>
-      </div>
-
-      <div class="capability-card" @click="activeTab = 'captcha'">
-        <div class="cap-icon captcha">
-          <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-          </svg>
-        </div>
-        <h3>验证码识别</h3>
-        <p>图片验证码、滑块验证、点选验证</p>
-        <div class="cap-tags">
-          <el-tag size="small">数字</el-tag>
-          <el-tag size="small">字母</el-tag>
-          <el-tag size="small">滑块</el-tag>
-        </div>
-      </div>
-
-      <div class="capability-card" @click="activeTab = 'nlp'">
-        <div class="cap-icon nlp">
-          <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor">
-            <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>
-          </svg>
-        </div>
-        <h3>NLP 文本处理</h3>
-        <p>情感分析、实体识别、关键词提取</p>
-        <div class="cap-tags">
-          <el-tag size="small">情感</el-tag>
-          <el-tag size="small">翻译</el-tag>
-          <el-tag size="small">分类</el-tag>
+          <el-tag size="small">{{ t('ai.ocrTags').split(',')[0] }}</el-tag>
+          <el-tag size="small">{{ t('ai.ocrTags').split(',')[1] }}</el-tag>
+          <el-tag size="small">{{ t('ai.ocrTags').split(',')[2] }}</el-tag>
         </div>
       </div>
 
@@ -58,11 +28,39 @@
             <path d="M3 3v18h18V3H3zm8 16H5v-6h6v6zm0-8H5V5h6v6zm8 8h-6v-6h6v6zm0-8h-6V5h6v6z"/>
           </svg>
         </div>
-        <h3>表格识别</h3>
-        <p>从图片中识别表格结构化数据</p>
+        <h3>{{ t('ai.table') }}</h3>
+        <p>{{ t('ai.tableDesc') }}</p>
         <div class="cap-tags">
-          <el-tag size="small">结构化</el-tag>
-          <el-tag size="small">导出</el-tag>
+          <el-tag size="small">{{ t('ai.tableTags').split(',')[0] }}</el-tag>
+          <el-tag size="small">{{ t('ai.tableTags').split(',')[1] }}</el-tag>
+        </div>
+      </div>
+
+      <div class="capability-card" @click="activeTab = 'document'">
+        <div class="cap-icon document">
+          <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor">
+            <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+          </svg>
+        </div>
+        <h3>{{ t('ai.document') }}</h3>
+        <p>{{ t('ai.documentDesc') }}</p>
+        <div class="cap-tags">
+          <el-tag size="small">{{ t('ai.documentTags').split(',')[0] }}</el-tag>
+          <el-tag size="small">{{ t('ai.documentTags').split(',')[1] }}</el-tag>
+        </div>
+      </div>
+
+      <div class="capability-card" @click="activeTab = 'barcode'">
+        <div class="cap-icon barcode">
+          <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor">
+            <path d="M2 6h2v12H2V6zm3 0h1v12H5V6zm3 0h1v12H8V6zm3 0h2v12h-2V6zm3 0h1v12h-1V6zm3 0h1v12h-1V6zm3 0h2v12h-2V6z"/>
+          </svg>
+        </div>
+        <h3>{{ t('ai.barcode') }}</h3>
+        <p>{{ t('ai.barcodeDesc') }}</p>
+        <div class="cap-tags">
+          <el-tag size="small">{{ t('ai.barcodeTags').split(',')[0] }}</el-tag>
+          <el-tag size="small">{{ t('ai.barcodeTags').split(',')[1] }}</el-tag>
         </div>
       </div>
     </div>
@@ -70,13 +68,13 @@
     <!-- 功能区域 -->
     <el-tabs v-model="activeTab" class="feature-tabs">
       <!-- OCR识别 -->
-      <el-tab-pane label="文字识别" name="ocr">
+      <el-tab-pane :label="t('ai.textRecognition')" name="ocr">
         <div class="feature-panel">
           <el-row :gutter="20">
             <el-col :span="12">
               <el-card shadow="hover">
                 <template #header>
-                  <span>上传图片</span>
+                  <span>{{ t('ai.uploadImage') }}</span>
                 </template>
                 <el-upload
                   class="upload-demo"
@@ -89,20 +87,20 @@
                   accept="image/*"
                 >
                   <el-icon class="el-icon--upload"><upload-filled /></el-icon>
-                  <div class="el-upload__text">拖拽图片到此处或<em>点击上传</em></div>
+                  <div class="el-upload__text">{{ t('ai.dragOrClick') }}</div>
                   <template #tip>
-                    <div class="el-upload__tip">支持 JPG、PNG 格式，建议图片清晰无遮挡</div>
+                    <div class="el-upload__tip">{{ t('ai.supportFormat') }}</div>
                   </template>
                 </el-upload>
 
                 <el-form :model="ocrForm" label-width="100px" style="margin-top: 20px">
-                  <el-form-item label="识别语言">
+                  <el-form-item :label="t('ai.recognitionLang')">
                     <el-select v-model="ocrForm.language" style="width: 100%">
-                      <el-option label="简体中文+英文" value="chi_sim+eng" />
-                      <el-option label="繁体中文+英文" value="chi_tra+eng" />
-                      <el-option label="纯英文" value="eng" />
-                      <el-option label="日文" value="jpn" />
-                      <el-option label="韩文" value="kor" />
+                      <el-option :label="t('ai.simplifiedChinese')" value="chi_sim+eng" />
+                      <el-option :label="t('ai.traditionalChinese')" value="chi_tra+eng" />
+                      <el-option :label="t('ai.english')" value="eng" />
+                      <el-option :label="t('ai.japanese')" value="jpn" />
+                      <el-option :label="t('ai.korean')" value="kor" />
                     </el-select>
                   </el-form-item>
                 </el-form>
@@ -111,23 +109,23 @@
             <el-col :span="12">
               <el-card shadow="hover">
                 <template #header>
-                  <span>识别结果</span>
+                  <span>{{ t('ai.recognitionResult') }}</span>
                 </template>
                 <div v-if="ocrResult" class="result-content">
                   <el-input
                     v-model="ocrResult.text"
                     type="textarea"
                     :rows="10"
-                    placeholder="识别结果将显示在这里..."
+                    :placeholder="t('ai.resultPlaceholder')"
                   />
                   <div class="result-meta">
-                    <el-tag type="success">置信度: {{ (ocrResult.confidence * 100).toFixed(1) }}%</el-tag>
-                    <el-tag>耗时: {{ ocrResult.duration }}ms</el-tag>
+                    <el-tag type="success">{{ t('ai.confidence') }}: {{ (ocrResult.confidence * 100).toFixed(1) }}%</el-tag>
+                    <el-tag>{{ t('ai.duration') }}: {{ ocrResult.duration }}ms</el-tag>
                   </div>
-                  <el-button type="primary" @click="copyResult(ocrResult.text)">复制结果</el-button>
+                  <el-button type="primary" @click="copyResult(ocrResult.text)">{{ t('ai.copyResult') }}</el-button>
                 </div>
                 <div v-else class="empty-result">
-                  <el-empty description="暂无识别结果" />
+                  <el-empty :description="t('ai.noResult')" />
                 </div>
               </el-card>
             </el-col>
@@ -136,12 +134,12 @@
       </el-tab-pane>
 
       <!-- 身份证识别 -->
-      <el-tab-pane label="身份证识别" name="idcard">
+      <el-tab-pane :label="t('ai.idCard')" name="idcard">
         <div class="feature-panel">
           <el-row :gutter="20">
             <el-col :span="8">
               <el-card shadow="hover">
-                <template #header>上传身份证正面</template>
+                <template #header>{{ t('ai.uploadFront') }}</template>
                 <el-upload
                   class="upload-demo"
                   :http-request="uploadIdCard('front')"
@@ -149,13 +147,13 @@
                   accept="image/*"
                 >
                   <el-icon class="el-icon--upload"><upload-filled /></el-icon>
-                  <div class="el-upload__text">点击上传身份证正面</div>
+                  <div class="el-upload__text">{{ t('ai.uploadFront') }}</div>
                 </el-upload>
               </el-card>
             </el-col>
             <el-col :span="8">
               <el-card shadow="hover">
-                <template #header>上传身份证背面</template>
+                <template #header>{{ t('ai.uploadBack') }}</template>
                 <el-upload
                   class="upload-demo"
                   :http-request="uploadIdCard('back')"
@@ -163,56 +161,56 @@
                   accept="image/*"
                 >
                   <el-icon class="el-icon--upload"><upload-filled /></el-icon>
-                  <div class="el-upload__text">点击上传身份证背面</div>
+                  <div class="el-upload__text">{{ t('ai.uploadBack') }}</div>
                 </el-upload>
               </el-card>
             </el-col>
             <el-col :span="8">
               <el-card shadow="hover">
-                <template #header>识别结果</template>
+                <template #header>{{ t('ai.idCardResult') }}</template>
                 <div v-if="idCardResult" class="idcard-result">
                   <div class="result-item">
-                    <span class="label">姓名:</span>
+                    <span class="label">{{ t('ai.name') }}:</span>
                     <span class="value">{{ idCardResult.name }}</span>
                   </div>
                   <div class="result-item">
-                    <span class="label">性别:</span>
+                    <span class="label">{{ t('ai.gender') }}:</span>
                     <span class="value">{{ idCardResult.gender }}</span>
                   </div>
                   <div class="result-item">
-                    <span class="label">民族:</span>
+                    <span class="label">{{ t('ai.ethnicity') }}:</span>
                     <span class="value">{{ idCardResult.ethnicity }}</span>
                   </div>
                   <div class="result-item">
-                    <span class="label">出生日期:</span>
+                    <span class="label">{{ t('ai.birthDate') }}:</span>
                     <span class="value">{{ idCardResult.birthDate }}</span>
                   </div>
                   <div class="result-item">
-                    <span class="label">身份证号:</span>
+                    <span class="label">{{ t('ai.idNumber') }}:</span>
                     <span class="value masked">{{ idCardResult.idNumber }}</span>
                   </div>
                   <div class="result-item">
-                    <span class="label">地址:</span>
+                    <span class="label">{{ t('ai.address') }}:</span>
                     <span class="value">{{ idCardResult.address }}</span>
                   </div>
                   <div v-if="idCardResult.issueAuthority" class="result-item">
-                    <span class="label">签发机关:</span>
+                    <span class="label">{{ t('ai.issueAuthority') }}:</span>
                     <span class="value">{{ idCardResult.issueAuthority }}</span>
                   </div>
                   <div v-if="idCardResult.validDate" class="result-item">
-                    <span class="label">有效期:</span>
+                    <span class="label">{{ t('ai.validDate') }}:</span>
                     <span class="value">{{ idCardResult.validDate }}</span>
                   </div>
 
                   <!-- 一键复制按钮 -->
                   <div class="copy-actions">
                     <el-button type="primary" plain size="small" @click="copyIdCardResult">
-                      一键复制
+                      {{ t('ai.copyAll') }}
                     </el-button>
-                    <span v-if="copySuccess" class="copy-tip">已复制到剪贴板</span>
+                    <span v-if="copySuccess" class="copy-tip">{{ t('ai.copied') }}</span>
                   </div>
                 </div>
-                <el-empty v-else description="暂无识别结果" />
+                <el-empty v-else :description="t('ai.noResult')" />
               </el-card>
             </el-col>
           </el-row>
@@ -220,12 +218,12 @@
       </el-tab-pane>
 
       <!-- 发票识别 -->
-      <el-tab-pane label="发票识别" name="invoice">
+      <el-tab-pane :label="t('ai.invoiceRecognition')" name="invoice">
         <div class="feature-panel">
           <el-row :gutter="20">
             <el-col :span="12">
               <el-card shadow="hover">
-                <template #header>上传发票</template>
+                <template #header>{{ t('ai.uploadInvoice') }}</template>
                 <el-upload
                   class="upload-demo"
                   :action="apiBase + '/ai/invoice'"
@@ -235,158 +233,46 @@
                   accept="image/*"
                 >
                   <el-icon class="el-icon--upload"><upload-filled /></el-icon>
-                  <div class="el-upload__text">点击上传发票图片</div>
+                  <div class="el-upload__text">{{ t('ai.uploadInvoice') }}</div>
                   <template #tip>
-                    <div class="el-upload__tip">支持增值税发票、电子发票等</div>
+                    <div class="el-upload__tip">{{ t('ai.uploadInvoiceTip') }}</div>
                   </template>
                 </el-upload>
               </el-card>
             </el-col>
             <el-col :span="12">
               <el-card shadow="hover">
-                <template #header>发票信息</template>
+                <template #header>{{ t('ai.invoiceInfo') }}</template>
                 <div v-if="invoiceResult" class="invoice-result">
                   <el-descriptions :column="2" border>
-                    <el-descriptions-item label="发票代码">{{ invoiceResult.invoiceCode }}</el-descriptions-item>
-                    <el-descriptions-item label="发票号码">{{ invoiceResult.invoiceNumber }}</el-descriptions-item>
-                    <el-descriptions-item label="开票日期">{{ invoiceResult.invoiceDate }}</el-descriptions-item>
-                    <el-descriptions-item label="发票类型">
-                      <el-tag size="small">{{ invoiceResult.invoiceType === 'vat_special' ? '增值税专用发票' : '普通发票' }}</el-tag>
+                    <el-descriptions-item :label="t('ai.invoiceCode')">{{ invoiceResult.invoiceCode }}</el-descriptions-item>
+                    <el-descriptions-item :label="t('ai.invoiceNumber')">{{ invoiceResult.invoiceNumber }}</el-descriptions-item>
+                    <el-descriptions-item :label="t('ai.invoiceDate2')">{{ invoiceResult.invoiceDate }}</el-descriptions-item>
+                    <el-descriptions-item :label="t('ai.invoiceType2')">
+                      <el-tag size="small">{{ invoiceResult.invoiceType === 'vat_special' ? t('ai.vatinvoice') : t('ai.normalInvoice') }}</el-tag>
                     </el-descriptions-item>
-                    <el-descriptions-item label="购买方">{{ invoiceResult.buyerName }}</el-descriptions-item>
-                    <el-descriptions-item label="销售方">{{ invoiceResult.sellerName }}</el-descriptions-item>
-                    <el-descriptions-item label="金额">
+                    <el-descriptions-item :label="t('ai.buyer')">{{ invoiceResult.buyerName }}</el-descriptions-item>
+                    <el-descriptions-item :label="t('ai.seller')">{{ invoiceResult.sellerName }}</el-descriptions-item>
+                    <el-descriptions-item :label="t('ai.amount')">
                       <span class="amount">{{ invoiceResult.invoiceAmount }}</span>
                     </el-descriptions-item>
-                    <el-descriptions-item label="税额">{{ invoiceResult.taxAmount }}</el-descriptions-item>
+                    <el-descriptions-item :label="t('ai.taxAmount')">{{ invoiceResult.taxAmount }}</el-descriptions-item>
                   </el-descriptions>
                 </div>
-                <el-empty v-else description="暂无识别结果" />
+                <el-empty v-else :description="t('ai.noResult')" />
               </el-card>
             </el-col>
           </el-row>
-        </div>
-      </el-tab-pane>
-
-      <!-- 验证码识别 -->
-      <el-tab-pane label="验证码识别" name="captcha">
-        <div class="feature-panel">
-          <el-row :gutter="20">
-            <el-col :span="12">
-              <el-card shadow="hover">
-                <template #header>上传验证码</template>
-                <el-upload
-                  class="upload-demo"
-                  :action="apiBase + '/ai/captcha'"
-                  :headers="{ Authorization: 'Bearer ' + token }"
-                  :on-success="handleCaptchaSuccess"
-                  :show-file-list="false"
-                  accept="image/*"
-                >
-                  <el-icon class="el-icon--upload"><upload-filled /></el-icon>
-                  <div class="el-upload__text">点击上传验证码图片</div>
-                </el-upload>
-              </el-card>
-            </el-col>
-            <el-col :span="12">
-              <el-card shadow="hover">
-                <template #header>识别结果</template>
-                <div v-if="captchaResult" class="captcha-result">
-                  <div class="captcha-value">
-                    <span class="label">识别结果:</span>
-                    <span class="value">{{ captchaResult.text }}</span>
-                    <el-button type="primary" size="small" @click="copyResult(captchaResult.text)">复制</el-button>
-                  </div>
-                  <div class="captcha-confidence">
-                    <span>置信度: </span>
-                    <el-progress :percentage="(captchaResult.confidence * 100)" :color="getConfidenceColor(captchaResult.confidence)" />
-                  </div>
-                </div>
-                <el-empty v-else description="暂无识别结果" />
-              </el-card>
-            </el-col>
-          </el-row>
-        </div>
-      </el-tab-pane>
-
-      <!-- NLP处理 -->
-      <el-tab-pane label="NLP处理" name="nlp">
-        <div class="feature-panel">
-          <el-card shadow="hover">
-            <template #header>
-              <el-radio-group v-model="nlpType" size="small">
-                <el-radio-button label="sentiment">情感分析</el-radio-button>
-                <el-radio-button label="translate">文本翻译</el-radio-button>
-                <el-radio-button label="entity">实体提取</el-radio-button>
-                <el-radio-button label="keyword">关键词提取</el-radio-button>
-                <el-radio-button label="classify">文本分类</el-radio-button>
-              </el-radio-group>
-            </template>
-
-            <el-row :gutter="20">
-              <el-col :span="12">
-                <el-input
-                  v-model="nlpInput"
-                  type="textarea"
-                  :rows="8"
-                  :placeholder="getNlpPlaceholder()"
-                />
-                <el-button type="primary" @click="processNlp" :loading="nlpLoading" style="margin-top: 10px">
-                  开始处理
-                </el-button>
-              </el-col>
-              <el-col :span="12">
-                <div v-if="nlpResult" class="nlp-result">
-                  <!-- 情感分析结果 -->
-                  <div v-if="nlpType === 'sentiment'" class="sentiment-result">
-                    <el-tag :type="getSentimentType(nlpResult.data?.sentiment)" size="large">
-                      {{ getSentimentText(nlpResult.data?.sentiment) }}
-                    </el-tag>
-                    <div class="sentiment-score">
-                      情感得分: {{ nlpResult.data?.score?.toFixed(2) }}
-                    </div>
-                  </div>
-
-                  <!-- 翻译结果 -->
-                  <div v-else-if="nlpType === 'translate'" class="translate-result">
-                    <div class="translated-text">{{ nlpResult.text }}</div>
-                    <el-button type="primary" size="small" @click="copyResult(nlpResult.text)">复制译文</el-button>
-                  </div>
-
-                  <!-- 实体提取结果 -->
-                  <div v-else-if="nlpType === 'entity'" class="entity-result">
-                    <el-tag v-for="e in nlpResult.data?.entities" :key="e.value" size="small" style="margin: 5px">
-                      {{ e.type }}: {{ e.value }}
-                    </el-tag>
-                  </div>
-
-                  <!-- 关键词提取结果 -->
-                  <div v-else-if="nlpType === 'keyword'" class="keyword-result">
-                    <el-tag v-for="kw in nlpResult.data?.keywords" :key="kw.word" size="small" style="margin: 5px">
-                      {{ kw.word }} ({{ kw.freq }})
-                    </el-tag>
-                  </div>
-
-                  <!-- 文本分类结果 -->
-                  <div v-else-if="nlpType === 'classify'" class="classify-result">
-                    <div class="category">类别: {{ nlpResult.data?.category }}</div>
-                    <div class="confidence">置信度: {{ (nlpResult.data?.confidence * 100).toFixed(1) }}%</div>
-                  </div>
-                </div>
-                <el-empty v-else description="暂无处理结果" />
-              </el-col>
-            </el-row>
-          </el-card>
         </div>
       </el-tab-pane>
 
       <!-- 表格识别 -->
-      <el-tab-pane label="表格识别" name="table">
+      <el-tab-pane :label="t('ai.tableRecognition')" name="table">
         <div class="feature-panel">
           <el-row :gutter="20">
             <el-col :span="12">
               <el-card shadow="hover">
-                <template #header>上传表格图片</template>
+                <template #header>{{ t('ai.uploadTable') }}</template>
                 <el-upload
                   class="upload-demo"
                   :action="apiBase + '/ai/table'"
@@ -396,20 +282,115 @@
                   accept="image/*"
                 >
                   <el-icon class="el-icon--upload"><upload-filled /></el-icon>
-                  <div class="el-upload__text">点击上传表格图片</div>
+                  <div class="el-upload__text">{{ t('ai.uploadTable') }}</div>
                 </el-upload>
               </el-card>
             </el-col>
             <el-col :span="12">
               <el-card shadow="hover">
-                <template #header>表格数据</template>
+                <template #header>{{ t('ai.tableData') }}</template>
                 <div v-if="tableResult && tableResult.data?.data" class="table-result">
                   <el-table :data="tableResult.data.data" border stripe max-height="400">
                     <el-table-column v-for="(val, key) in tableResult.data.data[0]" :key="key" :prop="key" :label="key" />
                   </el-table>
-                  <div class="table-meta">共 {{ tableResult.data.data.length }} 行数据</div>
+                  <div class="table-meta">{{ t('ai.rows') }}: {{ tableResult.data.data.length }}</div>
                 </div>
-                <el-empty v-else description="暂无识别结果" />
+                <el-empty v-else :description="t('ai.noResult')" />
+              </el-card>
+            </el-col>
+          </el-row>
+        </div>
+      </el-tab-pane>
+
+      <!-- 文档处理 -->
+      <el-tab-pane :label="t('ai.docProcessing')" name="document">
+        <div class="feature-panel">
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-card shadow="hover">
+                <template #header>{{ t('ai.uploadDoc') }}</template>
+                <el-upload
+                  class="upload-demo"
+                  :action="apiBase + '/ai/document'"
+                  :headers="{ Authorization: 'Bearer ' + token }"
+                  :on-success="handleDocumentSuccess"
+                  :show-file-list="false"
+                  accept=".pdf,.doc,.docx"
+                >
+                  <el-icon class="el-icon--upload"><upload-filled /></el-icon>
+                  <div class="el-upload__text">{{ t('ai.uploadDoc') }}</div>
+                  <template #tip>
+                    <div class="el-upload__tip">{{ t('ai.docTip') }}</div>
+                  </template>
+                </el-upload>
+              </el-card>
+            </el-col>
+            <el-col :span="12">
+              <el-card shadow="hover">
+                <template #header>{{ t('ai.docContent') }}</template>
+                <div v-if="documentResult" class="document-result">
+                  <el-input
+                    v-model="documentResult.text"
+                    type="textarea"
+                    :rows="10"
+                    :placeholder="t('ai.resultPlaceholder')"
+                  />
+                  <div class="result-meta">
+                    <el-tag type="success">{{ t('ai.pages') }}: {{ documentResult.pages || 1 }}</el-tag>
+                    <el-tag>{{ t('ai.duration') }}: {{ documentResult.duration || 0 }}ms</el-tag>
+                  </div>
+                  <el-button type="primary" @click="copyResult(documentResult.text)">{{ t('ai.copyContent') }}</el-button>
+                </div>
+                <div v-else class="empty-result">
+                  <el-empty :description="t('ai.noDocContent')" />
+                </div>
+              </el-card>
+            </el-col>
+          </el-row>
+        </div>
+      </el-tab-pane>
+
+      <!-- 条码识别 -->
+      <el-tab-pane :label="t('ai.barcodeRecognition')" name="barcode">
+        <div class="feature-panel">
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-card shadow="hover">
+                <template #header>{{ t('ai.uploadBarcode') }}</template>
+                <el-upload
+                  class="upload-demo"
+                  :action="apiBase + '/ai/barcode'"
+                  :headers="{ Authorization: 'Bearer ' + token }"
+                  :on-success="handleBarcodeSuccess"
+                  :show-file-list="false"
+                  accept="image/*"
+                >
+                  <el-icon class="el-icon--upload"><upload-filled /></el-icon>
+                  <div class="el-upload__text">{{ t('ai.uploadBarcode') }}</div>
+                  <template #tip>
+                    <div class="el-upload__tip">{{ t('ai.barcodeTip') }}</div>
+                  </template>
+                </el-upload>
+              </el-card>
+            </el-col>
+            <el-col :span="12">
+              <el-card shadow="hover">
+                <template #header>{{ t('ai.recognitionResult') }}</template>
+                <div v-if="barcodeResult" class="barcode-result">
+                  <div class="barcode-value">
+                    <span class="label">{{ t('ai.result') }}:</span>
+                    <span class="value">{{ barcodeResult.text }}</span>
+                    <el-button type="primary" size="small" @click="copyResult(barcodeResult.text)">{{ t('ai.copyResult') }}</el-button>
+                  </div>
+                  <div class="barcode-type">
+                    <el-tag>{{ t('ai.format') }}: {{ barcodeResult.format || t('ai.unknown') }}</el-tag>
+                  </div>
+                  <div class="barcode-confidence">
+                    <span>{{ t('ai.confidence') }}: </span>
+                    <el-progress :percentage="(barcodeResult.confidence * 100) || 100" :color="getConfidenceColor(barcodeResult.confidence || 1)" />
+                  </div>
+                </div>
+                <el-empty v-else :description="t('ai.noResult')" />
               </el-card>
             </el-col>
           </el-row>
@@ -421,9 +402,12 @@
 
 <script setup>
 import { ref, reactive, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { UploadFilled } from '@element-plus/icons-vue'
 import { CopyDocument } from '@element-plus/icons-vue'
+
+const { t } = useI18n()
 
 const apiBase = '/api'
 const token = localStorage.getItem('token') || ''
@@ -437,14 +421,14 @@ const ocrResult = ref(null)
 const handleOcrSuccess = (res) => {
   if (res.code === 0) {
     ocrResult.value = res.data
-    ElMessage.success('识别成功')
+    ElMessage.success(t('ai.recognition'))
   } else {
-    ElMessage.error(res.message || '识别失败')
+    ElMessage.error(res.message || t('ai.uploadFailed'))
   }
 }
 
 const handleOcrError = () => {
-  ElMessage.error('上传失败，请重试')
+  ElMessage.error(t('ai.uploadFailed'))
 }
 
 // 身份证
@@ -495,15 +479,15 @@ const uploadIdCard = (side) => {
           }
           console.log('身份证背面识别结果:', idCardResult.value)
         }
-        ElMessage.success('识别成功')
+        ElMessage.success(t('ai.recognition'))
         onSuccess(res)
       } else {
-        ElMessage.error(res.message || res.errorMessage || '识别失败')
-        onError(new Error(res.message || '识别失败'))
+        ElMessage.error(res.message || res.errorMessage || t('ai.uploadFailed'))
+        onError(new Error(res.message || t('ai.uploadFailed')))
       }
     } catch (e) {
       console.error('上传失败:', e)
-      ElMessage.error('上传失败: ' + e.message)
+      ElMessage.error(t('ai.uploadFailed') + ': ' + e.message)
       onError(e)
     }
   }
@@ -527,10 +511,10 @@ const copyIdCardResult = async () => {
   try {
     await navigator.clipboard.writeText(text)
     copySuccess.value = true
-    ElMessage.success('已复制到剪贴板')
+    ElMessage.success(t('ai.copied'))
     setTimeout(() => { copySuccess.value = false }, 2000)
   } catch (e) {
-    ElMessage.error('复制失败，请手动复制')
+    ElMessage.error(t('collaboration.copyFailed'))
   }
 }
 
@@ -539,7 +523,7 @@ const invoiceResult = ref(null)
 const handleInvoiceSuccess = (res) => {
   if (res.code === 0) {
     invoiceResult.value = res.data
-    ElMessage.success('识别成功')
+    ElMessage.success(t('ai.recognition'))
   }
 }
 
@@ -548,7 +532,7 @@ const captchaResult = ref(null)
 const handleCaptchaSuccess = (res) => {
   if (res.code === 0) {
     captchaResult.value = res.data
-    ElMessage.success('识别成功')
+    ElMessage.success(t('ai.recognition'))
   }
 }
 
@@ -557,7 +541,25 @@ const tableResult = ref(null)
 const handleTableSuccess = (res) => {
   if (res.code === 0) {
     tableResult.value = res.data
-    ElMessage.success('识别成功')
+    ElMessage.success(t('ai.recognition'))
+  }
+}
+
+// 文档处理
+const documentResult = ref(null)
+const handleDocumentSuccess = (res) => {
+  if (res.code === 0) {
+    documentResult.value = res.data
+    ElMessage.success(t('ai.recognition'))
+  }
+}
+
+// 条码识别
+const barcodeResult = ref(null)
+const handleBarcodeSuccess = (res) => {
+  if (res.code === 0) {
+    barcodeResult.value = res.data
+    ElMessage.success(t('ai.recognition'))
   }
 }
 
@@ -632,9 +634,9 @@ const getSentimentType = (sentiment) => {
 }
 
 const getSentimentText = (sentiment) => {
-  if (sentiment === 'positive') return '正面情感'
-  if (sentiment === 'negative') return '负面情感'
-  return '中性'
+  if (sentiment === 'positive') return t('ai.positive')
+  if (sentiment === 'negative') return t('ai.negative')
+  return t('ai.neutral')
 }
 </script>
 
@@ -687,9 +689,9 @@ const getSentimentText = (sentiment) => {
 }
 
 .cap-icon.ocr { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; }
-.cap-icon.captcha { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: #fff; }
-.cap-icon.nlp { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: #fff; }
 .cap-icon.table { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: #fff; }
+.cap-icon.document { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: #fff; }
+.cap-icon.barcode { background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%); color: #fff; }
 
 .capability-card h3 {
   margin: 0 0 8px 0;

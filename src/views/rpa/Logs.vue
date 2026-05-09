@@ -1,37 +1,37 @@
 <template>
   <div class="logs-page">
     <div class="page-header">
-      <h2>执行日志</h2>
-      <p class="page-desc">查看RPA任务执行记录</p>
+      <h2>{{ t('log.title') }}</h2>
+      <p class="page-desc">{{ t('log.description') }}</p>
     </div>
 
     <div class="toolbar">
       <div class="search-box">
         <el-icon><Search /></el-icon>
-        <input v-model="searchKeyword" placeholder="搜索任务名称/机器人..." />
+        <input v-model="searchKeyword" :placeholder="t('log.searchPlaceholder')" />
       </div>
-      <el-select v-model="statusFilter" placeholder="状态筛选" clearable style="width: 120px;">
-        <el-option label="成功" value="success" />
-        <el-option label="失败" value="failed" />
-        <el-option label="进行中" value="running" />
-        <el-option label="正常" value="正常" />
-        <el-option label="异常" value="异常" />
+      <el-select v-model="statusFilter" :placeholder="t('log.statusFilter')" clearable style="width: 120px;">
+        <el-option :label="t('log.statusSuccess')" value="success" />
+        <el-option :label="t('log.statusFailed')" value="failed" />
+        <el-option :label="t('log.statusRunning')" value="running" />
+        <el-option :label="t('log.statusNormal')" value="正常" />
+        <el-option :label="t('log.statusAbnormal')" value="异常" />
       </el-select>
       <el-date-picker
         v-model="dateRange"
         type="daterange"
-        range-separator="至"
-        start-placeholder="开始日期"
-        end-placeholder="结束日期"
+        :range-separator="t('log.to')"
+        :start-placeholder="t('log.startDate')"
+        :end-placeholder="t('log.endDate')"
         style="width: 260px"
       />
       <el-button type="success" @click="exportData">
-        <el-icon><Download /></el-icon> 导出
+        <el-icon><Download /></el-icon> {{ t('log.export') }}
       </el-button>
     </div>
 
     <el-table :data="paginatedLogs" v-loading="loading" border stripe class="unified-table" :default-sort="{ prop: 'startTime', order: 'descending' }">
-      <el-table-column type="index" label="序号" width="60" align="center">
+      <el-table-column type="index" :label="t('log.index')" width="60" align="center">
         <template #default="{ $index }">
           <div class="index-cell">
             <div class="index-line"></div>
@@ -40,35 +40,35 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column prop="taskName" label="任务名称" min-width="160" show-overflow-tooltip />
-      <el-table-column prop="action" label="操作" min-width="100" />
-      <el-table-column prop="status" label="状态" width="90" align="center">
+      <el-table-column prop="taskName" :label="t('log.taskName')" min-width="160" show-overflow-tooltip />
+      <el-table-column prop="action" :label="t('log.action')" min-width="100" />
+      <el-table-column prop="status" :label="t('log.status')" width="90" align="center">
         <template #default="{ row }">
           <el-tag :type="getStatusType(getDisplayStatus(row))" size="small">
             {{ getDisplayStatus(row) }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="采集数据" width="90" align="center">
+      <el-table-column :label="t('log.dataCollected')" width="90" align="center">
         <template #default="{ row }">
           <span :class="parseDataCount(row) > 0 ? 'data-count-success' : 'data-count-zero'">
             {{ parseDataCount(row) }}
           </span>
         </template>
       </el-table-column>
-      <el-table-column prop="message" label="信息" min-width="200" show-overflow-tooltip>
+      <el-table-column prop="message" :label="t('log.message')" min-width="200" show-overflow-tooltip>
         <template #default="{ row }">{{ row.message || '-' }}</template>
       </el-table-column>
-      <el-table-column prop="startTime" label="开始时间" min-width="160" />
-      <el-table-column prop="endTime" label="结束时间" min-width="160">
+      <el-table-column prop="startTime" :label="t('log.startTime')" min-width="160" />
+      <el-table-column prop="endTime" :label="t('log.endTime')" min-width="160">
         <template #default="{ row }">{{ row.endTime || '-' }}</template>
       </el-table-column>
-      <el-table-column prop="duration" label="耗时" width="90" align="center" />
-      <el-table-column label="操作" width="80" fixed="right" align="center">
+      <el-table-column prop="duration" :label="t('log.duration')" width="90" align="center" />
+      <el-table-column :label="t('log.operation')" width="80" fixed="right" align="center">
         <template #default="{ row }">
           <div class="action-buttons">
             <el-button link type="primary" @click="viewDetail(row)" class="action-btn">
-              <span>详情</span>
+              <span>{{ t('log.detail') }}</span>
             </el-button>
           </div>
         </template>
@@ -88,19 +88,19 @@
     </div>
 
     <!-- 详情弹窗 -->
-    <el-dialog v-model="detailVisible" title="日志详情" width="550px">
+    <el-dialog v-model="detailVisible" :title="t('log.logDetail')" width="550px">
       <div class="detail-content">
-        <div class="detail-item"><label>任务名称：</label><span>{{ currentLog.taskName }}</span></div>
-        <div class="detail-item"><label>执行机器人：</label><span>{{ currentLog.robotName }}</span></div>
-        <div class="detail-item"><label>操作：</label><span>{{ currentLog.action }}</span></div>
-        <div class="detail-item"><label>状态：</label>
+        <div class="detail-item"><label>{{ t('log.taskName') }}：</label><span>{{ currentLog.taskName }}</span></div>
+        <div class="detail-item"><label>{{ t('log.robotName') }}：</label><span>{{ currentLog.robotName }}</span></div>
+        <div class="detail-item"><label>{{ t('log.action') }}：</label><span>{{ currentLog.action }}</span></div>
+        <div class="detail-item"><label>{{ t('log.status') }}：</label>
           <el-tag :type="getStatusType(getDisplayStatus(currentLog))" size="small">{{ getDisplayStatus(currentLog) }}</el-tag>
         </div>
-        <div class="detail-item"><label>采集数据：</label><span :class="parseDataCount(currentLog) > 0 ? 'data-count-success' : 'data-count-zero'">{{ parseDataCount(currentLog) }} 条</span></div>
-        <div class="detail-item"><label>开始时间：</label><span>{{ currentLog.startTime }}</span></div>
-        <div class="detail-item"><label>结束时间：</label><span>{{ currentLog.endTime || '-' }}</span></div>
-        <div class="detail-item"><label>耗时：</label><span>{{ currentLog.duration || '-' }}</span></div>
-        <div class="detail-item full"><label>详细信息：</label><pre class="log-message">{{ currentLog.message || '-' }}</pre></div>
+        <div class="detail-item"><label>{{ t('log.dataCollected') }}：</label><span :class="parseDataCount(currentLog) > 0 ? 'data-count-success' : 'data-count-zero'">{{ parseDataCount(currentLog) }} {{ t('log.records') }}</span></div>
+        <div class="detail-item"><label>{{ t('log.startTime') }}：</label><span>{{ currentLog.startTime }}</span></div>
+        <div class="detail-item"><label>{{ t('log.endTime') }}：</label><span>{{ currentLog.endTime || '-' }}</span></div>
+        <div class="detail-item"><label>{{ t('log.duration') }}：</label><span>{{ currentLog.duration || '-' }}</span></div>
+        <div class="detail-item full"><label>{{ t('log.detailInfo') }}：</label><pre class="log-message">{{ currentLog.message || '-' }}</pre></div>
       </div>
     </el-dialog>
   </div>
@@ -110,6 +110,9 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { Search, Download } from '@element-plus/icons-vue'
 import { apiGet } from '../../utils/api.js'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const loading = ref(false)
 const logs = ref([])
@@ -137,11 +140,11 @@ const parseDataCount = (log) => {
 const getDisplayStatus = (log) => {
   const dataCount = parseDataCount(log)
   if (dataCount > 0) {
-    return '正常'
+    return t('log.statusNormal')
   }
   if (log.status === 'completed' || log.status === 'running') {
     if (log.message && (log.message.includes('完成') || log.message.includes('结束'))) {
-      return '异常'
+      return t('log.statusAbnormal')
     }
   }
   return log.status
@@ -156,9 +159,7 @@ const getStatusType = (s) => {
     completed_with_errors: 'warning',
     abnormal: 'danger',
     pending: 'info',
-    cancelled: 'info',
-    正常: 'success',
-    异常: 'danger'
+    cancelled: 'info'
   }
   return map[s] || 'info'
 }
@@ -217,11 +218,21 @@ const exportData = async () => {
   try {
     const exportLogs = filteredLogs.value
     if (exportLogs.length === 0) {
-      ElMessage.warning('没有可导出的数据')
+      ElMessage.warning(t('log.noDataToExport'))
       return
     }
 
-    const headers = ['序号', '任务名称', '操作', '状态', '采集数据', '信息', '开始时间', '结束时间', '耗时']
+    const headers = [
+      t('log.index'),
+      t('log.taskName'),
+      t('log.action'),
+      t('log.status'),
+      t('log.dataCollected'),
+      t('log.message'),
+      t('log.startTime'),
+      t('log.endTime'),
+      t('log.duration')
+    ]
     const rows = exportLogs.map((log, index) => [
       index + 1,
       log.taskName || '-',
@@ -244,15 +255,15 @@ const exportData = async () => {
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `执行日志_${new Date().toISOString().split('T')[0]}.csv`
+    link.download = `${t('log.exportFileName')}_${new Date().toISOString().split('T')[0]}.csv`
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
 
-    ElMessage.success(`已导出 ${exportLogs.length} 条记录`)
+    ElMessage.success(t('log.exportSuccess', { count: exportLogs.length }))
   } catch {
-    ElMessage.error('导出失败')
+    ElMessage.error(t('log.exportFailed'))
   }
 }
 

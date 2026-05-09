@@ -12,17 +12,17 @@
       <template #header>
         <div class="urgent-header">
           <el-icon class="urgent-icon"><WarningFilled /></el-icon>
-          <span>紧急公告</span>
+          <span>{{ t('notification.urgentDialog') }}</span>
         </div>
       </template>
       <div class="urgent-content" v-html="urgentContent"></div>
       <template #footer>
         <div class="urgent-footer">
           <el-checkbox v-model="urgentConfirmed" v-if="!urgentReadIds.includes(urgentId)">
-            我已阅读并理解上述内容
+            {{ t('notification.urgentConfirmText') }}
           </el-checkbox>
           <el-button type="primary" :disabled="!urgentConfirmed && !urgentReadIds.includes(urgentId)" @click="confirmUrgentRead">
-            确认已阅
+            {{ t('notification.confirmRead') }}
           </el-button>
         </div>
       </template>
@@ -32,20 +32,20 @@
     <div class="page-header">
       <div class="header-left">
         <div class="header-title">
-          <h2>通知公告</h2>
+          <h2>{{ t('notification.title') }}</h2>
           <el-tag size="small" type="info">OFFICIAL</el-tag>
         </div>
-        <p class="page-desc">系统重要通知和公告信息管理</p>
+        <p class="page-desc">{{ t('notification.pageDesc') }}</p>
       </div>
       <div class="header-actions" v-if="isAdmin">
         <el-button @click="showDraftBox">
           <el-icon><Document /></el-icon>
-          草稿箱
+          {{ t('notification.draftBox') }}
           <el-badge :value="draftCount" :hidden="draftCount === 0" />
         </el-button>
         <el-button type="primary" @click="showPublishDialog">
           <el-icon><Plus /></el-icon>
-          发布公告
+          {{ t('notification.publishAnnouncement') }}
         </el-button>
       </div>
     </div>
@@ -60,7 +60,7 @@
         </div>
         <div class="stat-info">
           <span class="stat-num">{{ stats.urgent || 0 }}</span>
-          <span class="stat-label">紧急公告</span>
+          <span class="stat-label">{{ t('notification.urgentAnnouncement') }}</span>
         </div>
         <div class="stat-indicator"></div>
       </div>
@@ -72,7 +72,7 @@
         </div>
         <div class="stat-info">
           <span class="stat-num">{{ stats.important || 0 }}</span>
-          <span class="stat-label">重要公告</span>
+          <span class="stat-label">{{ t('notification.importantAnnouncement') }}</span>
         </div>
         <div class="stat-indicator"></div>
       </div>
@@ -84,7 +84,7 @@
         </div>
         <div class="stat-info">
           <span class="stat-num">{{ stats.normal || 0 }}</span>
-          <span class="stat-label">普通公告</span>
+          <span class="stat-label">{{ t('notification.normalAnnouncement') }}</span>
         </div>
         <div class="stat-indicator"></div>
       </div>
@@ -96,7 +96,7 @@
         </div>
         <div class="stat-info">
           <span class="stat-num">{{ stats.unread || 0 }}</span>
-          <span class="stat-label">未读公告</span>
+          <span class="stat-label">{{ t('notification.unreadAnnouncement') }}</span>
         </div>
         <div class="stat-indicator"></div>
       </div>
@@ -108,32 +108,32 @@
         <el-icon class="search-icon"><Search /></el-icon>
         <input
           v-model="searchKeyword"
-          placeholder="搜索公告标题或内容..."
+          :placeholder="t('notification.searchPlaceholder')"
           @keyup.enter="handleSearch"
         />
       </div>
-      <el-select v-model="priorityFilter" placeholder="优先级" clearable style="width: 120px;">
-        <el-option label="紧急" value="urgent" />
-        <el-option label="重要" value="important" />
-        <el-option label="普通" value="normal" />
+      <el-select v-model="priorityFilter" :placeholder="t('notification.priority')" clearable style="width: 120px;">
+        <el-option :label="t('notification.priorityUrgent')" value="urgent" />
+        <el-option :label="t('notification.priorityImportant')" value="important" />
+        <el-option :label="t('notification.priorityNormal')" value="normal" />
       </el-select>
-      <el-select v-model="statusFilter" placeholder="状态" clearable style="width: 100px;">
-        <el-option label="未读" value="unread" />
-        <el-option label="已读" value="read" />
+      <el-select v-model="statusFilter" :placeholder="t('notification.status')" clearable style="width: 100px;">
+        <el-option :label="t('notification.statusUnread')" value="unread" />
+        <el-option :label="t('notification.statusRead')" value="read" />
       </el-select>
       <el-date-picker
         v-model="dateRange"
         type="daterange"
-        range-separator="至"
-        start-placeholder="开始日期"
-        end-placeholder="结束日期"
+        :range-separator="t('notification.endDate')"
+        :start-placeholder="t('notification.startDate')"
+        :end-placeholder="t('notification.endDate')"
         style="width: 260px;"
         clearable
       />
       <div class="toolbar-right">
         <el-button @click="markAllRead" :disabled="stats.unread === 0">
           <el-icon><Check /></el-icon>
-          全部已读
+          {{ t('notification.markAllRead') }}
         </el-button>
       </div>
     </div>
@@ -170,13 +170,13 @@
             </div>
             <div class="item-actions" @click.stop>
               <el-button link type="primary" size="small" @click="markRead(item)" v-if="item.status === 'unread'">
-                标记已读
+                {{ t('notification.markRead') }}
               </el-button>
               <el-button link type="primary" size="small" @click="viewDetail(item)">
-                查看详情
+                {{ t('notification.viewDetail') }}
               </el-button>
               <el-button link type="primary" size="small" @click="showReadStats(item)" v-if="isAdmin">
-                阅读统计
+                {{ t('notification.readStats') }}
               </el-button>
             </div>
           </div>
@@ -186,7 +186,7 @@
         </div>
       </div>
 
-      <el-empty v-if="paginatedAnnouncements.length === 0 && !loading" description="暂无公告">
+      <el-empty v-if="paginatedAnnouncements.length === 0 && !loading" :description="t('notification.noAnnouncement')">
         <template #image>
           <svg viewBox="0 0 24 24" width="64" height="64" fill="#dcdfe6">
             <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
@@ -197,7 +197,7 @@
 
     <!-- 分页 -->
     <div class="pagination-wrapper" v-if="pagination.total > 0">
-      <span class="pagination-info">共 {{ pagination.total }} 条记录</span>
+      <span class="pagination-info">{{ t('notification.totalRecords', { count: pagination.total }) }}</span>
       <el-pagination
         v-model:current-page="pagination.page"
         v-model:page-size="pagination.size"
@@ -225,7 +225,7 @@
           </span>
           <span class="detail-views">
             <el-icon><View /></el-icon>
-            阅读 {{ currentAnnouncement.readCount || 0 }} 次
+            {{ t('notification.readTimes', { count: currentAnnouncement.readCount || 0 }) }}
           </span>
         </div>
       </div>
@@ -233,7 +233,7 @@
       <div class="detail-body" v-html="currentAnnouncement.content"></div>
       <div class="detail-attachments" v-if="currentAnnouncement.attachments?.length">
         <el-divider style="margin: 16px 0;" />
-        <h4>附件列表</h4>
+        <h4>{{ t('notification.attachmentList') }}</h4>
         <div class="attachment-list">
           <div
             v-for="file in currentAnnouncement.attachments"
@@ -250,23 +250,23 @@
       </div>
       <template #footer>
         <div class="detail-footer">
-          <el-button @click="detailVisible = false">关闭</el-button>
+          <el-button @click="detailVisible = false">{{ t('notification.close') }}</el-button>
           <el-button type="primary" @click="confirmRead(currentAnnouncement)" v-if="currentAnnouncement.status === 'unread'">
-            确认已阅
+            {{ t('notification.confirmRead') }}
           </el-button>
         </div>
       </template>
     </el-dialog>
 
     <!-- 发布公告弹窗（管理员） -->
-    <el-dialog v-model="publishVisible" title="发布公告" width="900px" class="publish-dialog" destroy-on-close>
+    <el-dialog v-model="publishVisible" :title="t('notification.publishTitle')" width="900px" class="publish-dialog" destroy-on-close>
       <el-form :model="publishForm" :rules="publishRules" ref="publishFormRef" label-width="100px" class="publish-form">
         <el-row :gutter="24">
           <el-col :span="24">
-            <el-form-item label="公告标题" prop="title" class="form-item-required">
+            <el-form-item :label="t('notification.announcementTitle')" prop="title" class="form-item-required">
               <el-input
                 v-model="publishForm.title"
-                placeholder="请输入公告标题，标题需简洁明了"
+                :placeholder="t('notification.titlePlaceholder')"
                 maxlength="100"
                 show-word-limit
               />
@@ -275,66 +275,66 @@
         </el-row>
         <el-row :gutter="24">
           <el-col :span="8">
-            <el-form-item label="优先级" prop="priority" class="form-item-required">
+            <el-form-item :label="t('notification.priority')" prop="priority" class="form-item-required">
               <el-radio-group v-model="publishForm.priority" class="priority-group">
                 <el-radio label="normal" value="normal">
-                  <span class="priority-badge normal">普通</span>
+                  <span class="priority-badge normal">{{ t('notification.priorityNormal') }}</span>
                 </el-radio>
                 <el-radio label="important" value="important">
-                  <span class="priority-badge important">重要</span>
+                  <span class="priority-badge important">{{ t('notification.priorityImportant') }}</span>
                 </el-radio>
                 <el-radio label="urgent" value="urgent">
-                  <span class="priority-badge urgent">紧急</span>
+                  <span class="priority-badge urgent">{{ t('notification.priorityUrgent') }}</span>
                 </el-radio>
               </el-radio-group>
             </el-form-item>
           </el-col>
           <el-col :span="8">
-            <el-form-item label="生效时间" prop="publishTime">
+            <el-form-item :label="t('notification.effectiveTime')" prop="publishTime">
               <el-date-picker
                 v-model="publishForm.publishTime"
                 type="datetime"
-                placeholder="留空立即发布"
+                :placeholder="t('notification.leaveEmptyPublish')"
                 :disabled-date="disabledDate"
                 style="width: 100%;"
                 format="YYYY-MM-DD HH:mm"
                 value-format="YYYY-MM-DD HH:mm:ss"
               />
-              <div class="form-tip">留空则立即发布</div>
+              <div class="form-tip">{{ t('notification.leaveEmptyPublish') }}</div>
             </el-form-item>
           </el-col>
           <el-col :span="8">
-            <el-form-item label="有效期至" prop="expireTime">
+            <el-form-item :label="t('notification.validUntil')" prop="expireTime">
               <el-date-picker
                 v-model="publishForm.expireTime"
                 type="datetime"
-                placeholder="默认1个月后"
+                :placeholder="t('notification.defaultValidOneMonth')"
                 style="width: 100%;"
                 format="YYYY-MM-DD HH:mm"
                 value-format="YYYY-MM-DD HH:mm:ss"
                 :disabled-date="disabledExpireDate"
               />
-              <div class="form-tip">默认有效期为1个月</div>
+              <div class="form-tip">{{ t('notification.defaultValidOneMonth') }}</div>
             </el-form-item>
           </el-col>
         </el-row>
         <el-row :gutter="24">
           <el-col :span="12">
-            <el-form-item label="发布范围" prop="scope">
-              <el-select v-model="publishForm.scope" placeholder="请选择发布范围" style="width: 100%;">
-                <el-option label="全平台用户" value="all" />
-                <el-option label="本企业部门" value="enterprise" />
-                <el-option label="指定人员" value="specific" />
+            <el-form-item :label="t('notification.publishScope')" prop="scope">
+              <el-select v-model="publishForm.scope" :placeholder="t('notification.selectScope')" style="width: 100%;">
+                <el-option :label="t('notification.allUsers')" value="all" />
+                <el-option :label="t('notification.enterpriseDept')" value="enterprise" />
+                <el-option :label="t('notification.specifiedUsers')" value="specific" />
               </el-select>
             </el-form-item>
           </el-col>
           <!-- 企业部门选择 -->
           <el-col :span="12" v-if="publishForm.scope === 'enterprise'">
-            <el-form-item label="选择部门" prop="targetDepartments">
+            <el-form-item :label="t('notification.selectDept')" prop="targetDepartments">
               <el-select
                 v-model="publishForm.targetDepartments"
                 multiple
-                placeholder="请选择部门"
+                :placeholder="t('notification.selectDept')"
                 style="width: 100%;"
                 filterable
                 collapse-tags
@@ -347,21 +347,21 @@
                   :value="dept"
                 />
               </el-select>
-              <div class="form-tip">选择接收公告的部门</div>
+              <div class="form-tip">{{ t('notification.selectDeptTip') }}</div>
             </el-form-item>
           </el-col>
         </el-row>
         <!-- 指定人员选择 -->
         <el-row :gutter="24" v-if="publishForm.scope === 'specific'">
           <el-col :span="24">
-            <el-form-item label="指定人员" prop="targetUsers">
+            <el-form-item :label="t('notification.selectUsers')" prop="targetUsers">
               <el-select
                 v-model="publishForm.targetUsers"
                 multiple
                 filterable
                 remote
                 reserve-keyword
-                placeholder="请输入姓名或用户名搜索"
+                :placeholder="t('notification.searchUserTip')"
                 :remote-method="searchUsers"
                 :loading="userSearchLoading"
                 style="width: 100%;"
@@ -377,22 +377,22 @@
                       {{ user.realName?.charAt(0) || 'U' }}
                     </el-avatar>
                     <span>{{ user.realName || user.username }}</span>
-                    <span class="user-dept">{{ user.department || '未分配部门' }}</span>
+                    <span class="user-dept">{{ user.department || t('notification.noDepartment') }}</span>
                   </div>
                 </el-option>
               </el-select>
-              <div class="form-tip">选择接收公告的人员</div>
+              <div class="form-tip">{{ t('notification.selectUserTip') }}</div>
             </el-form-item>
           </el-col>
         </el-row>
         <el-row :gutter="24">
           <el-col :span="24">
-            <el-form-item label="公告内容" prop="content" class="form-item-required">
+            <el-form-item :label="t('notification.content')" prop="content" class="form-item-required">
               <el-input
                 v-model="publishForm.content"
                 type="textarea"
                 :rows="10"
-                placeholder="请输入公告内容，支持富文本格式。支持插入链接、图片等内容。"
+                :placeholder="t('notification.contentPlaceholder')"
                 resize="vertical"
               />
             </el-form-item>
@@ -400,7 +400,7 @@
         </el-row>
         <el-row :gutter="24">
           <el-col :span="24">
-            <el-form-item label="附件上传">
+            <el-form-item :label="t('notification.attachmentUpload')">
               <el-upload
                 :file-list="fileList"
                 :auto-upload="false"
@@ -412,12 +412,12 @@
               >
                 <el-button type="primary" plain>
                   <el-icon><Upload /></el-icon>
-                  选择文件
+                  {{ t('notification.selectFiles') }}
                 </el-button>
                 <template #tip>
                   <div class="upload-tip">
-                    支持上传文档、图片、压缩包等文件，单个文件不超过50MB。
-                    <span class="forbidden">禁止上传可执行文件（.exe/.bat/.cmd）</span>
+                    {{ t('notification.uploadTip') }}
+                    <span class="forbidden">{{ t('notification.forbiddenUpload') }}</span>
                   </div>
                 </template>
               </el-upload>
@@ -427,75 +427,75 @@
       </el-form>
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="publishVisible = false">取消</el-button>
-          <el-button @click="saveDraft" :loading="draftLoading">保存草稿</el-button>
-          <el-button type="primary" @click="submitAnnouncement" :loading="submitLoading">发布</el-button>
+          <el-button @click="publishVisible = false">{{ t('common.cancel') }}</el-button>
+          <el-button @click="saveDraft" :loading="draftLoading">{{ t('notification.saveDraft') }}</el-button>
+          <el-button type="primary" @click="submitAnnouncement" :loading="submitLoading">{{ t('notification.publish') }}</el-button>
         </div>
       </template>
     </el-dialog>
 
     <!-- 阅读统计弹窗（管理员）- 真实数据 -->
-    <el-dialog v-model="statsVisible" title="阅读统计" width="1000px" class="stats-dialog" destroy-on-close>
+    <el-dialog v-model="statsVisible" :title="t('notification.readStatsTitle')" width="1000px" class="stats-dialog" destroy-on-close>
       <div class="stats-summary" v-if="readStats.title">
         <div class="summary-title">{{ readStats.title }}</div>
       </div>
       <div class="stats-summary">
         <div class="summary-card total">
           <div class="summary-value">{{ readStats.total || 0 }}</div>
-          <div class="summary-label">目标人数</div>
+          <div class="summary-label">{{ t('notification.targetCount') }}</div>
         </div>
         <div class="summary-card read">
           <div class="summary-value">{{ readStats.read || 0 }}</div>
-          <div class="summary-label">已读人数</div>
+          <div class="summary-label">{{ t('notification.readCount') }}</div>
         </div>
         <div class="summary-card unread">
           <div class="summary-value">{{ readStats.unread || 0 }}</div>
-          <div class="summary-label">未读人数</div>
+          <div class="summary-label">{{ t('notification.unreadCount') }}</div>
         </div>
         <div class="summary-card rate">
           <div class="summary-value">{{ (readStats.rate || 0).toFixed(1) }}%</div>
-          <div class="summary-label">阅读率</div>
+          <div class="summary-label">{{ t('notification.readRate') }}</div>
         </div>
       </div>
       <el-divider />
       <div class="read-list">
         <div class="list-header">
-          <h4>阅读详情</h4>
+          <h4>{{ t('notification.readDetail') }}</h4>
           <div class="list-actions">
             <el-button size="small" @click="exportStats">
               <el-icon><Download /></el-icon>
-              导出报表
+              {{ t('notification.exportReport') }}
             </el-button>
             <el-button type="primary" size="small" @click="sendBatchReminder" :disabled="!readStats.unread">
               <el-icon><Message /></el-icon>
-              一键催读
+              {{ t('notification.batchRemind') }}
             </el-button>
           </div>
         </div>
         <el-table :data="readStats.details" border stripe max-height="400" class="stats-table" v-loading="statsLoading">
-          <el-table-column prop="userName" label="姓名" width="120" />
-          <el-table-column prop="department" label="部门" width="150">
+          <el-table-column prop="userName" :label="t('notification.name')" width="120" />
+          <el-table-column prop="department" :label="t('notification.department')" width="150">
             <template #default="{ row }">
               {{ row.department || '-' }}
             </template>
           </el-table-column>
-          <el-table-column prop="readTime" label="阅读时间" width="180">
+          <el-table-column prop="readTime" :label="t('notification.readTime')" width="180">
             <template #default="{ row }">
               <span v-if="row.readTime">{{ formatDateTime(row.readTime) }}</span>
-              <span v-else class="text-muted">未阅读</span>
+              <span v-else class="text-muted">{{ t('notification.notRead') }}</span>
             </template>
           </el-table-column>
-          <el-table-column prop="status" label="状态" width="80" align="center">
+          <el-table-column prop="status" :label="t('notification.status')" width="80" align="center">
             <template #default="{ row }">
               <el-tag :type="row.status === 'read' ? 'success' : 'warning'" size="small" effect="plain">
-                {{ row.status === 'read' ? '已读' : '未读' }}
+                {{ row.status === 'read' ? t('notification.statusRead') : t('notification.statusUnread') }}
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="操作" width="100" align="center">
+          <el-table-column :label="t('common.actions')" width="100" align="center">
             <template #default="{ row }">
               <el-button link type="primary" size="small" @click="sendReminder(row)" v-if="row.status !== 'read'">
-                发送提醒
+                {{ t('notification.sendReminder') }}
               </el-button>
               <span v-else class="text-muted">-</span>
             </template>
@@ -505,33 +505,36 @@
     </el-dialog>
 
     <!-- 草稿列表弹窗 -->
-    <el-dialog v-model="draftVisible" title="草稿箱" width="700px" class="draft-dialog" destroy-on-close>
+    <el-dialog v-model="draftVisible" :title="t('notification.draftListTitle')" width="700px" class="draft-dialog" destroy-on-close>
       <div class="draft-list" v-if="draftList.length">
         <div v-for="draft in draftList" :key="draft.id" class="draft-item">
           <div class="draft-content" @click="editDraft(draft)">
-            <h4>{{ draft.title || '无标题' }}</h4>
+            <h4>{{ draft.title || t('notification.noTitle') }}</h4>
             <p>{{ stripHtml(draft.content) | truncate(60) }}</p>
-            <span class="draft-time">保存于 {{ formatTime(draft.updateTime) }}</span>
+            <span class="draft-time">{{ t('notification.savedAt') }} {{ formatTime(draft.updateTime) }}</span>
           </div>
           <div class="draft-actions">
-            <el-button link type="primary" size="small" @click="editDraft(draft)">编辑</el-button>
-            <el-button link type="danger" size="small" @click="deleteDraft(draft)">删除</el-button>
+            <el-button link type="primary" size="small" @click="editDraft(draft)">{{ t('notification.edit') }}</el-button>
+            <el-button link type="danger" size="small" @click="deleteDraft(draft)">{{ t('notification.deleteDraft') }}</el-button>
           </div>
         </div>
       </div>
-      <el-empty v-else description="暂无草稿" />
+      <el-empty v-else :description="t('notification.noDraft')" />
     </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Bell, Search, Plus, Check, User, Clock, View, Document,
   Upload, Download, Message, OfficeBuilding, WarningFilled
 } from '@element-plus/icons-vue'
 import { apiGet, apiPost, apiPut, apiDelete } from '../../utils/api.js'
+
+const { t } = useI18n()
 
 // 状态
 const loading = ref(false)
@@ -576,9 +579,9 @@ const publishForm = reactive({
   content: ''
 })
 const publishRules = {
-  title: [{ required: true, message: '请输入公告标题', trigger: 'blur' }],
-  priority: [{ required: true, message: '请选择优先级', trigger: 'change' }],
-  content: [{ required: true, message: '请输入公告内容', trigger: 'blur' }]
+  title: [{ required: true, message: t('notification.enterTitle'), trigger: 'blur' }],
+  priority: [{ required: true, message: t('notification.selectPriority'), trigger: 'change' }],
+  content: [{ required: true, message: t('notification.enterContent'), trigger: 'blur' }]
 }
 
 // 统计弹窗
@@ -673,6 +676,7 @@ const loadAnnouncements = async () => {
     }
   } catch (e) {
     console.error('加载公告失败:', e)
+    ElMessage.error(t('notification.loadFailed'))
     announcements.value = []
     calculateStats()
     notifyLayout()
@@ -723,7 +727,7 @@ const confirmUrgentRead = async () => {
     if (item) item.status = 'read'
     calculateStats()
     notifyLayout()
-    ElMessage.success('已确认阅读')
+    ElMessage.success(t('notification.readConfirm'))
     urgentDialogVisible.value = false
   } catch (e) {
     console.error('标记已读失败:', e)
@@ -731,7 +735,7 @@ const confirmUrgentRead = async () => {
     if (item) item.status = 'read'
     calculateStats()
     notifyLayout()
-    ElMessage.success('已确认阅读')
+    ElMessage.success(t('notification.readConfirm'))
     urgentDialogVisible.value = false
   }
 }
@@ -748,22 +752,20 @@ const markRead = async (item) => {
     await apiPut(`/announcement/${item.id}/read`, { userId: currentUserId.value })
     item.status = 'read'
     calculateStats()
-    notifyLayout()
-    // 通知布局刷新未读数
+    // 发送单个通知事件（包含更新后的未读数和已读公告ID）
     window.dispatchEvent(new CustomEvent('notificationUpdated', {
-      detail: { count: stats.value.unread }
+      detail: { count: stats.value.unread, readIds: [item.id] }
     }))
-    ElMessage.success('已标记为已读')
+    ElMessage.success(t('notification.markedAsRead'))
   } catch (e) {
     console.error('标记已读失败:', e)
+    // 即使API失败，也标记本地状态
     item.status = 'read'
     calculateStats()
-    notifyLayout()
-    // 通知布局刷新未读数
     window.dispatchEvent(new CustomEvent('notificationUpdated', {
-      detail: { count: stats.value.unread }
+      detail: { count: stats.value.unread, readIds: [item.id] }
     }))
-    ElMessage.success('已标记为已读')
+    ElMessage.success(t('notification.markedAsRead'))
   }
 }
 
@@ -776,28 +778,35 @@ const confirmRead = async (item) => {
 // 全部已读
 const markAllRead = async () => {
   try {
-    await ElMessageBox.confirm(`确定将 ${stats.value.unread} 条未读公告全部标记为已读？`, '确认操作', {
-      type: 'warning'
-    })
+    await ElMessageBox.confirm(
+      t('notification.markAllReadConfirm', { count: stats.value.unread }),
+      t('notification.confirmOperation'),
+      { type: 'warning' }
+    )
 
-    // 先立即更新本地状态，让用户看到效果
+    // 先收集所有未读公告的ID
     const totalUnread = stats.value.unread
-    announcements.value.forEach(a => a.status = 'read')
+    const readIds = announcements.value.filter(a => a.status === 'unread').map(a => a.id)
+
+    // 立即更新本地状态
+    announcements.value.forEach(a => {
+      if (a.status === 'unread') a.status = 'read'
+    })
     calculateStats()
 
-    // 通知布局立即更新（传入当前已知的未读数0）
+    // 通知布局（使用明确的count=0）
     window.dispatchEvent(new CustomEvent('notificationUpdated', {
-      detail: { count: 0 }
+      detail: { count: 0, readIds }
     }))
 
-    // 然后发送后端请求
+    // 发送后端请求（不等待结果，因为UI已经更新）
     try {
       await apiPut('/announcement/readAll', { userId: currentUserId.value })
     } catch (e) {
       console.error('后端标记已读失败，但本地状态已更新', e)
     }
 
-    ElMessage.success('全部已标记为已读')
+    ElMessage.success(t('notification.allMarkedAsRead'))
   } catch (e) {
     if (e !== 'cancel') {
       console.error('标记全部已读失败', e)
@@ -866,7 +875,7 @@ const showDraftBox = () => {
 // 保存草稿
 const saveDraft = async () => {
   if (!publishForm.title && !publishForm.content) {
-    ElMessage.warning('请填写标题或内容后再保存草稿')
+    ElMessage.warning(t('notification.fillBeforeSave'))
     return
   }
   draftLoading.value = true
@@ -886,15 +895,15 @@ const saveDraft = async () => {
 
     const result = await apiPost('/announcement/draft', draftData)
     if (result.code === 0) {
-      ElMessage.success('草稿保存成功')
+      ElMessage.success(t('notification.draftSaved'))
       publishVisible.value = false
       loadDrafts()
     } else {
-      ElMessage.error(result.message || '保存失败')
+      ElMessage.error(result.message || t('notification.saveFailed'))
     }
   } catch (e) {
     console.error('保存草稿失败:', e)
-    ElMessage.error('保存失败')
+    ElMessage.error(t('notification.saveFailed'))
   } finally {
     draftLoading.value = false
   }
@@ -941,10 +950,10 @@ const editDraft = (draft) => {
 // 删除草稿
 const deleteDraft = async (draft) => {
   try {
-    await ElMessageBox.confirm('确定要删除此草稿吗？', '确认删除', { type: 'warning' })
+    await ElMessageBox.confirm(t('notification.deleteDraftConfirm'), t('notification.confirmDelete'), { type: 'warning' })
     await apiDelete(`/announcement/${draft.id}`)
     draftList.value = draftList.value.filter(d => d.id !== draft.id)
-    ElMessage.success('草稿已删除')
+    ElMessage.success(t('notification.draftDeleted'))
   } catch (e) {
     // 用户取消
   }
@@ -998,16 +1007,16 @@ const submitAnnouncement = async () => {
             await apiDelete(`/announcement/${currentDraftId.value}`)
           }
 
-          ElMessage.success('公告发布成功')
+          ElMessage.success(t('notification.announcementPublished'))
           publishVisible.value = false
           loadAnnouncements()
           loadDrafts()
         } else {
-          ElMessage.error(result.message || '发布失败')
+          ElMessage.error(result.message || t('notification.publishFailed'))
         }
       } catch (e) {
         console.error('发布公告失败:', e)
-        ElMessage.error('发布失败')
+        ElMessage.error(t('notification.publishFailed'))
       } finally {
         submitLoading.value = false
       }
@@ -1028,7 +1037,7 @@ const showReadStats = async (item) => {
     }
   } catch (e) {
     console.error('加载阅读统计失败:', e)
-    ElMessage.error('加载阅读统计失败')
+    ElMessage.error(t('notification.loadStatsFailed'))
   } finally {
     statsLoading.value = false
   }
@@ -1040,10 +1049,10 @@ const sendReminder = async (row) => {
       announcementId: readStats.value.announcementId,
       userId: row.userId
     })
-    ElMessage.success(`已向 ${row.userName} 发送提醒`)
+    ElMessage.success(t('notification.reminderSent', { name: row.userName }))
   } catch (e) {
     console.error('发送提醒失败:', e)
-    ElMessage.success(`已向 ${row.userName} 发送提醒`)
+    ElMessage.success(t('notification.reminderSent', { name: row.userName }))
   }
 }
 
@@ -1052,22 +1061,22 @@ const sendBatchReminder = async () => {
     await apiPost('/announcement/sendBatchReminder', {
       announcementId: readStats.value.announcementId
     })
-    ElMessage.success('已向所有未读人员发送提醒')
+    ElMessage.success(t('notification.allRemindersSent'))
   } catch (e) {
     console.error('批量发送提醒失败:', e)
-    ElMessage.success('已向所有未读人员发送提醒')
+    ElMessage.success(t('notification.allRemindersSent'))
   }
 }
 
 const exportStats = () => {
-  ElMessage.info('正在生成导出文件...')
+  ElMessage.info(t('notification.generatingExport'))
   setTimeout(() => {
-    ElMessage.success('报表已导出')
+    ElMessage.success(t('notification.reportExported'))
   }, 1000)
 }
 
 const downloadAttachment = (file) => {
-  ElMessage.info(`正在下载: ${file.name}`)
+  ElMessage.info(t('notification.downloading', { name: file.name }))
 }
 
 // 工具方法
@@ -1077,7 +1086,11 @@ const getPriorityType = (priority) => {
 }
 
 const getPriorityText = (priority) => {
-  const map = { urgent: '紧急', important: '重要', normal: '普通' }
+  const map = {
+    urgent: t('notification.priorityUrgent'),
+    important: t('notification.priorityImportant'),
+    normal: t('notification.priorityNormal')
+  }
   return map[priority] || priority
 }
 
@@ -1086,10 +1099,10 @@ const formatTime = (time) => {
   const date = new Date(time)
   const now = new Date()
   const diff = now - date
-  if (diff < 60000) return '刚刚'
-  if (diff < 3600000) return `${Math.floor(diff / 60000)} 分钟前`
-  if (diff < 86400000) return `${Math.floor(diff / 3600000)} 小时前`
-  if (diff < 604800000) return `${Math.floor(diff / 86400000)} 天前`
+  if (diff < 60000) return t('notification.justNow')
+  if (diff < 3600000) return t('notification.minutesAgo', { count: Math.floor(diff / 60000) })
+  if (diff < 86400000) return t('notification.hoursAgo', { count: Math.floor(diff / 3600000) })
+  if (diff < 604800000) return t('notification.daysAgo', { count: Math.floor(diff / 86400000) })
   return date.toLocaleDateString('zh-CN')
 }
 
@@ -1138,7 +1151,7 @@ const handleFileChange = (file, files) => {
   const forbidden = ['.exe', '.bat', '.cmd', '.msi', '.dll']
   const name = file.name.toLowerCase()
   if (forbidden.some(ext => name.endsWith(ext))) {
-    ElMessage.error('禁止上传可执行文件')
+    ElMessage.error(t('notification.forbiddenFile'))
     fileList.value = fileList.value.filter(f => f.uid !== file.uid)
     return
   }

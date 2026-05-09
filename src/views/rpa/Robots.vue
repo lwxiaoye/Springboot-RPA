@@ -3,8 +3,8 @@
     <!-- 主列表视图 -->
     <div v-if="!showCreateView" class="main-content">
       <div class="page-header">
-        <h2>机器人管理</h2>
-        <p class="page-desc">管理和监控RPA机器人，按功能分类执行流程任务</p>
+        <h2>{{ t('robot.title') }}</h2>
+        <p class="page-desc">{{ t('robot.title') }}</p>
       </div>
 
       <!-- 统计概览 -->
@@ -15,40 +15,40 @@
           </div>
           <div class="stat-content">
             <div class="stat-value">{{ stats.total }}</div>
-            <div class="stat-label">机器人总数</div>
+            <div class="stat-label">{{ t('robot.totalRobots') }}</div>
           </div>
           <div class="stat-arrow"><el-icon><ArrowRight /></el-icon></div>
         </div>
-        
+
         <div class="stat-card" @click="goTo('/rpa/robots?status=online')">
           <div class="stat-icon-wrapper" style="background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);">
             <el-icon style="color: #388e3c;"><CircleCheck /></el-icon>
           </div>
           <div class="stat-content">
             <div class="stat-value success">{{ stats.online }}</div>
-            <div class="stat-label">在线机器人</div>
+            <div class="stat-label">{{ t('robot.online') }}</div>
           </div>
           <div class="stat-arrow"><el-icon><ArrowRight /></el-icon></div>
         </div>
-        
+
         <div class="stat-card" @click="goTo('/rpa/robots?status=busy')">
           <div class="stat-icon-wrapper" style="background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);">
             <el-icon style="color: #f57c00;"><Timer /></el-icon>
           </div>
           <div class="stat-content">
             <div class="stat-value warning">{{ stats.busy }}</div>
-            <div class="stat-label">忙碌中</div>
+            <div class="stat-label">{{ t('robot.busy') }}</div>
           </div>
           <div class="stat-arrow"><el-icon><ArrowRight /></el-icon></div>
         </div>
-        
+
         <div class="stat-card" @click="goTo('/rpa/logs')">
           <div class="stat-icon-wrapper" style="background: linear-gradient(135deg, #fce4ec 0%, #f8bbd0 100%);">
             <el-icon style="color: #c2185b;"><TrendCharts /></el-icon>
           </div>
           <div class="stat-content">
             <div class="stat-value">{{ stats.todayExecutions }}</div>
-            <div class="stat-label">今日执行</div>
+            <div class="stat-label">{{ t('robot.todayExecutions') }}</div>
           </div>
           <div class="stat-arrow"><el-icon><ArrowRight /></el-icon></div>
         </div>
@@ -57,26 +57,26 @@
       <div class="toolbar">
         <div class="search-box">
           <el-icon><Search /></el-icon>
-          <input v-model="searchKeyword" placeholder="搜索机器人名称/IP地址..." />
+          <input v-model="searchKeyword" :placeholder="t('robot.searchPlaceholder')" />
         </div>
-        <el-select v-model="categoryFilter" placeholder="分类筛选" clearable style="width: 140px;">
+        <el-select v-model="categoryFilter" :placeholder="t('robot.categoryFilter')" clearable style="width: 140px;">
           <el-option v-for="cat in categoryList" :key="cat.code" :label="cat.name" :value="cat.code" />
         </el-select>
-        <el-select v-model="statusFilter" placeholder="状态筛选" clearable style="width: 120px;">
-          <el-option label="空闲" value="idle" />
-          <el-option label="忙碌" value="busy" />
-          <el-option label="离线" value="offline" />
+        <el-select v-model="statusFilter" :placeholder="t('robot.statusFilter')" clearable style="width: 120px;">
+          <el-option :label="t('robot.idle')" value="idle" />
+          <el-option :label="t('robot.busy')" value="busy" />
+          <el-option :label="t('robot.offline')" value="offline" />
         </el-select>
         <el-button @click="showCategoryDialog">
-          <el-icon><FolderOpened /></el-icon> 分类管理
+          <el-icon><FolderOpened /></el-icon> {{ t('robot.categoryManage') }}
         </el-button>
         <el-button type="primary" @click="showCreateView = true">
-          <el-icon><Plus /></el-icon> 注册机器人
+          <el-icon><Plus /></el-icon> {{ t('robot.register') }}
         </el-button>
       </div>
 
       <el-table :data="paginatedRobots" v-loading="loading" border stripe highlight-current-row class="robots-table" :default-sort="{ prop: 'createTime', order: 'descending' }">
-        <el-table-column type="index" label="序号" width="60" align="center">
+        <el-table-column type="index" :label="t('common.index')" width="60" align="center">
           <template #default="{ $index }">
             <div class="index-cell">
               <div class="index-line"></div>
@@ -85,22 +85,22 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="name" label="机器人名称" min-width="120" align="center" show-overflow-tooltip />
-        <el-table-column prop="ip" label="IP地址" width="110" align="center" />
-        <el-table-column prop="robotCategory" label="分类" width="80" align="center">
+        <el-table-column prop="name" :label="t('robot.name')" min-width="120" align="center" show-overflow-tooltip />
+        <el-table-column prop="ip" :label="t('robot.ip')" width="110" align="center" />
+        <el-table-column prop="robotCategory" :label="t('common.category')" width="80" align="center">
           <template #default="{ row }">
             <el-tag :type="getCategoryType(row.robotCategory)" size="small" effect="light">
               {{ getCategoryText(row.robotCategory) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="queueName" label="所属队列" width="90" align="center">
+        <el-table-column prop="queueName" :label="t('robot.queue')" width="90" align="center">
           <template #default="{ row }">
             <span v-if="row.queueName" class="queue-tag">{{ row.queueName }}</span>
             <span v-else class="text-muted">-</span>
           </template>
         </el-table-column>
-        <el-table-column prop="status" label="状态" width="75" align="center">
+        <el-table-column prop="status" :label="t('common.status')" width="75" align="center">
           <template #default="{ row }">
             <div class="status-cell">
               <span class="status-dot" :class="row.status"></span>
@@ -110,8 +110,8 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="totalExecutions" label="执行次数" width="75" align="center" />
-        <el-table-column prop="successRate" label="成功率" width="70" align="center">
+        <el-table-column prop="totalExecutions" :label="t('robot.executions')" width="75" align="center" />
+        <el-table-column prop="successRate" :label="t('robot.successRate')" width="70" align="center">
           <template #default="{ row }">
             <div class="rate-cell" :class="getSuccessRateClass(row)">
               <el-icon v-if="getSuccessRateClass(row) === 'rate-high'"><CircleCheck /></el-icon>
@@ -119,32 +119,32 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="lastHeartbeat" label="最后心跳" min-width="140" align="center">
+        <el-table-column prop="lastHeartbeat" :label="t('robot.lastHeartbeat')" min-width="140" align="center">
           <template #default="{ row }">
             <span v-if="row.lastHeartbeat" class="heartbeat-time">{{ formatHeartbeat(row.lastHeartbeat) }}</span>
             <span v-else class="text-muted">-</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="150" fixed="right" align="center">
+        <el-table-column :label="t('common.actions')" width="150" fixed="right" align="center">
           <template #default="{ row }">
             <div class="action-buttons">
               <el-button link type="primary" @click="editRobot(row)" class="action-btn">
-                <span>编辑</span>
+                <span>{{ t('common.edit') }}</span>
               </el-button>
               <el-button link type="primary" @click="viewDetail(row)" class="action-btn">
-                <span>详情</span>
+                <span>{{ t('common.view') }}</span>
               </el-button>
               <el-popconfirm
-                :title="'确定要删除机器人「' + row.name + '」吗？'"
-                confirmButtonText="确认删除"
-                cancelButtonText="取消"
+                :title="t('robot.deleteConfirm', { name: row.name })"
+                :confirmButtonText="t('robot.confirmDelete')"
+                :cancelButtonText="t('common.cancel')"
                 icon="Delete"
                 iconColor="#f56c6c"
                 @confirm="deleteRobot(row)"
               >
                 <template #reference>
                   <el-button link type="danger" class="action-btn">
-                    <span>删除</span>
+                    <span>{{ t('common.delete') }}</span>
                   </el-button>
                 </template>
               </el-popconfirm>
@@ -654,10 +654,12 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { Search, Plus, FolderOpened, Cpu, CircleCheck, Timer, TrendCharts, InfoFilled, MagicStick, Document, Edit, Monitor, Connection, More, ArrowLeft, ArrowRight, View, Delete } from '@element-plus/icons-vue'
 import { apiGet, apiPost, apiPut, apiDelete } from '../../utils/api.js'
 
+const { t } = useI18n()
 const router = useRouter()
 
 const loading = ref(false)

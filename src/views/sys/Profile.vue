@@ -3,8 +3,8 @@
     <!-- 顶部欢迎区域 -->
     <div class="profile-header">
       <div class="header-content">
-        <h1 class="page-title">个人信息</h1>
-        <p class="page-subtitle">管理您的个人资料和账户安全设置</p>
+        <h1 class="page-title">{{ t('profile.title') }}</h1>
+        <p class="page-subtitle">{{ t('profile.subtitle') }}</p>
       </div>
     </div>
 
@@ -17,28 +17,28 @@
             <div class="card-header">
               <div class="header-left">
                 <el-icon class="header-icon"><User /></el-icon>
-                <span class="header-title">基本信息</span>
+                <span class="header-title">{{ t('profile.basicInfo') }}</span>
               </div>
               <div class="header-actions">
-                <el-button 
-                  v-if="!isEditing" 
-                  type="primary" 
+                <el-button
+                  v-if="!isEditing"
+                  type="primary"
                   size="small"
                   @click="startEdit"
                 >
                   <el-icon><Edit /></el-icon>
-                  编辑资料
+                  {{ t('profile.editProfile') }}
                 </el-button>
                 <div v-else class="action-buttons">
-                  <el-button size="small" @click="cancelEdit">取消</el-button>
+                  <el-button size="small" @click="cancelEdit">{{ t('common.cancel') }}</el-button>
                   <el-button size="small" type="primary" @click="saveAllInfo" :loading="saveLoading">
-                    保存
+                    {{ t('profile.save') }}
                   </el-button>
                 </div>
               </div>
             </div>
           </template>
-          
+
           <div class="profile-info-section">
             <!-- 头像区域 -->
             <div class="avatar-section">
@@ -47,23 +47,23 @@
                   {{ userInitialsLarge }}
                 </div>
                 <div class="avatar-circle" v-else>
-                  <img 
-                    :src="getAvatarUrl(avatarPreview || currentUser.avatar)" 
-                    alt="头像" 
+                  <img
+                    :src="getAvatarUrl(avatarPreview || currentUser.avatar)"
+                    :alt="t('profile.avatar')"
                     @error="handleImageError"
                   />
                 </div>
                 <div class="avatar-overlay" @click="triggerAvatarUpload">
                   <el-icon><Camera /></el-icon>
-                  <span>更换头像</span>
+                  <span>{{ t('profile.changeAvatar') }}</span>
                 </div>
               </div>
-              <input 
-                type="file" 
-                ref="avatarInput" 
+              <input
+                type="file"
+                ref="avatarInput"
                 style="display: none"
-                accept="image/jpeg,image/png" 
-                @change="handleAvatarChange" 
+                accept="image/jpeg,image/png"
+                @change="handleAvatarChange"
               />
             </div>
 
@@ -72,14 +72,14 @@
               <el-form :model="editForm" label-width="100px" class="info-form">
                 <el-row :gutter="20">
                   <el-col :span="12">
-                    <el-form-item label="用户名">
+                    <el-form-item :label="t('user.username')">
                       <div class="info-value readonly">{{ currentUser.username }}</div>
                     </el-form-item>
                   </el-col>
                   <el-col :span="12">
-                    <el-form-item label="角色">
+                    <el-form-item :label="t('user.role')">
                       <div class="info-value readonly">
-                        <el-tag size="small" type="success">{{ currentUser.role === 1 ? '管理员' : currentUser.role === 2 ? '普通用户' : currentUser.role || '系统管理员' }}</el-tag>
+                        <el-tag size="small" type="success">{{ currentUser.role === 1 ? t('profile.admin') : currentUser.role === 2 ? t('profile.normalUser') : t('user.admin') }}</el-tag>
                       </div>
                     </el-form-item>
                   </el-col>
@@ -87,28 +87,28 @@
 
                 <el-row :gutter="20">
                   <el-col :span="12">
-                    <el-form-item label="真实姓名">
-                      <div v-if="!isEditing" class="info-value">{{ editForm.realName || '未设置' }}</div>
-                      <el-input v-else v-model="editForm.realName" placeholder="请输入真实姓名" clearable />
+                    <el-form-item :label="t('profile.realName')">
+                      <div v-if="!isEditing" class="info-value">{{ editForm.realName || t('profile.notSet') }}</div>
+                      <el-input v-else v-model="editForm.realName" :placeholder="t('profile.inputRealName')" clearable />
                     </el-form-item>
                   </el-col>
                   <el-col :span="12">
-                    <el-form-item label="邮箱">
-                      <div v-if="!isEditing" class="info-value">{{ editForm.email || '未设置' }}</div>
-                      <el-input v-else v-model="editForm.email" placeholder="请输入邮箱" clearable />
+                    <el-form-item :label="t('profile.email')">
+                      <div v-if="!isEditing" class="info-value">{{ editForm.email || t('profile.notSet') }}</div>
+                      <el-input v-else v-model="editForm.email" :placeholder="t('profile.inputEmail')" clearable />
                     </el-form-item>
                   </el-col>
                 </el-row>
 
                 <el-row :gutter="20">
                   <el-col :span="12">
-                    <el-form-item label="手机号">
-                      <div v-if="!isEditing" class="info-value">{{ editForm.mobile || '未绑定' }}</div>
-                      <el-input v-else v-model="editForm.mobile" placeholder="请输入手机号" clearable />
+                    <el-form-item :label="t('profile.mobile')">
+                      <div v-if="!isEditing" class="info-value">{{ editForm.mobile || t('profile.notBound') }}</div>
+                      <el-input v-else v-model="editForm.mobile" :placeholder="t('profile.inputMobile')" clearable />
                     </el-form-item>
                   </el-col>
                   <el-col :span="12">
-                    <el-form-item label="创建时间">
+                    <el-form-item :label="t('common.createTime')">
                       <div class="info-value readonly">{{ formatDate(currentUser.createTime) }}</div>
                     </el-form-item>
                   </el-col>
@@ -124,7 +124,7 @@
             <div class="card-header">
               <div class="header-left">
                 <el-icon class="header-icon"><DataAnalysis /></el-icon>
-                <span class="header-title">账户统计</span>
+                <span class="header-title">{{ t('profile.accountStats') }}</span>
               </div>
             </div>
           </template>
@@ -135,7 +135,7 @@
               </div>
               <div class="stat-content">
                 <div class="stat-value">{{ accountDays }}</div>
-                <div class="stat-label">账户天数</div>
+                <div class="stat-label">{{ t('profile.accountDays') }}</div>
               </div>
             </div>
             <div class="stat-item">
@@ -143,8 +143,8 @@
                 <el-icon><Clock /></el-icon>
               </div>
               <div class="stat-content">
-                <div class="stat-value">今天</div>
-                <div class="stat-label">最后登录</div>
+                <div class="stat-value">{{ t('profile.today') }}</div>
+                <div class="stat-label">{{ t('profile.lastLogin') }}</div>
               </div>
             </div>
           </div>
@@ -159,18 +159,18 @@
             <div class="card-header">
               <div class="header-left">
                 <el-icon class="header-icon"><Lock /></el-icon>
-                <span class="header-title">账户安全</span>
+                <span class="header-title">{{ t('profile.security') }}</span>
               </div>
             </div>
           </template>
           <div class="security-list">
             <div class="security-item" @click="activeTab = 'password'">
               <div class="security-info">
-                <div class="security-title">登录密码</div>
-                <div class="security-desc">定期更换密码保护账户安全</div>
+                <div class="security-title">{{ t('profile.loginPassword') }}</div>
+                <div class="security-desc">{{ t('profile.passwordTip') }}</div>
               </div>
               <el-button text type="primary">
-                修改
+                {{ t('profile.modify') }}
                 <el-icon><ArrowRight /></el-icon>
               </el-button>
             </div>
@@ -183,7 +183,7 @@
             <div class="card-header">
               <div class="header-left">
                 <el-icon class="header-icon"><Key /></el-icon>
-                <span class="header-title">修改密码</span>
+                <span class="header-title">{{ t('profile.changePassword') }}</span>
               </div>
               <el-button text @click="activeTab = ''">
                 <el-icon><Close /></el-icon>
@@ -191,32 +191,32 @@
             </div>
           </template>
           <el-form :model="pwdModel" label-position="top" class="pwd-form">
-            <el-form-item label="原密码">
-              <el-input 
-                v-model="pwdModel.oldPassword" 
-                type="password" 
-                placeholder="请输入原密码"
+            <el-form-item :label="t('profile.oldPassword')">
+              <el-input
+                v-model="pwdModel.oldPassword"
+                type="password"
+                :placeholder="t('profile.inputOldPassword')"
                 show-password
                 @paste.prevent="preventPaste"
                 clearable
               />
             </el-form-item>
-            <el-form-item label="新密码">
-              <el-input 
-                v-model="pwdModel.newPassword" 
-                type="password" 
-                placeholder="8-24位，包含字母、数字和特殊字符"
+            <el-form-item :label="t('profile.newPassword')">
+              <el-input
+                v-model="pwdModel.newPassword"
+                type="password"
+                :placeholder="t('profile.newPasswordTip')"
                 show-password
                 @paste.prevent="preventPaste"
                 clearable
               />
               <div v-if="pwdNewError" class="error-tip">{{ pwdNewError }}</div>
             </el-form-item>
-            <el-form-item label="确认新密码">
-              <el-input 
-                v-model="pwdModel.confirmPassword" 
-                type="password" 
-                placeholder="请再次输入新密码"
+            <el-form-item :label="t('profile.confirmPassword')">
+              <el-input
+                v-model="pwdModel.confirmPassword"
+                type="password"
+                :placeholder="t('profile.inputConfirmPassword')"
                 show-password
                 @paste.prevent="preventPaste"
                 clearable
@@ -224,13 +224,13 @@
               <div v-if="pwdConfirmError" class="error-tip">{{ pwdConfirmError }}</div>
             </el-form-item>
             <div class="pwd-actions">
-              <el-button @click="resetPasswordForm" plain>重置</el-button>
+              <el-button @click="resetPasswordForm" plain>{{ t('profile.reset') }}</el-button>
               <el-button type="primary" @click="changePassword" :loading="pwdLoading">
-                更新密码
+                {{ t('profile.updatePassword') }}
               </el-button>
             </div>
             <el-alert
-              title="密码修改后需重新登录"
+              :title="t('profile.passwordChangeTip')"
               type="info"
               :closable="false"
               show-icon
@@ -244,10 +244,13 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Download, User, Lock, DataAnalysis, ArrowRight, Edit, Camera, Calendar, Clock, Key, Close } from '@element-plus/icons-vue'
 
 import { apiGet, apiPost, apiPut, apiDelete, apiUpload } from '../../utils/api.js'
+
+const { t } = useI18n()
 
 
 // 当前用户信息
@@ -294,20 +297,20 @@ watch(() => pwdModel.newPassword, (val) => {
   if (val) {
     // 长度验证
     if (val.length < 8 || val.length > 24) {
-      pwdNewError.value = '密码长度需 8-24 位'
-    } 
+      pwdNewError.value = t('profile.pwdLengthTip')
+    }
     // 复杂度验证：必须包含字母、数字和特殊字符
     else if (!/[a-zA-Z]/.test(val) || !/[0-9]/.test(val) || !/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(val)) {
-      pwdNewError.value = '密码必须包含字母、数字和特殊字符'
+      pwdNewError.value = t('profile.pwdComplexTip')
     } else {
       pwdNewError.value = ''
     }
   } else {
     pwdNewError.value = ''
   }
-  
+
   if (pwdModel.confirmPassword && pwdModel.confirmPassword !== val) {
-    pwdConfirmError.value = '两次输入密码不一致'
+    pwdConfirmError.value = t('profile.pwdMismatch')
   } else {
     pwdConfirmError.value = ''
   }
@@ -315,7 +318,7 @@ watch(() => pwdModel.newPassword, (val) => {
 
 watch(() => pwdModel.confirmPassword, (val) => {
   if (val && val !== pwdModel.newPassword) {
-    pwdConfirmError.value = '两次输入密码不一致'
+    pwdConfirmError.value = t('profile.pwdMismatch')
   } else {
     pwdConfirmError.value = ''
   }
@@ -323,7 +326,7 @@ watch(() => pwdModel.confirmPassword, (val) => {
 
 const preventPaste = (e) => {
   e.preventDefault()
-  ElMessage.warning('出于安全考虑，禁止粘贴密码')
+  ElMessage.warning(t('profile.forbidPaste'))
 }
 
 const initEditForm = () => {
@@ -339,14 +342,14 @@ const startEdit = () => {
 const cancelEdit = () => {
   isEditing.value = false
   initEditForm()
-  ElMessage.info('已取消编辑')
+  ElMessage.info(t('profile.editCanceled'))
 }
 
 
 
 const resetInfo = () => {
   initEditForm()
-  ElMessage.info('已重置为当前用户信息')
+  ElMessage.info(t('profile.resetToCurrent'))
 }
 
 const saveAllInfo = async () => {
@@ -367,13 +370,13 @@ const saveAllInfo = async () => {
       storedUser.email = payload.email
       storedUser.mobile = payload.mobile
       localStorage.setItem('userInfo', JSON.stringify(storedUser))
-      ElMessage.success('基本信息更新成功')
+      ElMessage.success(t('profile.basicInfoSuccess'))
       isEditing.value = false
     } else {
-      ElMessage.error(result.message || '保存失败')
+      ElMessage.error(result.message || t('profile.saveFailed'))
     }
   } catch (err) {
-    ElMessage.warning('后端未响应，模拟本地保存')
+    ElMessage.warning(t('profile.noResponse'))
     currentUser.value.realName = editForm.realName
     currentUser.value.email = editForm.email
     currentUser.value.mobile = editForm.mobile
@@ -383,7 +386,7 @@ const saveAllInfo = async () => {
     storedUser.mobile = editForm.mobile
     localStorage.setItem('userInfo', JSON.stringify(storedUser))
     isEditing.value = false
-    ElMessage.success('本地更新成功')
+    ElMessage.success(t('profile.localSaveSuccess'))
   } finally {
     saveLoading.value = false
   }
@@ -391,15 +394,15 @@ const saveAllInfo = async () => {
 
 const changePassword = async () => {
   if (!pwdModel.oldPassword) {
-    ElMessage.warning('请输入原密码')
+    ElMessage.warning(t('profile.inputOldPassword'))
     return
   }
   if (!pwdModel.newPassword || pwdNewError.value) {
-    ElMessage.warning('请填写符合要求的新密码')
+    ElMessage.warning(t('profile.inputNewPassword'))
     return
   }
   if (pwdModel.newPassword !== pwdModel.confirmPassword) {
-    ElMessage.warning('两次输入的密码不一致')
+    ElMessage.warning(t('profile.pwdMismatch'))
     return
   }
   
@@ -421,21 +424,21 @@ const changePassword = async () => {
     console.log('后端响应:', result)
     
     if (result.code === 0) {
-      ElMessage.success('密码修改成功，请重新登录')
+      ElMessage.success(t('profile.pwdSuccess'))
       resetPasswordForm()
       setTimeout(() => {
-        ElMessageBox.confirm('密码已修改，建议重新登录', '提示', { confirmButtonText: '去登录' }).then(() => {
+        ElMessageBox.confirm(t('profile.confirmReLogin'), t('common.tips'), { confirmButtonText: t('menu.logout') }).then(() => {
           localStorage.removeItem('userInfo')
           localStorage.removeItem('token')
           window.location.href = '/login'
         })
       }, 800)
     } else {
-      ElMessage.error(result.message || '修改失败')
+      ElMessage.error(result.message || t('profile.pwdFailed'))
     }
   } catch (err) {
-    console.error('密码修改失败:', err)
-    ElMessage.error('网络错误，请确保后端服务可用')
+    console.error(t('profile.pwdFailed') + ':', err)
+    ElMessage.error(t('profile.pwdFailed'))
   } finally {
     pwdLoading.value = false
   }
@@ -481,13 +484,13 @@ const handleAvatarChange = async (e) => {
         // 触发自定义事件，通知其他组件更新头像
         window.dispatchEvent(new Event('avatarUpdated'))
         
-        ElMessage.success('头像更新成功')
+        ElMessage.success(t('profile.avatarUpdateSuccess'))
       } else {
-        ElMessage.error('上传失败')
+        ElMessage.error(t('profile.uploadFailed'))
       }
     } catch (err) {
       currentUser.value.avatar = avatarPreview.value
-      ElMessage.success('头像已更换（本地模拟）')
+      ElMessage.success(t('profile.avatarChanged'))
     }
   }
   reader.readAsDataURL(file)
@@ -499,7 +502,7 @@ const handleImageError = (e) => {
   const imgSrc = e.target.src
   console.error('❌ 头像加载失败:', imgSrc)
   console.error('当前用户头像路径:', currentUser.value.avatar)
-  ElMessage.error('头像加载失败，请检查后端服务是否启动')
+  ElMessage.error(t('profile.avatarLoadFailed'))
 }
 
 const formatDate = (isoString) => {

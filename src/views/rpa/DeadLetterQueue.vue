@@ -1,27 +1,27 @@
 <template>
   <div class="dead-letter-page">
     <div class="page-header">
-      <h2>死信队列</h2>
-      <p class="page-desc">任务执行失败的记录，需要人工介入处理</p>
+      <h2>{{ t('dlq.title') }}</h2>
+      <p class="page-desc">{{ t('dlq.subtitle') }}</p>
     </div>
 
     <!-- 统计卡片 -->
     <div class="stats-row">
       <div class="stat-box">
         <span class="stat-num">{{ stats.total }}</span>
-        <span class="stat-label">待处理</span>
+        <span class="stat-label">{{ t('dlq.pending') }}</span>
       </div>
       <div class="stat-box warning">
         <span class="stat-num">{{ stats.retrying }}</span>
-        <span class="stat-label">重试中</span>
+        <span class="stat-label">{{ t('dlq.retrying') }}</span>
       </div>
       <div class="stat-box danger">
         <span class="stat-num">{{ stats.resolved }}</span>
-        <span class="stat-label">已解决</span>
+        <span class="stat-label">{{ t('dlq.resolved') }}</span>
       </div>
       <div class="stat-box info">
         <span class="stat-num">{{ stats.analyzing }}</span>
-        <span class="stat-label">分析中</span>
+        <span class="stat-label">{{ t('dlq.analyzing') }}</span>
       </div>
     </div>
 
@@ -29,23 +29,23 @@
     <div class="toolbar">
       <div class="search-box">
         <el-icon><Search /></el-icon>
-        <input v-model="searchKeyword" placeholder="搜索任务名称/流程名称..." />
+        <input v-model="searchKeyword" :placeholder="t('dlq.searchPlaceholder')" />
       </div>
-      <el-select v-model="statusFilter" placeholder="状态筛选" clearable style="width: 140px;">
-        <el-option label="待处理" value="pending" />
-        <el-option label="分析中" value="analysing" />
-        <el-option label="已解决" value="resolved" />
-        <el-option label="人工关闭" value="manually_closed" />
+      <el-select v-model="statusFilter" :placeholder="t('dlq.statusFilter')" clearable style="width: 140px;">
+        <el-option :label="t('dlq.pending')" value="pending" />
+        <el-option :label="t('dlq.analyzing')" value="analysing" />
+        <el-option :label="t('dlq.resolved')" value="resolved" />
+        <el-option :label="t('dlq.manuallyClosed')" value="manually_closed" />
       </el-select>
-      <el-date-picker v-model="dateRange" type="daterange" range-separator="至" start-placeholder="开始日期" end-placeholder="结束日期" style="width: 260px;" />
+      <el-date-picker v-model="dateRange" type="daterange" :range-separator="t('dlq.to')" :start-placeholder="t('dlq.startDate')" :end-placeholder="t('dlq.endDate')" style="width: 260px;" />
       <el-button type="primary" @click="loadDeadLetters">
-        <el-icon><Search /></el-icon> 查询
+        <el-icon><Search /></el-icon> {{ t('dlq.query') }}
       </el-button>
     </div>
 
     <!-- 死信队列列表 -->
     <el-table :data="paginatedData" v-loading="loading" border stripe class="unified-table" :default-sort="{ prop: 'createTime', order: 'descending' }">
-      <el-table-column type="index" label="序号" width="60" align="center">
+      <el-table-column type="index" :label="t('dlq.seq')" width="60" align="center">
         <template #default="{ $index }">
           <div class="index-cell">
             <div class="index-line"></div>
@@ -54,40 +54,40 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column prop="taskName" label="任务名称" min-width="180" show-overflow-tooltip />
-      <el-table-column prop="processName" label="流程" min-width="140" />
-      <el-table-column prop="errorCode" label="错误码" width="100" align="center">
+      <el-table-column prop="taskName" :label="t('dlq.taskName')" min-width="180" show-overflow-tooltip />
+      <el-table-column prop="processName" :label="t('dlq.process')" min-width="140" />
+      <el-table-column prop="errorCode" :label="t('dlq.errorCode')" width="100" align="center">
         <template #default="{ row }">
           <el-tag type="danger" size="small">{{ row.errorCode || '-' }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="retryCount" label="重试次数" width="90" align="center">
+      <el-table-column prop="retryCount" :label="t('dlq.retryCount')" width="90" align="center">
         <template #default="{ row }">
           <span :class="row.retryCount >= row.maxRetry ? 'text-danger' : 'text-warning'">
             {{ row.retryCount }}/{{ row.maxRetry }}
           </span>
         </template>
       </el-table-column>
-      <el-table-column prop="errorMessage" label="错误信息" min-width="200" show-overflow-tooltip />
-      <el-table-column prop="status" label="状态" width="100" align="center">
+      <el-table-column prop="errorMessage" :label="t('dlq.errorMessage')" min-width="200" show-overflow-tooltip />
+      <el-table-column prop="status" :label="t('task.status')" width="100" align="center">
         <template #default="{ row }">
           <el-tag :type="getStatusType(row.status)" size="small">{{ getStatusText(row.status) }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="createTime" label="创建时间" min-width="160" />
-      <el-table-column label="操作" width="180" fixed="right" align="center">
+      <el-table-column prop="createTime" :label="t('dlq.createTime')" min-width="160" />
+      <el-table-column :label="t('common.actions')" width="180" fixed="right" align="center">
         <template #default="{ row }">
           <div class="action-buttons">
-            <el-button link type="primary" @click="viewDetail(row)" class="action-btn">详情</el-button>
-            <el-button link type="success" @click="retryTask(row)" :disabled="row.status !== 'pending'" class="action-btn">重试</el-button>
+            <el-button link type="primary" @click="viewDetail(row)" class="action-btn">{{ t('dlq.detail') }}</el-button>
+            <el-button link type="success" @click="retryTask(row)" :disabled="row.status !== 'pending'" class="action-btn">{{ t('dlq.retry') }}</el-button>
             <el-popconfirm
-              title="确定要跳过该任务吗？"
-              confirmButtonText="确认跳过"
-              cancelButtonText="取消"
+              :title="t('dlq.confirmSkip')"
+              :confirmButtonText="t('dlq.confirmSkipBtn')"
+              :cancelButtonText="t('common.cancel')"
               @confirm="skipTask(row)"
             >
               <template #reference>
-                <el-button link type="danger" :disabled="row.status !== 'pending'" class="action-btn">跳过</el-button>
+                <el-button link type="danger" :disabled="row.status !== 'pending'" class="action-btn">{{ t('dlq.skip') }}</el-button>
               </template>
             </el-popconfirm>
           </div>
@@ -108,75 +108,75 @@
     </div>
 
     <!-- 详情弹窗 -->
-    <el-dialog v-model="detailVisible" title="死信详情" width="800px">
+    <el-dialog v-model="detailVisible" :title="t('dlq.detailTitle')" width="800px">
       <div class="detail-content" v-if="currentItem">
         <div class="detail-section">
-          <h4>基本信息</h4>
+          <h4>{{ t('dlq.basicInfo') }}</h4>
           <div class="detail-grid">
             <div class="detail-item">
-              <label>任务名称:</label>
+              <label>{{ t('dlq.taskName') }}:</label>
               <span>{{ currentItem.taskName }}</span>
             </div>
             <div class="detail-item">
-              <label>流程名称:</label>
+              <label>{{ t('dlq.processName') }}:</label>
               <span>{{ currentItem.processName }}</span>
             </div>
             <div class="detail-item">
-              <label>机器人:</label>
+              <label>{{ t('dlq.robot') }}:</label>
               <span>{{ currentItem.robotName || '-' }}</span>
             </div>
             <div class="detail-item">
-              <label>创建时间:</label>
+              <label>{{ t('dlq.createTime') }}:</label>
               <span>{{ currentItem.createTime }}</span>
             </div>
           </div>
         </div>
 
         <div class="detail-section">
-          <h4>错误信息</h4>
+          <h4>{{ t('dlq.errorInfo') }}</h4>
           <div class="error-info">
             <div class="error-row">
-              <span class="error-label">错误码:</span>
+              <span class="error-label">{{ t('dlq.errorCode') }}:</span>
               <el-tag type="danger">{{ currentItem.errorCode || '-' }}</el-tag>
             </div>
             <div class="error-row">
-              <span class="error-label">错误信息:</span>
+              <span class="error-label">{{ t('dlq.errorMessage') }}:</span>
               <div class="error-message">{{ currentItem.errorMessage }}</div>
             </div>
             <div class="error-row">
-              <span class="error-label">错误堆栈:</span>
-              <pre class="error-stack">{{ currentItem.errorStack || '无' }}</pre>
+              <span class="error-label">{{ t('dlq.errorStack') }}:</span>
+              <pre class="error-stack">{{ currentItem.errorStack || t('dlq.noStack') }}</pre>
             </div>
           </div>
         </div>
 
         <div class="detail-section" v-if="currentItem.status === 'resolved'">
-          <h4>解决信息</h4>
+          <h4>{{ t('dlq.resolutionInfo') }}</h4>
           <div class="detail-grid">
             <div class="detail-item">
-              <label>解决方式:</label>
+              <label>{{ t('dlq.resolutionType') }}:</label>
               <span>{{ getResolutionText(currentItem.resolutionType) }}</span>
             </div>
             <div class="detail-item">
-              <label>处理人:</label>
+              <label>{{ t('dlq.handler') }}:</label>
               <span>{{ currentItem.resolvedBy }}</span>
             </div>
             <div class="detail-item">
-              <label>解决时间:</label>
+              <label>{{ t('dlq.resolvedTime') }}:</label>
               <span>{{ currentItem.resolvedAt }}</span>
             </div>
             <div class="detail-item full">
-              <label>解决说明:</label>
+              <label>{{ t('dlq.resolutionComment') }}:</label>
               <span>{{ currentItem.resolutionComment }}</span>
             </div>
           </div>
         </div>
       </div>
       <template #footer v-if="currentItem && currentItem.status === 'pending'">
-        <el-button @click="detailVisible = false">关闭</el-button>
-        <el-button type="warning" @click="analyzeTask(currentItem)">分析</el-button>
-        <el-button type="primary" @click="retryTask(currentItem)">重试</el-button>
-        <el-button type="danger" @click="skipTask(currentItem)">跳过</el-button>
+        <el-button @click="detailVisible = false">{{ t('common.close') }}</el-button>
+        <el-button type="warning" @click="analyzeTask(currentItem)">{{ t('dlq.analyze') }}</el-button>
+        <el-button type="primary" @click="retryTask(currentItem)">{{ t('dlq.retry') }}</el-button>
+        <el-button type="danger" @click="skipTask(currentItem)">{{ t('dlq.skip') }}</el-button>
       </template>
     </el-dialog>
   </div>
@@ -184,9 +184,12 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
 import { apiGet, apiPost } from '../../utils/api.js'
+
+const { t } = useI18n()
 
 const loading = ref(false)
 const searchKeyword = ref('')
@@ -232,12 +235,12 @@ const getStatusType = (status) => {
 }
 
 const getStatusText = (status) => {
-  const map = { pending: '待处理', analysing: '分析中', resolved: '已解决', manually_closed: '人工关闭' }
+  const map = { pending: t('dlq.pending'), analysing: t('dlq.analyzing'), resolved: t('dlq.resolved'), manually_closed: t('dlq.manuallyClosed') }
   return map[status] || status
 }
 
 const getResolutionText = (type) => {
-  const map = { retry: '重试', skip: '跳过', manual_fix: '人工修复' }
+  const map = { retry: t('dlq.retry'), skip: t('dlq.skip'), manual_fix: t('dlq.manualFix') }
   return map[type] || '-'
 }
 
@@ -256,7 +259,7 @@ const loadDeadLetters = async () => {
       stats.analyzing = deadLetters.value.filter(d => d.status === 'analysing').length
     }
   } catch (e) {
-    console.error('加载死信队列失败:', e)
+    console.error(t('dlq.loadFailed') + ':', e)
     // 模拟数据
     deadLetters.value = [
       { id: 1, taskName: '发票采集任务', processName: '发票采集流程', errorCode: 'NET_TIMEOUT', errorMessage: '网络连接超时', retryCount: 3, maxRetry: 3, status: 'pending', robotName: 'Robot-01', createTime: '2026-04-07 10:30:00' },
@@ -276,45 +279,45 @@ const viewDetail = (row) => {
 
 const retryTask = async (item) => {
   try {
-    await ElMessageBox.confirm('确定要重试该任务吗？', '确认重试', { type: 'warning' })
+    await ElMessageBox.confirm(t('dlq.confirmRetry'), t('dlq.confirmRetryTitle'), { type: 'warning' })
     const result = await apiPost(`/dead-letter-queue/${item.id}/resolve`, {
       resolutionType: 'retry',
       comment: '手动重试'
     })
     if (result.code === 0) {
-      ElMessage.success('任务已重新提交到队列')
+      ElMessage.success(t('dlq.taskResubmitted'))
       loadDeadLetters()
       detailVisible.value = false
     }
   } catch (e) {
     if (e !== 'cancel') {
-      ElMessage.error('操作失败')
+      ElMessage.error(t('dlq.operationFailed'))
     }
   }
 }
 
 const skipTask = async (item) => {
   try {
-    await ElMessageBox.confirm('确定要跳过该任务吗？此操作不可恢复。', '确认跳过', { type: 'warning' })
+    await ElMessageBox.confirm(t('dlq.confirmSkipWarning'), t('dlq.confirmSkipTitle'), { type: 'warning' })
     const result = await apiPost(`/dead-letter-queue/${item.id}/resolve`, {
       resolutionType: 'skip',
       comment: '手动跳过'
     })
     if (result.code === 0) {
-      ElMessage.success('任务已跳过')
+      ElMessage.success(t('dlq.taskSkipped'))
       loadDeadLetters()
       detailVisible.value = false
     }
   } catch (e) {
     if (e !== 'cancel') {
-      ElMessage.error('操作失败')
+      ElMessage.error(t('dlq.operationFailed'))
     }
   }
 }
 
 const analyzeTask = async (item) => {
   currentItem.value.status = 'analysing'
-  ElMessage.info('正在分析错误原因...')
+  ElMessage.info(t('dlq.analyzingError'))
 }
 
 const handleSizeChange = (size) => {

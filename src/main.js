@@ -11,6 +11,9 @@ import './styles/table-hover.css'
 // 全局 ECharts 注册（必须在 vue-echarts 之前）
 import './utils/echarts.ts'
 
+// 国际化
+import i18n from './locales'
+
 const app = createApp(App)
 
 // 注册所有 Element Plus 图标
@@ -20,6 +23,7 @@ for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
 
 app.use(router)
 app.use(ElementPlus)
+app.use(i18n)
 
 // 全局水印管理器（仅在非登录页面初始化）
 import globalWatermarkManager from './utils/watermark/GlobalWatermarkManager.js'

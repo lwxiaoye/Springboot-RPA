@@ -1,8 +1,8 @@
 <template>
   <div class="queues-page">
     <div class="page-header">
-      <h2>队列管理</h2>
-      <p class="page-desc">管理任务队列，实现任务的统一调度和负载均衡</p>
+      <h2>{{ t('queue.title') }}</h2>
+      <p class="page-desc">{{ t('queue.subtitle') }}</p>
     </div>
 
     <div class="stats-row">
@@ -10,28 +10,28 @@
         <div class="stat-icon primary"><el-icon><Operation /></el-icon></div>
         <div class="stat-content">
           <span class="stat-value">{{ stats.total }}</span>
-          <span class="stat-label">队列总数</span>
+          <span class="stat-label">{{ t('queue.totalQueues') }}</span>
         </div>
       </div>
       <div class="stat-card">
         <div class="stat-icon success"><el-icon><CircleCheck /></el-icon></div>
         <div class="stat-content">
           <span class="stat-value">{{ stats.active }}</span>
-          <span class="stat-label">运行中</span>
+          <span class="stat-label">{{ t('queue.running') }}</span>
         </div>
       </div>
       <div class="stat-card">
         <div class="stat-icon warning"><el-icon><Timer /></el-icon></div>
         <div class="stat-content">
           <span class="stat-value">{{ stats.pendingTasks }}</span>
-          <span class="stat-label">待处理任务</span>
+          <span class="stat-label">{{ t('queue.pendingTasks') }}</span>
         </div>
       </div>
       <div class="stat-card">
         <div class="stat-icon danger"><el-icon><Cpu /></el-icon></div>
         <div class="stat-content">
           <span class="stat-value">{{ stats.runningTasks }}</span>
-          <span class="stat-label">执行中任务</span>
+          <span class="stat-label">{{ t('queue.executingTasks') }}</span>
         </div>
       </div>
     </div>
@@ -39,20 +39,20 @@
     <div class="toolbar">
       <div class="search-box">
         <el-icon><Search /></el-icon>
-        <input v-model="searchKeyword" placeholder="搜索队列名称/编码..." />
+        <input v-model="searchKeyword" :placeholder="t('queue.searchPlaceholder')" />
       </div>
-      <el-select v-model="statusFilter" placeholder="状态筛选" clearable style="width: 120px;">
-        <el-option label="运行中" value="active" />
-        <el-option label="已暂停" value="paused" />
-        <el-option label="已停止" value="stopped" />
+      <el-select v-model="statusFilter" :placeholder="t('queue.statusFilter')" clearable style="width: 120px;">
+        <el-option :label="t('queue.running')" value="active" />
+        <el-option :label="t('queue.paused')" value="paused" />
+        <el-option :label="t('queue.stopped')" value="stopped" />
       </el-select>
       <el-button type="primary" @click="showCreateModal">
-        <el-icon><Plus /></el-icon> 新建队列
+        <el-icon><Plus /></el-icon> {{ t('queue.createQueue') }}
       </el-button>
     </div>
 
     <el-table :data="paginatedQueues" v-loading="loading" border stripe class="unified-table" :default-sort="{ prop: 'createTime', order: 'descending' }">
-      <el-table-column type="index" label="序号" width="60" align="center">
+      <el-table-column type="index" :label="t('queue.seq')" width="60" align="center">
         <template #default="{ $index }">
           <div class="index-cell">
             <div class="index-line"></div>
@@ -61,13 +61,13 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column prop="name" label="队列名称" min-width="150" show-overflow-tooltip />
-      <el-table-column prop="code" label="队列编码" min-width="120">
+      <el-table-column prop="name" :label="t('queue.queueName')" min-width="150" show-overflow-tooltip />
+      <el-table-column prop="code" :label="t('queue.queueCode')" min-width="120">
         <template #default="{ row }">
           <span class="code-text">{{ row.code }}</span>
         </template>
       </el-table-column>
-      <el-table-column prop="priorityLevel" label="优先级" width="80" align="center">
+      <el-table-column prop="priorityLevel" :label="t('queue.priority')" width="80" align="center">
         <template #default="{ row }">
           <el-tag v-if="getPriorityType(row.priorityLevel)" :type="getPriorityType(row.priorityLevel)" size="small">
             {{ getPriorityText(row.priorityLevel) }}
@@ -75,14 +75,14 @@
           <span v-else>{{ getPriorityText(row.priorityLevel) }}</span>
         </template>
       </el-table-column>
-      <el-table-column prop="status" label="状态" width="90" align="center">
+      <el-table-column prop="status" :label="t('queue.status')" width="90" align="center">
         <template #default="{ row }">
           <el-tag :type="getStatusType(row.status)" size="small">
             {{ getStatusText(row.status) }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="任务统计" width="200" align="center">
+      <el-table-column :label="t('queue.taskStats')" width="200" align="center">
         <template #default="{ row }">
           <div class="task-stats">
             <span class="stat-item pending">
@@ -100,35 +100,35 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column prop="requiredCategories" label="机器人分类" min-width="150" show-overflow-tooltip>
+      <el-table-column prop="requiredCategories" :label="t('queue.robotCategory')" min-width="150" show-overflow-tooltip>
         <template #default="{ row }">
           <span v-if="row.requiredCategories" class="category-tags">
             {{ formatCategories(row.requiredCategories) }}
           </span>
-          <el-tag v-else type="info" size="small">全部</el-tag>
+          <el-tag v-else type="info" size="small">{{ t('queue.all') }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="creator" label="创建人" width="100" align="center" />
-      <el-table-column label="操作" width="150" fixed="right" align="center">
+      <el-table-column prop="creator" :label="t('queue.creator')" width="100" align="center" />
+      <el-table-column :label="t('common.actions')" width="150" fixed="right" align="center">
         <template #default="{ row }">
           <div class="action-buttons">
             <el-button link type="primary" @click="viewDetail(row)" class="action-btn">
-              <span>详情</span>
+              <span>{{ t('queue.detail') }}</span>
             </el-button>
             <el-button link type="warning" @click="toggleStatus(row)" class="action-btn">
-              <span>{{ row.status === 'active' ? '暂停' : '启用' }}</span>
+              <span>{{ row.status === 'active' ? t('queue.pause') : t('queue.enable') }}</span>
             </el-button>
             <el-popconfirm
-              :title="'确定要删除队列「' + row.name + '」吗？'"
-              confirmButtonText="确认删除"
-              cancelButtonText="取消"
+              :title="t('queue.confirmDelete', { name: row.name })"
+              :confirmButtonText="t('queue.confirmDeleteBtn')"
+              :cancelButtonText="t('common.cancel')"
               icon="Delete"
               iconColor="#f56c6c"
               @confirm="deleteQueue(row)"
             >
               <template #reference>
                 <el-button link type="danger" class="action-btn">
-                  <span>删除</span>
+                  <span>{{ t('common.delete') }}</span>
                 </el-button>
               </template>
             </el-popconfirm>
@@ -152,177 +152,183 @@
     <!-- 新建/编辑队列弹窗 -->
     <el-dialog v-model="dialogVisible" :title="dialogTitle" width="600px">
       <el-form :model="queueForm" :rules="formRules" ref="formRef" label-width="100px">
-        <el-form-item label="队列名称" prop="name">
-          <el-input v-model="queueForm.name" placeholder="请输入队列名称" />
+        <el-form-item :label="t('queue.queueName')" prop="name">
+          <el-input v-model="queueForm.name" :placeholder="t('queue.inputQueueName')" />
         </el-form-item>
-        <el-form-item label="队列编码" prop="code">
-          <el-input v-model="queueForm.code" placeholder="请输入队列编码，如：INVOICE_QUEUE" :disabled="isEdit" />
+        <el-form-item :label="t('queue.queueCode')" prop="code">
+          <el-input v-model="queueForm.code" :placeholder="t('queue.inputQueueCode')" :disabled="isEdit" />
         </el-form-item>
-        <el-form-item label="优先级">
+        <el-form-item :label="t('queue.priority')">
           <el-select v-model="queueForm.priorityLevel" style="width: 100%">
-            <el-option :value="1" label="低优先级" />
-            <el-option :value="2" label="普通优先级" />
-            <el-option :value="3" label="高优先级" />
-            <el-option :value="4" label="紧急优先级" />
+            <el-option :value="1" :label="t('queue.lowPriority')" />
+            <el-option :value="2" :label="t('queue.normalPriority')" />
+            <el-option :value="3" :label="t('queue.highPriority')" />
+            <el-option :value="4" :label="t('queue.urgentPriority')" />
           </el-select>
         </el-form-item>
-        <el-form-item label="最大并发">
+        <el-form-item :label="t('queue.maxConcurrent')">
           <el-input-number v-model="queueForm.maxConcurrentTasks" :min="1" :max="100" style="width: 100%" />
         </el-form-item>
-        <el-form-item label="机器人分类">
-          <el-select v-model="queueForm.requiredCategories" multiple placeholder="选择需要的机器人分类" style="width: 100%">
+        <el-form-item :label="t('queue.robotCategory')">
+          <el-select v-model="queueForm.requiredCategories" multiple :placeholder="t('queue.selectRobotCategory')" style="width: 100%">
             <el-option v-for="cat in categoryList" :key="cat.code" :label="cat.name" :value="cat.code" />
           </el-select>
         </el-form-item>
-        <el-form-item label="描述">
-          <el-input v-model="queueForm.description" type="textarea" :rows="3" placeholder="请输入队列描述" />
+        <el-form-item :label="t('queue.description')">
+          <el-input v-model="queueForm.description" type="textarea" :rows="3" :placeholder="t('queue.inputDescription')" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitQueue" :loading="submitLoading">确定</el-button>
+        <el-button @click="dialogVisible = false">{{ t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="submitQueue" :loading="submitLoading">{{ t('common.confirm') }}</el-button>
       </template>
     </el-dialog>
 
     <!-- 详情弹窗 -->
-    <el-dialog v-model="detailVisible" title="队列详情" width="650px">
+    <el-dialog v-model="detailVisible" :title="t('queue.queueDetail')" width="650px">
       <div class="detail-content">
         <div class="detail-section">
-          <div class="section-title">基本信息</div>
+          <div class="section-title">{{ t('queue.basicInfo') }}</div>
           <div class="detail-grid">
             <div class="detail-item">
-              <label>队列名称：</label>
+              <label>{{ t('queue.queueName') }}：</label>
               <span>{{ currentQueue.name }}</span>
             </div>
             <div class="detail-item">
-              <label>队列编码：</label>
+              <label>{{ t('queue.queueCode') }}：</label>
               <span class="code-text">{{ currentQueue.code }}</span>
             </div>
             <div class="detail-item">
-              <label>状态：</label>
+              <label>{{ t('queue.status') }}：</label>
               <el-tag :type="getStatusType(currentQueue.status)" size="small">{{ getStatusText(currentQueue.status) }}</el-tag>
             </div>
             <div class="detail-item">
-              <label>优先级：</label>
+              <label>{{ t('queue.priority') }}：</label>
               <el-tag v-if="getPriorityType(currentQueue.priorityLevel)" :type="getPriorityType(currentQueue.priorityLevel)" size="small">{{ getPriorityText(currentQueue.priorityLevel) }}</el-tag>
               <span v-else>{{ getPriorityText(currentQueue.priorityLevel) }}</span>
             </div>
             <div class="detail-item">
-              <label>最大并发：</label>
-              <span>{{ currentQueue.maxConcurrentTasks }} 个任务</span>
+              <label>{{ t('queue.maxConcurrent') }}：</label>
+              <span>{{ currentQueue.maxConcurrentTasks }} {{ t('queue.tasks') }}</span>
             </div>
             <div class="detail-item">
-              <label>创建人：</label>
+              <label>{{ t('queue.creator') }}：</label>
               <span>{{ currentQueue.creator || '-' }}</span>
             </div>
           </div>
         </div>
 
         <div class="detail-section">
-          <div class="section-title">实时统计</div>
+          <div class="section-title">{{ t('queue.realtimeStats') }}</div>
           <div class="stats-grid">
             <div class="mini-stat-card pending">
               <div class="stat-icon"><el-icon><Clock /></el-icon></div>
               <div class="stat-info">
                 <span class="value">{{ currentQueue.currentPendingCount || 0 }}</span>
-                <span class="label">排队中</span>
+                <span class="label">{{ t('queue.queued') }}</span>
               </div>
             </div>
             <div class="mini-stat-card running">
               <div class="stat-icon"><el-icon><VideoPlay /></el-icon></div>
               <div class="stat-info">
                 <span class="value">{{ currentQueue.currentRunningCount || 0 }}</span>
-                <span class="label">执行中</span>
+                <span class="label">{{ t('queue.executing') }}</span>
               </div>
             </div>
             <div class="mini-stat-card success">
               <div class="stat-icon"><el-icon><CircleCheck /></el-icon></div>
               <div class="stat-info">
                 <span class="value">{{ currentQueue.completedCount || 0 }}</span>
-                <span class="label">已完成</span>
+                <span class="label">{{ t('queue.completed') }}</span>
               </div>
             </div>
             <div class="mini-stat-card danger">
               <div class="stat-icon"><el-icon><CircleClose /></el-icon></div>
               <div class="stat-info">
                 <span class="value">{{ currentQueue.failedCount || 0 }}</span>
-                <span class="label">已失败</span>
+                <span class="label">{{ t('queue.failed') }}</span>
               </div>
             </div>
           </div>
         </div>
 
         <div class="detail-section" v-if="currentQueue.description">
-          <div class="section-title">描述</div>
+          <div class="section-title">{{ t('queue.description') }}</div>
           <div class="detail-desc">{{ currentQueue.description }}</div>
         </div>
 
         <div class="detail-section">
-          <div class="section-title">排队中的任务 ({{ pendingTasks.length }})</div>
+          <div class="section-title">{{ t('queue.pendingTasksInQueue', { count: pendingTasks.length }) }}</div>
           <el-table :data="pendingTasks" size="small" border stripe max-height="200" v-loading="taskLoading">
-            <el-table-column prop="id" label="任务ID" width="80" align="center" />
-            <el-table-column prop="name" label="任务名称" min-width="150" show-overflow-tooltip />
-            <el-table-column prop="processName" label="关联流程" min-width="120" show-overflow-tooltip />
-            <el-table-column label="状态" width="90" align="center">
+            <el-table-column prop="id" :label="t('queue.taskId')" width="80" align="center" />
+            <el-table-column prop="name" :label="t('queue.taskName')" min-width="150" show-overflow-tooltip />
+            <el-table-column prop="processName" :label="t('queue.relatedProcess')" min-width="120" show-overflow-tooltip />
+            <el-table-column :label="t('queue.status')" width="90" align="center">
               <template #default="{ row }">
-                <el-tag type="warning" size="small">排队中</el-tag>
+                <el-tag type="warning" size="small">{{ t('queue.queued') }}</el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="createTime" label="创建时间" width="160">
+            <el-table-column prop="createTime" :label="t('queue.createTime')" width="160">
               <template #default="{ row }">
                 {{ formatDateTime(row.createTime) }}
               </template>
             </el-table-column>
           </el-table>
-          <el-empty v-if="!taskLoading && pendingTasks.length === 0" description="暂无排队任务" :image-size="60" />
+          <el-empty v-if="!taskLoading && pendingTasks.length === 0" :image-size="60">
+            <span>{{ t('queue.noPendingTasks') }}</span>
+          </el-empty>
         </div>
 
         <div class="detail-section">
-          <div class="section-title">执行中的任务 ({{ runningTasks.length }})</div>
+          <div class="section-title">{{ t('queue.executingTasksInQueue', { count: runningTasks.length }) }}</div>
           <el-table :data="runningTasks" size="small" border stripe max-height="200" v-loading="taskLoading">
-            <el-table-column prop="id" label="任务ID" width="80" align="center" />
-            <el-table-column prop="name" label="任务名称" min-width="150" show-overflow-tooltip />
-            <el-table-column prop="processName" label="关联流程" min-width="120" show-overflow-tooltip />
-            <el-table-column prop="robotName" label="执行机器人" width="120" show-overflow-tooltip />
-            <el-table-column label="状态" width="90" align="center">
+            <el-table-column prop="id" :label="t('queue.taskId')" width="80" align="center" />
+            <el-table-column prop="name" :label="t('queue.taskName')" min-width="150" show-overflow-tooltip />
+            <el-table-column prop="processName" :label="t('queue.relatedProcess')" min-width="120" show-overflow-tooltip />
+            <el-table-column prop="robotName" :label="t('queue.executingRobot')" width="120" show-overflow-tooltip />
+            <el-table-column :label="t('queue.status')" width="90" align="center">
               <template #default="{ row }">
-                <el-tag type="primary" size="small">执行中</el-tag>
+                <el-tag type="primary" size="small">{{ t('queue.executing') }}</el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="startTime" label="开始时间" width="160">
+            <el-table-column prop="startTime" :label="t('queue.startTime')" width="160">
               <template #default="{ row }">
                 {{ formatDateTime(row.startTime) }}
               </template>
             </el-table-column>
           </el-table>
-          <el-empty v-if="!taskLoading && runningTasks.length === 0" description="暂无执行中任务" :image-size="60" />
+          <el-empty v-if="!taskLoading && runningTasks.length === 0" :image-size="60">
+            <span>{{ t('queue.noExecutingTasks') }}</span>
+          </el-empty>
         </div>
 
         <div class="detail-section">
-          <div class="section-title">最近完成记录 ({{ completedTasks.length }})</div>
+          <div class="section-title">{{ t('queue.recentCompletedRecords', { count: completedTasks.length }) }}</div>
           <el-table :data="completedTasks" size="small" border stripe max-height="200" v-loading="taskLoading">
-            <el-table-column prop="id" label="任务ID" width="80" align="center" />
-            <el-table-column prop="name" label="任务名称" min-width="150" show-overflow-tooltip />
-            <el-table-column prop="processName" label="关联流程" min-width="120" show-overflow-tooltip />
-            <el-table-column label="结果" width="90" align="center">
+            <el-table-column prop="id" :label="t('queue.taskId')" width="80" align="center" />
+            <el-table-column prop="name" :label="t('queue.taskName')" min-width="150" show-overflow-tooltip />
+            <el-table-column prop="processName" :label="t('queue.relatedProcess')" min-width="120" show-overflow-tooltip />
+            <el-table-column :label="t('queue.result')" width="90" align="center">
               <template #default="{ row }">
                 <el-tag :type="row.status === 'completed' ? 'success' : 'danger'" size="small">
-                  {{ row.status === 'completed' ? '成功' : '失败' }}
+                  {{ row.status === 'completed' ? t('queue.success') : t('queue.failed') }}
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="endTime" label="完成时间" width="160">
+            <el-table-column prop="endTime" :label="t('queue.completedTime')" width="160">
               <template #default="{ row }">
                 {{ formatDateTime(row.endTime) }}
               </template>
             </el-table-column>
           </el-table>
-          <el-empty v-if="!taskLoading && completedTasks.length === 0" description="暂无完成记录" :image-size="60" />
+          <el-empty v-if="!taskLoading && completedTasks.length === 0" :image-size="60">
+            <span>{{ t('queue.noCompletedRecords') }}</span>
+          </el-empty>
         </div>
       </div>
       <template #footer>
-        <el-button @click="detailVisible = false">关闭</el-button>
-        <el-button type="primary" @click="refreshTasks">刷新任务</el-button>
+        <el-button @click="detailVisible = false">{{ t('common.close') }}</el-button>
+        <el-button type="primary" @click="refreshTasks">{{ t('queue.refreshTasks') }}</el-button>
       </template>
     </el-dialog>
   </div>
@@ -330,9 +336,12 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { Search, Plus, Operation, CircleCheck, Timer, Cpu, Clock, VideoPlay, CircleClose } from '@element-plus/icons-vue'
 import { apiGet, apiPost, apiPut, apiDelete } from '../../utils/api.js'
+
+const { t } = useI18n()
 
 const loading = ref(false)
 const submitLoading = ref(false)
@@ -347,15 +356,17 @@ const runningTasks = ref([])
 const completedTasks = ref([])
 
 const queues = ref([])
-const categoryList = ref([
-  { code: 'DATA_COLLECT', name: '数据采集' },
-  { code: 'DATA_PARSE', name: '数据解析' },
-  { code: 'DATA_PROCESS', name: '数据加工' },
-  { code: 'DATA_STORE', name: '数据落库' },
-  { code: 'GENERAL', name: '通用执行' }
-])
 const searchKeyword = ref('')
 const statusFilter = ref('')
+
+// 使用 computed 来定义 categoryList，确保 t() 在 useI18n() 之后执行
+const categoryList = computed(() => [
+  { code: 'DATA_COLLECT', name: t('queue.dataCollection') },
+  { code: 'DATA_PARSE', name: t('queue.dataParsing') },
+  { code: 'DATA_PROCESS', name: t('queue.dataProcessing') },
+  { code: 'DATA_STORE', name: t('queue.dataStorage') },
+  { code: 'GENERAL', name: t('queue.generalExecution') }
+])
 
 const pagination = reactive({ page: 1, size: 10, total: 0 })
 
@@ -377,11 +388,11 @@ const queueForm = reactive({
 })
 
 const formRules = {
-  name: [{ required: true, message: '请输入队列名称', trigger: 'blur' }],
-  code: [{ required: true, message: '请输入队列编码', trigger: 'blur' }]
+  name: [{ required: true, message: t('queue.inputQueueName'), trigger: 'blur' }],
+  code: [{ required: true, message: t('queue.inputQueueCode'), trigger: 'blur' }]
 }
 
-const dialogTitle = computed(() => isEdit.value ? '编辑队列' : '新建队列')
+const dialogTitle = computed(() => isEdit.value ? t('queue.editQueue') : t('queue.createQueue'))
 
 const filteredQueues = computed(() => {
   let list = queues.value
@@ -410,8 +421,8 @@ const updateStats = () => {
 }
 
 const getPriorityText = (level) => {
-  const map = { 1: '低', 2: '普通', 3: '高', 4: '紧急' }
-  return map[level] || '普通'
+  const map = { 1: t('queue.low'), 2: t('queue.normal'), 3: t('queue.high'), 4: t('queue.urgent') }
+  return map[level] || t('queue.normal')
 }
 
 const getPriorityType = (level) => {
@@ -422,7 +433,7 @@ const getPriorityType = (level) => {
 }
 
 const getStatusText = (s) => {
-  const map = { active: '运行中', paused: '已暂停', stopped: '已停止' }
+  const map = { active: t('queue.running'), paused: t('queue.paused'), stopped: t('queue.stopped') }
   return map[s] || s || '-'
 }
 
@@ -520,13 +531,13 @@ const toggleStatus = async (queue) => {
     const newStatus = queue.status === 'active' ? 'paused' : 'active'
     const result = await apiPut(`/queue/${queue.id}/status`, { status: newStatus })
     if (result.code === 0) {
-      ElMessage.success(`队列${newStatus === 'active' ? '已启用' : '已暂停'}`)
+      ElMessage.success(t('queue.queueStatusChanged', { status: newStatus === 'active' ? t('queue.enabled') : t('queue.paused') }))
       await loadQueues()
     } else {
-      ElMessage.error(result.message || '操作失败')
+      ElMessage.error(result.message || t('queue.operationFailed'))
     }
   } catch {
-    ElMessage.error('操作失败')
+    ElMessage.error(t('queue.operationFailed'))
   }
 }
 
@@ -547,14 +558,14 @@ const submitQueue = async () => {
         result = await apiPost('/queue', data)
       }
       if (result.code === 0) {
-        ElMessage.success(isEdit.value ? '更新成功' : '创建成功')
+        ElMessage.success(isEdit.value ? t('queue.updateSuccess') : t('queue.createSuccess'))
         dialogVisible.value = false
         await loadQueues()
       } else {
-        ElMessage.error(result.message || '操作失败')
+        ElMessage.error(result.message || t('queue.operationFailed'))
       }
     } catch {
-      ElMessage.error('请求失败')
+      ElMessage.error(t('queue.requestFailed'))
     } finally {
       submitLoading.value = false
     }
@@ -565,13 +576,13 @@ const deleteQueue = async (queue) => {
   try {
     const result = await apiDelete(`/queue/${queue.id}`)
     if (result.code === 0) {
-      ElMessage.success('删除成功')
+      ElMessage.success(t('queue.deleteSuccess'))
       await loadQueues()
     } else {
-      ElMessage.error(result.message || '删除失败')
+      ElMessage.error(result.message || t('queue.deleteFailed'))
     }
   } catch {
-    ElMessage.error('删除失败')
+    ElMessage.error(t('queue.deleteFailed'))
   }
 }
 

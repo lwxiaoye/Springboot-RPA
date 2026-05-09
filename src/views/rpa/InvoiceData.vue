@@ -5,22 +5,22 @@
         <div class="header-left">
           <h2>
             <el-icon><Document /></el-icon>
-            企业发票数据
+            {{ t('invoice.title') }}
           </h2>
-          <p class="subtitle">从目标网页采集并解析的企业发票数据</p>
+          <p class="subtitle">{{ t('invoice.subtitle') }}</p>
         </div>
         <div class="header-actions">
           <el-button type="primary" @click="handleCollect" :loading="collecting">
             <el-icon><Refresh /></el-icon>
-            采集数据
+            {{ t('invoice.collectData') }}
           </el-button>
           <el-button @click="loadData">
             <el-icon><Refresh /></el-icon>
-            刷新
+            {{ t('invoice.refresh') }}
           </el-button>
           <el-button type="danger" @click="handleClear" :disabled="tableData.length === 0">
             <el-icon><Delete /></el-icon>
-            清空
+            {{ t('invoice.clear') }}
           </el-button>
         </div>
       </div>
@@ -28,40 +28,69 @@
 
     <!-- 统计卡片 -->
     <div class="stats-grid" v-if="stats.totalCount > 0">
-      <el-card class="stat-card">
-        <div class="stat-icon collect">
-          <el-icon><Document /></el-icon>
-        </div>
-        <div class="stat-info">
-          <div class="stat-value">{{ stats.totalCount }}</div>
-          <div class="stat-label">发票总数</div>
-        </div>
-      </el-card>
-      <el-card class="stat-card">
-        <div class="stat-icon amount">
-          <el-icon><Money /></el-icon>
-        </div>
-        <div class="stat-info">
-          <div class="stat-value">¥ {{ formatNumber(stats.taxExclusiveTotal) }}</div>
-          <div class="stat-label">不含税总额</div>
-        </div>
-      </el-card>
-      <el-card class="stat-card">
-        <div class="stat-icon tax">
-          <el-icon><Coin /></el-icon>
-        </div>
-        <div class="stat-info">
-          <div class="stat-value">¥ {{ formatNumber(stats.taxTotal) }}</div>
-          <div class="stat-label">税额总额</div>
+      <el-card class="stat-card total-count" shadow="hover">
+        <div class="stat-card-inner">
+          <div class="stat-icon-wrapper">
+            <div class="stat-icon collect">
+              <el-icon><Document /></el-icon>
+            </div>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value">{{ stats.totalCount }}</div>
+            <div class="stat-label">{{ t('invoice.totalInvoices') }}</div>
+            <div class="stat-trend up">
+              <el-icon><Top /></el-icon>
+              <span>{{ t('invoice.allValid') }}</span>
+            </div>
+          </div>
         </div>
       </el-card>
-      <el-card class="stat-card">
-        <div class="stat-icon total">
-          <el-icon><TrendCharts /></el-icon>
+
+      <el-card class="stat-card normal-count" shadow="hover">
+        <div class="stat-card-inner">
+          <div class="stat-icon-wrapper">
+            <div class="stat-icon amount">
+              <el-icon><Money /></el-icon>
+            </div>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value success">¥ {{ formatNumber(stats.taxExclusiveTotal) }}</div>
+            <div class="stat-label">{{ t('invoice.taxExclusiveTotal') }}</div>
+            <div class="stat-sub">{{ t('invoice.taxExclusiveTotalSub') }}</div>
+          </div>
         </div>
-        <div class="stat-info">
-          <div class="stat-value">¥ {{ formatNumber(stats.amountTotal) }}</div>
-          <div class="stat-label">价税合计</div>
+      </el-card>
+
+      <el-card class="stat-card tax-count" shadow="hover">
+        <div class="stat-card-inner">
+          <div class="stat-icon-wrapper">
+            <div class="stat-icon tax">
+              <el-icon><Coin /></el-icon>
+            </div>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value warning">¥ {{ formatNumber(stats.taxTotal) }}</div>
+            <div class="stat-label">{{ t('invoice.taxTotal') }}</div>
+            <div class="stat-sub">{{ t('invoice.taxTotalSub') }}</div>
+          </div>
+        </div>
+      </el-card>
+
+      <el-card class="stat-card amount-total" shadow="hover">
+        <div class="stat-card-inner">
+          <div class="stat-icon-wrapper highlight">
+            <div class="stat-icon total">
+              <el-icon><TrendCharts /></el-icon>
+            </div>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value highlight">¥ {{ formatNumber(stats.amountTotal) }}</div>
+            <div class="stat-label">{{ t('invoice.totalAmount') }}</div>
+            <div class="stat-trend">
+              <el-progress :percentage="stats.totalCount > 0 ? Math.round((stats.normalCount / stats.totalCount) * 100) : 0" :stroke-width="4" :show-text="false" size="small" />
+              <span class="trend-text">{{ stats.normalCount }} {{ t('invoice.normalCount') }} / {{ stats.totalCount - stats.normalCount }} {{ t('invoice.voidedCount') }}</span>
+            </div>
+          </div>
         </div>
       </el-card>
     </div>
@@ -72,29 +101,29 @@
         <div class="card-header">
           <span>
             <el-icon><OfficeBuilding /></el-icon>
-            企业基本信息
+            {{ t('invoice.companyInfo') }}
           </span>
         </div>
       </template>
       <div class="company-grid">
         <div class="company-item">
-          <span class="label">纳税人识别号：</span>
+          <span class="label">{{ t('invoice.taxNo') }}：</span>
           <span class="value code">{{ companyInfo.taxNo }}</span>
         </div>
         <div class="company-item">
-          <span class="label">统一社会信用代码：</span>
+          <span class="label">{{ t('invoice.creditCode') }}：</span>
           <span class="value code">{{ companyInfo.creditCode }}</span>
         </div>
         <div class="company-item">
-          <span class="label">企业名称：</span>
+          <span class="label">{{ t('invoice.companyName') }}：</span>
           <span class="value">{{ companyInfo.companyName }}</span>
         </div>
         <div class="company-item">
-          <span class="label">企业类型：</span>
+          <span class="label">{{ t('invoice.companyType') }}：</span>
           <el-tag type="info">{{ companyInfo.companyType }}</el-tag>
         </div>
         <div class="company-item">
-          <span class="label">申请日期：</span>
+          <span class="label">{{ t('invoice.applyDate') }}：</span>
           <span class="value">{{ companyInfo.applyDate }}</span>
         </div>
       </div>
@@ -106,56 +135,56 @@
         <div class="card-header">
           <span>
             <el-icon><List /></el-icon>
-            发票明细
-            <el-tag type="primary" size="small">{{ tableData.length }} 条</el-tag>
+            {{ t('invoice.invoiceDetail') }}
+            <el-tag type="primary" size="small">{{ tableData.length }} {{ t('invoice.records') }}</el-tag>
           </span>
         </div>
       </template>
 
       <el-table :data="tableData" stripe border :max-height="600" v-loading="loading">
         <el-table-column type="index" width="60" label="#" align="center" />
-        <el-table-column prop="invoiceNo" label="发票号码" width="140" align="center">
+        <el-table-column prop="invoiceNo" :label="t('invoice.invoiceNo')" width="140" align="center">
           <template #default="{ row }">
             <span class="invoice-no">{{ row.invoiceNo }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="invoiceType" label="发票类型" width="100" align="center">
+        <el-table-column prop="invoiceType" :label="t('invoice.invoiceType')" width="100" align="center">
           <template #default="{ row }">
             <el-tag :type="row.invoiceType === '销项' ? 'success' : 'warning'" size="small">
               {{ row.invoiceType }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="invoiceStatus" label="状态" width="80" align="center">
+        <el-table-column prop="invoiceStatus" :label="t('invoice.invoiceStatus')" width="80" align="center">
           <template #default="{ row }">
             <el-tag :type="getStatusType(row.invoiceStatus)" size="small">
               {{ row.invoiceStatus }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="companyName" label="企业名称" min-width="180" show-overflow-tooltip />
-        <el-table-column prop="creditCode" label="统一社会信用代码" width="200" align="center">
+        <el-table-column prop="companyName" :label="t('invoice.companyName')" min-width="180" show-overflow-tooltip />
+        <el-table-column prop="creditCode" :label="t('invoice.creditCode')" width="200" align="center">
           <template #default="{ row }">
             <span class="code">{{ row.creditCode }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="invoiceDate" label="开票日期" width="120" align="center" />
-        <el-table-column prop="taxExclusiveAmount" label="不含税金额" width="140" align="right">
+        <el-table-column prop="invoiceDate" :label="t('invoice.invoiceDate')" width="120" align="center" />
+        <el-table-column prop="taxExclusiveAmount" :label="t('invoice.taxExclusiveAmount')" width="140" align="right">
           <template #default="{ row }">
             <span class="amount">¥ {{ formatNumber(row.taxExclusiveAmount) }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="taxAmount" label="税额" width="120" align="right">
+        <el-table-column prop="taxAmount" :label="t('invoice.taxAmount')" width="120" align="right">
           <template #default="{ row }">
             <span class="amount tax">¥ {{ formatNumber(row.taxAmount) }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="totalAmount" label="价税合计" width="140" align="right">
+        <el-table-column prop="totalAmount" :label="t('invoice.totalAmount')" width="140" align="right">
           <template #default="{ row }">
             <span class="amount total">¥ {{ formatNumber(row.totalAmount) }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="collectTime" label="采集时间" width="160" align="center">
+        <el-table-column prop="collectTime" :label="t('invoice.collectTime')" width="160" align="center">
           <template #default="{ row }">
             {{ formatDate(row.collectTime) }}
           </template>
@@ -164,10 +193,10 @@
     </el-card>
 
     <!-- 空状态 -->
-    <el-empty v-if="!loading && tableData.length === 0" description="暂无发票数据">
+    <el-empty v-if="!loading && tableData.length === 0" :description="t('invoice.noData')">
       <el-button type="primary" @click="handleCollect">
         <el-icon><Refresh /></el-icon>
-        立即采集
+        {{ t('invoice.collectNow') }}
       </el-button>
     </el-empty>
   </div>
@@ -175,13 +204,16 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Document, Refresh, Delete, List, Money, Coin,
-  TrendCharts, OfficeBuilding
+  TrendCharts, OfficeBuilding, Top
 } from '@element-plus/icons-vue'
 
 import { apiGet, apiPost, apiDelete } from '../../utils/api.js'
+
+const { t } = useI18n()
 
 const loading = ref(false)
 const collecting = ref(false)
@@ -191,7 +223,8 @@ const stats = reactive({
   totalCount: 0,
   taxExclusiveTotal: 0,
   taxTotal: 0,
-  amountTotal: 0
+  amountTotal: 0,
+  normalCount: 0
 })
 
 // 格式化数字
@@ -229,8 +262,10 @@ const loadData = async () => {
         stats.taxExclusiveTotal = tableData.value.reduce((sum, item) => sum + (item.taxExclusiveAmount || 0), 0)
         stats.taxTotal = tableData.value.reduce((sum, item) => sum + (item.taxAmount || 0), 0)
         stats.amountTotal = tableData.value.reduce((sum, item) => sum + (item.totalAmount || 0), 0)
+        // 统计正常发票数量
+        stats.normalCount = tableData.value.filter(item => '正常' === item.invoiceStatus).length
 
-        // 从第一条数据获取企业信息
+        // 从第一条数据获取企业信息（最近采集的数据）
         const first = tableData.value[0]
         companyInfo.value = {
           taxNo: first.taxNo,
@@ -241,10 +276,11 @@ const loadData = async () => {
         }
       } else {
         companyInfo.value = null
+        stats.normalCount = 0
       }
     }
   } catch (error) {
-    ElMessage.error('加载数据失败')
+    ElMessage.error(t('invoice.loadFailed'))
   } finally {
     loading.value = false
   }
@@ -256,13 +292,13 @@ const handleCollect = async () => {
   try {
     const result = await apiPost('/invoice/collect', { collectName: '企业发票数据采集' })
     if (result.code === 0) {
-      ElMessage.success('数据采集完成')
+      ElMessage.success(t('invoice.collectComplete'))
       await loadData()
     } else {
-      ElMessage.error(result.message || '采集失败')
+      ElMessage.error(result.message || t('invoice.collectFailed'))
     }
   } catch (error) {
-    ElMessage.error('采集失败，请检查目标网页是否可访问')
+    ElMessage.error(t('invoice.checkTarget'))
   } finally {
     collecting.value = false
   }
@@ -271,23 +307,24 @@ const handleCollect = async () => {
 // 清空数据
 const handleClear = async () => {
   try {
-    await ElMessageBox.confirm('确定要清空所有发票数据吗？', '警告', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
+    await ElMessageBox.confirm(t('invoice.confirmClear'), t('invoice.warning'), {
+      confirmButtonText: t('invoice.confirm'),
+      cancelButtonText: t('invoice.cancel'),
       type: 'warning'
     })
 
     const result = await apiDelete('/invoice/clear')
     if (result.code === 0) {
-      ElMessage.success('数据已清空')
+      ElMessage.success(t('invoice.dataCleared'))
       tableData.value = []
       companyInfo.value = null
       stats.totalCount = 0
       stats.taxExclusiveTotal = 0
       stats.taxTotal = 0
       stats.amountTotal = 0
+      stats.normalCount = 0
     } else {
-      ElMessage.error(result.message || '清空失败')
+      ElMessage.error(result.message || t('invoice.clearFailed'))
     }
   } catch {
     // 用户取消
@@ -299,12 +336,12 @@ const exportData = async () => {
   try {
     const exportData = tableData.value
     if (exportData.length === 0) {
-      ElMessage.warning('没有可导出的数据')
+      ElMessage.warning(t('invoice.noExportData'))
       return
     }
 
     // 构建CSV内容
-    const headers = ['序号', '发票号码', '发票类型', '状态', '企业名称', '统一社会信用代码', '开票日期', '不含税金额', '税额', '价税合计', '采集时间']
+    const headers = [t('invoice.index'), t('invoice.invoiceNo'), t('invoice.invoiceType'), t('invoice.invoiceStatus'), t('invoice.companyName'), t('invoice.creditCode'), t('invoice.invoiceDate'), t('invoice.taxExclusiveAmount'), t('invoice.taxAmount'), t('invoice.totalAmount'), t('invoice.collectTime')]
     const rows = exportData.map((item, index) => [
       index + 1,
       item.invoiceNo || '-',
@@ -331,15 +368,15 @@ const exportData = async () => {
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `企业发票数据_${new Date().toISOString().split('T')[0]}.csv`
+    link.download = `${t('invoice.title')}_${new Date().toISOString().split('T')[0]}.csv`
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
 
-    ElMessage.success(`已导出 ${exportData.length} 条记录`)
+    ElMessage.success(t('invoice.exported', { count: exportData.length }))
   } catch {
-    ElMessage.error('导出失败')
+    ElMessage.error(t('invoice.exportFailed'))
   }
 }
 
@@ -390,55 +427,173 @@ onMounted(() => {
 }
 
 .stat-card {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.stat-card-inner {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 16px;
+  position: relative;
+  z-index: 1;
+}
+
+.stat-icon-wrapper {
+  flex-shrink: 0;
+}
+
+.stat-icon-wrapper.highlight {
+  position: relative;
+}
+
+.stat-icon-wrapper.highlight::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 70px;
+  height: 70px;
+  background: linear-gradient(135deg, rgba(250, 139, 32, 0.2) 0%, rgba(247, 183, 51, 0.1) 100%);
+  border-radius: 50%;
+  z-index: -1;
 }
 
 .stat-icon {
-  width: 56px;
-  height: 56px;
+  width: 52px;
+  height: 52px;
   border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 28px;
+  font-size: 24px;
+  color: white;
 }
 
 .stat-icon.collect {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
 }
 
 .stat-icon.amount {
   background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-  color: white;
 }
 
 .stat-icon.tax {
   background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
-  color: white;
 }
 
 .stat-icon.total {
   background: linear-gradient(135deg, #fc4a1a 0%, #f7b733 100%);
-  color: white;
+  font-size: 28px;
 }
 
-.stat-info {
+.stat-content {
   flex: 1;
+  min-width: 0;
 }
 
 .stat-value {
-  font-size: 24px;
-  font-weight: 600;
+  font-size: 22px;
+  font-weight: 700;
   color: #303133;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stat-value.success {
+  color: #11998e;
+}
+
+.stat-value.warning {
+  color: #e6a23c;
+}
+
+.stat-value.highlight {
+  color: #fc4a1a;
+  font-size: 24px;
+  background: linear-gradient(135deg, #fc4a1a 0%, #f7b733 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .stat-label {
-  font-size: 14px;
+  font-size: 13px;
   color: #909399;
   margin-top: 4px;
+}
+
+.stat-sub {
+  font-size: 12px;
+  color: #c0c4cc;
+  margin-top: 2px;
+}
+
+.stat-trend {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #67c23a;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.stat-trend.up {
+  color: #67c23a;
+}
+
+.stat-trend.down {
+  color: #f56c6c;
+}
+
+.trend-text {
+  color: #909399;
+  margin-left: 4px;
+}
+
+/* 卡片特定样式 */
+.stat-card.total-count::before {
+  content: '';
+  position: absolute;
+  top: -20px;
+  right: -20px;
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.05) 100%);
+  border-radius: 50%;
+}
+
+.stat-card.amount-total::before {
+  content: '';
+  position: absolute;
+  top: -30px;
+  right: -30px;
+  width: 100px;
+  height: 100px;
+  background: linear-gradient(135deg, rgba(252, 74, 26, 0.08) 0%, rgba(247, 183, 51, 0.04) 100%);
+  border-radius: 50%;
+}
+
+/* 响应式调整 */
+@media (max-width: 1200px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .company-card {

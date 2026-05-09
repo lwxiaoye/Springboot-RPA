@@ -5,14 +5,14 @@
       <div class="header-content">
         <h2 class="page-title">
           <el-icon><MagicStick /></el-icon>
-          AI智能代码生成
+          {{ t('aiCode.title') }}
         </h2>
-        <p class="page-subtitle">描述您的需求，AI为您生成专业的RPA机器人代码</p>
+        <p class="page-subtitle">{{ t('aiCode.subtitle') }}</p>
       </div>
       <div class="header-actions">
         <el-button @click="goBack">
           <el-icon><ArrowLeft /></el-icon>
-          返回机器人管理
+          {{ t('aiCode.backToRobotManage') }}
         </el-button>
       </div>
     </div>
@@ -25,7 +25,7 @@
           <div class="card-header">
             <h3>
               <el-icon><Monitor /></el-icon>
-              机器人分类
+              {{ t('aiCode.robotCategory') }}
             </h3>
           </div>
           <div class="category-options">
@@ -36,8 +36,8 @@
               @click="configForm.robotCategory = cat.code"
             >
               <el-icon><component :is="cat.icon" /></el-icon>
-              <span class="cat-name">{{ cat.name }}</span>
-              <span class="cat-desc">{{ cat.description }}</span>
+              <span class="cat-name">{{ t(cat.nameKey) }}</span>
+              <span class="cat-desc">{{ t(cat.descKey) }}</span>
             </div>
           </div>
         </div>
@@ -47,82 +47,82 @@
           <div class="card-header">
             <h3>
               <el-icon><Setting /></el-icon>
-              {{ getCategoryName(configForm.robotCategory) }}配置
+              {{ getCategoryName(configForm.robotCategory) }}{{ t('aiCode.config') }}
             </h3>
           </div>
           <el-form :model="configForm" label-width="90px" class="config-form">
             <!-- 采集场景 -->
             <template v-if="configForm.robotCategory === 'DATA_COLLECT'">
-              <el-form-item label="采集场景" required>
-                <el-select v-model="configForm.scene" placeholder="选择采集场景" style="width: 100%" @change="onSceneChange">
-                  <el-option label="发票数据采集" value="invoice" />
-                  <el-option label="订单数据采集" value="order" />
-                  <el-option label="企业信息采集" value="company" />
-                  <el-option label="商品信息采集" value="product" />
-                  <el-option label="通用数据采集" value="general" />
+              <el-form-item :label="t('aiCode.collectScene')" required>
+                <el-select v-model="configForm.scene" :placeholder="t('aiCode.selectCollectScene')" style="width: 100%" @change="onSceneChange">
+                  <el-option :label="t('aiCode.invoiceCollect')" value="invoice" />
+                  <el-option :label="t('aiCode.orderCollect')" value="order" />
+                  <el-option :label="t('aiCode.companyCollect')" value="company" />
+                  <el-option :label="t('aiCode.productCollect')" value="product" />
+                  <el-option :label="t('aiCode.generalCollect')" value="general" />
                 </el-select>
               </el-form-item>
-              <el-form-item label="目标URL" required>
-                <el-input v-model="configForm.url" placeholder="请输入目标网页URL" clearable />
+              <el-form-item :label="t('aiCode.targetUrl')" required>
+                <el-input v-model="configForm.url" :placeholder="t('aiCode.enterTargetUrl')" clearable />
               </el-form-item>
-              <el-form-item label="表格选择器">
-                <el-input v-model="configForm.tableSelector" placeholder="CSS选择器，如: #invoice-table tbody tr" clearable />
+              <el-form-item :label="t('aiCode.tableSelector')">
+                <el-input v-model="configForm.tableSelector" :placeholder="t('aiCode.tableSelectorPlaceholder')" clearable />
               </el-form-item>
             </template>
 
             <!-- 解析场景 -->
             <template v-else-if="configForm.robotCategory === 'DATA_PARSE'">
-              <el-form-item label="解析场景" required>
-                <el-select v-model="configForm.scene" placeholder="选择解析场景" style="width: 100%">
-                  <el-option label="HTML表格解析" value="parse-html" />
-                  <el-option label="JSON数据解析" value="parse-json" />
-                  <el-option label="XML数据解析" value="parse-xml" />
-                  <el-option label="CSV数据解析" value="parse-csv" />
+              <el-form-item :label="t('aiCode.parseScene')" required>
+                <el-select v-model="configForm.scene" :placeholder="t('aiCode.selectParseScene')" style="width: 100%">
+                  <el-option :label="t('aiCode.htmlParse')" value="parse-html" />
+                  <el-option :label="t('aiCode.jsonParse')" value="parse-json" />
+                  <el-option :label="t('aiCode.xmlParse')" value="parse-xml" />
+                  <el-option :label="t('aiCode.csvParse')" value="parse-csv" />
                 </el-select>
               </el-form-item>
-              <el-form-item label="数据来源">
-                <el-input v-model="configForm.url" placeholder="输入URL或文件路径" clearable />
+              <el-form-item :label="t('aiCode.dataSource')">
+                <el-input v-model="configForm.url" :placeholder="t('aiCode.inputUrlOrPath')" clearable />
               </el-form-item>
-              <el-form-item label="解析规则">
-                <el-input v-model="configForm.columns" type="textarea" :rows="3" placeholder="输入解析规则，如: $.data.items[*]" />
+              <el-form-item :label="t('aiCode.parseRule')">
+                <el-input v-model="configForm.columns" type="textarea" :rows="3" :placeholder="t('aiCode.parseRulePlaceholder')" />
               </el-form-item>
             </template>
 
             <!-- 加工场景 -->
             <template v-else-if="configForm.robotCategory === 'DATA_PROCESS'">
-              <el-form-item label="加工场景" required>
-                <el-select v-model="configForm.scene" placeholder="选择加工场景" style="width: 100%">
-                  <el-option label="数据清洗" value="clean" />
-                  <el-option label="格式转换" value="transform" />
-                  <el-option label="数据校验" value="validate" />
-                  <el-option label="数据去重" value="dedup" />
+              <el-form-item :label="t('aiCode.processScene')" required>
+                <el-select v-model="configForm.scene" :placeholder="t('aiCode.selectProcessScene')" style="width: 100%">
+                  <el-option :label="t('aiCode.dataClean')" value="clean" />
+                  <el-option :label="t('aiCode.formatTransform')" value="transform" />
+                  <el-option :label="t('aiCode.dataValidate')" value="validate" />
+                  <el-option :label="t('aiCode.dataDedup')" value="dedup" />
                 </el-select>
               </el-form-item>
-              <el-form-item label="处理选项">
+              <el-form-item :label="t('aiCode.processOptions')">
                 <el-checkbox-group v-model="configForm.processSteps">
-                  <el-checkbox label="clean">数据清洗</el-checkbox>
-                  <el-checkbox label="dedup">去重处理</el-checkbox>
-                  <el-checkbox label="validate">数据校验</el-checkbox>
-                  <el-checkbox label="transform">格式转换</el-checkbox>
+                  <el-checkbox label="clean">{{ t('aiCode.dataClean') }}</el-checkbox>
+                  <el-checkbox label="dedup">{{ t('aiCode.dedupProcess') }}</el-checkbox>
+                  <el-checkbox label="validate">{{ t('aiCode.dataValidate') }}</el-checkbox>
+                  <el-checkbox label="transform">{{ t('aiCode.formatTransform') }}</el-checkbox>
                 </el-checkbox-group>
               </el-form-item>
-              <el-form-item v-if="configForm.processSteps.includes('validate')" label="校验规则">
-                <el-input v-model="configForm.validateRules" placeholder="如: mobile=手机号,email=邮箱" />
+              <el-form-item v-if="configForm.processSteps.includes('validate')" :label="t('aiCode.validateRule')">
+                <el-input v-model="configForm.validateRules" :placeholder="t('aiCode.validateRulePlaceholder')" />
               </el-form-item>
-              <el-form-item v-if="configForm.processSteps.includes('transform')" label="转换规则">
-                <el-input v-model="configForm.transformRules" placeholder="如: date=yyyy-MM-dd,amount=2位小数" />
+              <el-form-item v-if="configForm.processSteps.includes('transform')" :label="t('aiCode.transformRule')">
+                <el-input v-model="configForm.transformRules" :placeholder="t('aiCode.transformRulePlaceholder')" />
               </el-form-item>
             </template>
 
             <!-- 通用场景 -->
             <template v-else>
-              <el-form-item label="执行场景" required>
-                <el-select v-model="configForm.scene" placeholder="选择执行场景" style="width: 100%">
-                  <el-option label="通用数据采集" value="general" />
+              <el-form-item :label="t('aiCode.executeScene')" required>
+                <el-select v-model="configForm.scene" :placeholder="t('aiCode.selectExecuteScene')" style="width: 100%">
+                  <el-option :label="t('aiCode.generalCollect')" value="general" />
                 </el-select>
               </el-form-item>
-              <el-form-item label="目标URL">
-                <el-input v-model="configForm.url" placeholder="请输入目标网页URL" clearable />
+              <el-form-item :label="t('aiCode.targetUrl')">
+                <el-input v-model="configForm.url" :placeholder="t('aiCode.enterTargetUrl')" clearable />
               </el-form-item>
             </template>
 
@@ -130,23 +130,23 @@
             <template v-if="configForm.robotCategory === 'DATA_COLLECT'">
               <el-divider content-position="left">
                 <el-icon><FolderOpened /></el-icon>
-                落库配置
+                {{ t('aiCode.storageConfig') }}
               </el-divider>
-              <el-form-item label="目标数据表" required>
-                <el-select v-model="configForm.targetTable" placeholder="选择落库目标表" style="width: 100%">
-                  <el-option label="发票数据表 (invoice_data)" value="invoice_data" />
-                  <el-option label="订单数据表 (order_data)" value="order_data" />
-                  <el-option label="客户数据表 (customer_data)" value="customer_data" />
-                  <el-option label="商品数据表 (product_data)" value="product_data" />
-                  <el-option label="财务报表表 (report_data)" value="report_data" />
-                  <el-option label="自定义表" value="custom" />
+              <el-form-item :label="t('aiCode.targetTable')" required>
+                <el-select v-model="configForm.targetTable" :placeholder="t('aiCode.selectTargetTable')" style="width: 100%">
+                  <el-option :label="t('aiCode.invoiceTable')" value="invoice_data" />
+                  <el-option :label="t('aiCode.orderTable')" value="order_data" />
+                  <el-option :label="t('aiCode.customerTable')" value="customer_data" />
+                  <el-option :label="t('aiCode.productTable')" value="product_data" />
+                  <el-option :label="t('aiCode.reportTable')" value="report_data" />
+                  <el-option :label="t('aiCode.customTable')" value="custom" />
                 </el-select>
               </el-form-item>
-              <el-form-item v-if="configForm.targetTable === 'custom'" label="自定义表名">
-                <el-input v-model="configForm.customTable" placeholder="请输入自定义表名" />
+              <el-form-item v-if="configForm.targetTable === 'custom'" :label="t('aiCode.customTableName')">
+                <el-input v-model="configForm.customTable" :placeholder="t('aiCode.enterCustomTableName')" />
               </el-form-item>
               <el-form-item>
-                <el-checkbox v-model="configForm.autoDetectColumns">自动检测表格列名</el-checkbox>
+                <el-checkbox v-model="configForm.autoDetectColumns">{{ t('aiCode.autoDetectColumns') }}</el-checkbox>
               </el-form-item>
             </template>
           </el-form>
@@ -157,7 +157,7 @@
           <div class="card-header">
             <h3>
               <el-icon><ChatLineRound /></el-icon>
-              需求描述
+              {{ t('aiCode.requirementDesc') }}
             </h3>
           </div>
           <div class="prompt-section">
@@ -165,7 +165,7 @@
               v-model="userPrompt"
               type="textarea"
               :rows="4"
-              placeholder="请描述您的采集需求，例如：采集某网站发票信息，包含发票号码、金额、日期等字段..."
+              :placeholder="t('aiCode.promptPlaceholder')"
               class="prompt-input"
             />
             <div class="prompt-actions">
@@ -176,7 +176,7 @@
                 size="default"
               >
                 <el-icon><MagicStick /></el-icon>
-                AI优化提示词
+                {{ t('aiCode.optimizePrompt') }}
               </el-button>
             </div>
 
@@ -184,10 +184,10 @@
             <div v-if="optimizedPrompt" class="optimized-prompt-section">
               <div class="optimized-header">
                 <el-icon><Clock /></el-icon>
-                <span>AI优化后的需求描述</span>
+                <span>{{ t('aiCode.optimizedPrompt') }}</span>
                 <el-button text size="small" @click="useOptimizedPrompt">
                   <el-icon><Edit /></el-icon>
-                  使用此描述
+                  {{ t('aiCode.useThisDesc') }}
                 </el-button>
               </div>
               <div class="optimized-content">
@@ -207,7 +207,7 @@
               class="generate-btn"
             >
               <el-icon><MagicStick /></el-icon>
-              根据需求描述生成代码
+              {{ t('aiCode.generateCodeFromDesc') }}
             </el-button>
           </div>
         </div>
@@ -219,16 +219,16 @@
           <div class="card-header">
             <h3>
               <el-icon><Document /></el-icon>
-              生成的代码
+              {{ t('aiCode.generatedCode') }}
             </h3>
             <div class="card-actions">
               <el-button size="small" @click="copyCode" :disabled="!generatedCode">
                 <el-icon><DocumentCopy /></el-icon>
-                复制
+                {{ t('common.copy') }}
               </el-button>
               <el-button size="small" @click="previewCode" :disabled="!generatedCode">
                 <el-icon><View /></el-icon>
-                预览
+                {{ t('common.preview') }}
               </el-button>
             </div>
           </div>
@@ -236,8 +236,8 @@
           <div class="code-content">
             <div v-if="!generatedCode" class="code-placeholder">
               <el-icon><Document /></el-icon>
-              <p>配置完成后点击"根据需求描述生成代码"</p>
-              <p class="hint">生成的代码将显示在这里</p>
+              <p>{{ t('aiCode.configThenGenerate') }}</p>
+              <p class="hint">{{ t('aiCode.generatedCodeHere') }}</p>
             </div>
             <pre v-else class="code-block"><code>{{ generatedCode }}</code></pre>
           </div>
@@ -248,29 +248,29 @@
           <div class="card-header">
             <h3>
               <el-icon><InfoFilled /></el-icon>
-              命令说明
+              {{ t('aiCode.commandHelp') }}
             </h3>
           </div>
           <div class="command-list">
             <div class="command-item">
               <code>@collect URL</code>
-              <span>采集网页内容</span>
+              <span>{{ t('aiCode.cmdCollectDesc') }}</span>
             </div>
             <div class="command-item">
               <code>@parse</code>
-              <span>解析HTML/JSON/XML</span>
+              <span>{{ t('aiCode.cmdParseDesc') }}</span>
             </div>
             <div class="command-item">
               <code>@process clean,dedup</code>
-              <span>数据处理步骤</span>
+              <span>{{ t('aiCode.cmdProcessDesc') }}</span>
             </div>
             <div class="command-item">
               <code>@store table_name</code>
-              <span>存储到数据库</span>
+              <span>{{ t('aiCode.cmdStoreDesc') }}</span>
             </div>
             <div class="command-item">
               <code>@log message</code>
-              <span>日志输出</span>
+              <span>{{ t('aiCode.cmdLogDesc') }}</span>
             </div>
           </div>
         </div>
@@ -278,27 +278,27 @@
     </div>
 
     <!-- 代码预览对话框 -->
-    <el-dialog v-model="previewVisible" title="代码预览" width="800px">
+    <el-dialog v-model="previewVisible" :title="t('aiCode.codePreview')" width="800px">
       <el-tabs v-model="activeTab">
-        <el-tab-pane label="完整代码" name="code">
+        <el-tab-pane :label="t('aiCode.fullCode')" name="code">
           <pre class="preview-code">{{ generatedCode }}</pre>
         </el-tab-pane>
-        <el-tab-pane label="命令说明" name="help">
+        <el-tab-pane :label="t('aiCode.commandHelp')" name="help">
           <div class="command-help">
-            <h4>支持的命令：</h4>
+            <h4>{{ t('aiCode.supportedCommands') }}</h4>
             <ul>
-              <li><code>@collect URL</code> - ���集网页内容</li>
-              <li><code>@parse</code> - 解析HTML/JSON/XML</li>
-              <li><code>@process clean,dedup</code> - 数据处理步骤</li>
-              <li><code>@store table_name</code> - 存储到数据库</li>
-              <li><code>@log message</code> - 日志输出</li>
+              <li><code>@collect URL</code> - {{ t('aiCode.cmdCollectDesc') }}</li>
+              <li><code>@parse</code> - {{ t('aiCode.cmdParseDesc') }}</li>
+              <li><code>@process clean,dedup</code> - {{ t('aiCode.cmdProcessDesc') }}</li>
+              <li><code>@store table_name</code> - {{ t('aiCode.cmdStoreDesc') }}</li>
+              <li><code>@log message</code> - {{ t('aiCode.cmdLogDesc') }}</li>
             </ul>
           </div>
         </el-tab-pane>
       </el-tabs>
       <template #footer>
-        <el-button @click="previewVisible = false">关闭</el-button>
-        <el-button type="primary" @click="copyCode">复制代码</el-button>
+        <el-button @click="previewVisible = false">{{ t('common.close') }}</el-button>
+        <el-button type="primary" @click="copyCode">{{ t('aiCode.copyCode') }}</el-button>
       </template>
     </el-dialog>
   </div>
@@ -307,6 +307,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   MagicStick, Setting, Document, ChatLineRound,
@@ -316,15 +317,17 @@ import {
 } from '@element-plus/icons-vue'
 import { apiPost } from '../../utils/api.js'
 
+const { t } = useI18n()
+
 const router = useRouter()
 const route = useRoute()
 
 // 机器人分类选项
 const categoryOptions = [
-  { code: 'DATA_COLLECT', name: '数据采集', icon: 'Download', description: '采集网页数据' },
-  { code: 'DATA_PARSE', name: '数据解析', icon: 'Document', description: '解析HTML/JSON/XML' },
-  { code: 'DATA_PROCESS', name: '数据加工', icon: 'Cpu', description: '数据清洗转换' },
-  { code: 'GENERAL', name: '通用执行', icon: 'Connection', description: '通用任务执行' }
+  { code: 'DATA_COLLECT', nameKey: 'aiCode.categoryCollect', icon: 'Download', descKey: 'aiCode.categoryCollectDesc' },
+  { code: 'DATA_PARSE', nameKey: 'aiCode.categoryParse', icon: 'Document', descKey: 'aiCode.categoryParseDesc' },
+  { code: 'DATA_PROCESS', nameKey: 'aiCode.categoryProcess', icon: 'Cpu', descKey: 'aiCode.categoryProcessDesc' },
+  { code: 'GENERAL', nameKey: 'aiCode.categoryGeneral', icon: 'Connection', descKey: 'aiCode.categoryGeneralDesc' }
 ]
 
 // 分类到场景的映射
@@ -377,7 +380,7 @@ const canGenerate = computed(() => {
 // 获取分类名称
 const getCategoryName = (code) => {
   const cat = categoryOptions.find(c => c.code === code)
-  return cat ? cat.name : code
+  return cat ? t(cat.nameKey) : code
 }
 
 // 分类切换
@@ -435,7 +438,7 @@ const onSceneChange = (scene) => {
 // AI优化提示词
 const optimizePrompt = async () => {
   if (!userPrompt.value.trim()) {
-    ElMessage.warning('请输入需求描述')
+    ElMessage.warning(t('aiCode.enterPromptDesc'))
     return
   }
 
@@ -449,9 +452,9 @@ const optimizePrompt = async () => {
 
     optimizedPrompt.value = response.data.optimizedPrompt
     hasOptimizedPrompt.value = true
-    ElMessage.success('提示词优化完成')
+    ElMessage.success(t('aiCode.promptOptimized'))
   } catch (error) {
-    ElMessage.error('AI优化失败：' + (error.message || '未知错误'))
+    ElMessage.error(t('aiCode.aiOptimizeFailed') + (error.message || t('aiCode.unknownError')))
   } finally {
     optimizingPrompt.value = false
   }
@@ -461,13 +464,13 @@ const optimizePrompt = async () => {
 const acceptPrompt = () => {
   userPrompt.value = optimizedPrompt.value
   hasOptimizedPrompt.value = false
-  ElMessage.success('已采用优化提示词')
+  ElMessage.success(t('aiCode.adoptedOptimizedPrompt'))
 }
 
 // 生成代码
 const generateCode = async () => {
   if (!canGenerate.value) {
-    ElMessage.warning('请选择场景')
+    ElMessage.warning(t('aiCode.selectScene'))
     return
   }
 
@@ -494,13 +497,13 @@ const generateCode = async () => {
 
     if (response.code === 0 && response.data) {
       generatedCode.value = response.data.code || response.data
-      ElMessage.success('代码生成成功！')
+      ElMessage.success(t('aiCode.codeGenerated'))
     } else {
-      throw new Error(response.message || '生成失败')
+      throw new Error(response.message || t('aiCode.generateFailed'))
     }
   } catch (error) {
     generatedCode.value = generateCodeLocally()
-    ElMessage.warning('使用本地模板生成')
+    ElMessage.warning(t('aiCode.usingLocalTemplate'))
   } finally {
     generatingCode.value = false
   }
@@ -550,12 +553,12 @@ const generateCodeLocally = () => {
 // 复制代码
 const copyCode = () => {
   if (!generatedCode.value) {
-    ElMessage.warning('暂无代码可复制')
+    ElMessage.warning(t('aiCode.noCodeToCopy'))
     return
   }
   navigator.clipboard.writeText(generatedCode.value)
-    .then(() => ElMessage.success('已复制到剪贴板'))
-    .catch(() => ElMessage.error('复制失败'))
+    .then(() => ElMessage.success(t('aiCode.copiedToClipboard')))
+    .catch(() => ElMessage.error(t('aiCode.copyFailed')))
 }
 
 // 预览代码
@@ -571,7 +574,7 @@ const previewCodeCompat = () => {
 // 应用代码到机器人
 const applyCode = () => {
   if (!generatedCode.value) {
-    ElMessage.warning('暂无代码可应用')
+    ElMessage.warning(t('aiCode.noCodeToApply'))
     return
   }
   localStorage.setItem('aiGeneratedCode', generatedCode.value)
@@ -582,7 +585,7 @@ const applyCode = () => {
 // 使用优化后的提示词
 const useOptimizedPrompt = () => {
   userPrompt.value = optimizedPrompt.value
-  ElMessage.success('已使用优化后的描述')
+  ElMessage.success(t('aiCode.usedOptimizedDesc'))
 }
 
 // 跳转到注册机器人
@@ -602,10 +605,10 @@ const goBack = () => {
 
 // 模板选项
 const templateOptions = [
-  { code: 'collect', name: '数据采集', description: '网页数据采集模板' },
-  { code: 'parse', name: '数据解析', description: 'HTML/JSON解析模板' },
-  { code: 'process', name: '数据加工', description: '数据清洗转换模板' },
-  { code: 'store', name: '数据落库', description: '数据库存储模板' }
+  { code: 'collect', name: t('aiCode.templateCollect'), description: t('aiCode.templateCollectDesc') },
+  { code: 'parse', name: t('aiCode.templateParse'), description: t('aiCode.templateParseDesc') },
+  { code: 'process', name: t('aiCode.templateProcess'), description: t('aiCode.templateProcessDesc') },
+  { code: 'store', name: t('aiCode.templateStore'), description: t('aiCode.templateStoreDesc') }
 ]
 
 onMounted(() => {

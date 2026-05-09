@@ -1,96 +1,96 @@
 <template>
   <div class="distributed-lock-page">
     <div class="page-header">
-      <h2>分布式锁管理</h2>
-      <p class="page-desc">管理集群环境下的分布式锁，支持任务抢锁、集群协调等场景</p>
+      <h2>{{ t('lock.title') }}</h2>
+      <p class="page-desc">{{ t('lock.pageDesc') }}</p>
     </div>
 
     <!-- 统计信息 -->
     <div class="stats-row">
       <div class="stat-box">
         <span class="stat-num">{{ stats.totalLocks }}</span>
-        <span class="stat-label">锁总数</span>
+        <span class="stat-label">{{ t('lock.totalLocks') }}</span>
       </div>
       <div class="stat-box primary">
         <span class="stat-num">{{ stats.activeLocks }}</span>
-        <span class="stat-label">活跃锁</span>
+        <span class="stat-label">{{ t('lock.activeLocks') }}</span>
       </div>
       <div class="stat-box success">
         <span class="stat-num">{{ stats.acquired }}</span>
-        <span class="stat-label">已获取</span>
+        <span class="stat-label">{{ t('lock.acquired') }}</span>
       </div>
       <div class="stat-box warning">
         <span class="stat-num">{{ stats.waiting }}</span>
-        <span class="stat-label">等待中</span>
+        <span class="stat-label">{{ t('lock.waiting') }}</span>
       </div>
     </div>
 
     <div class="toolbar">
       <div class="search-box">
         <el-icon><Search /></el-icon>
-        <input v-model="searchKeyword" placeholder="搜索锁名称或持有者..." />
+        <input v-model="searchKeyword" :placeholder="t('lock.lockNamePlaceholder')" />
       </div>
-      <el-select v-model="typeFilter" placeholder="锁类型" clearable style="width: 120px;">
-        <el-option label="任务锁" value="TASK" />
-        <el-option label="资源锁" value="RESOURCE" />
-        <el-option label="集群锁" value="CLUSTER" />
+      <el-select v-model="typeFilter" :placeholder="t('lock.lockType')" clearable style="width: 120px;">
+        <el-option :label="t('lock.typeTask')" value="TASK" />
+        <el-option :label="t('lock.typeResource')" value="RESOURCE" />
+        <el-option :label="t('lock.typeCluster')" value="CLUSTER" />
       </el-select>
       <el-button type="primary" @click="showAcquireDialog">
-        <el-icon><Plus /></el-icon> 获取锁
+        <el-icon><Plus /></el-icon> {{ t('lock.acquireLock') }}
       </el-button>
       <el-button @click="refreshList">
-        <el-icon><Refresh /></el-icon> 刷新
+        <el-icon><Refresh /></el-icon> {{ t('lock.refresh') }}
       </el-button>
     </div>
 
     <!-- 活跃锁列表 -->
     <el-table :data="paginatedLocks" v-loading="loading" border stripe :default-sort="{ prop: 'acquireTime', order: 'descending' }">
-      <el-table-column type="index" label="序号" width="60" align="center" />
-      <el-table-column prop="lockName" label="锁名称" min-width="150">
+      <el-table-column type="index" :label="t('lock.index')" width="60" align="center" />
+      <el-table-column prop="lockName" :label="t('lock.lockName')" min-width="150">
         <template #default="{ row }">
           <span class="lock-name">{{ row.lockName }}</span>
         </template>
       </el-table-column>
-      <el-table-column prop="type" label="类型" width="100" align="center">
+      <el-table-column prop="type" :label="t('lock.lockType')" width="100" align="center">
         <template #default="{ row }">
           <el-tag size="small" :type="getTypeTag(row.type)">{{ getTypeText(row.type) }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="holder" label="持有者" width="120">
+      <el-table-column prop="holder" :label="t('lock.holder')" width="120">
         <template #default="{ row }">
           <el-tag v-if="row.holder" size="small" type="success">{{ row.holder }}</el-tag>
           <span v-else class="text-muted">-</span>
         </template>
       </el-table-column>
-      <el-table-column prop="status" label="状态" width="100" align="center">
+      <el-table-column prop="status" :label="t('lock.status')" width="100" align="center">
         <template #default="{ row }">
           <el-tag :type="row.status === 'ACQUIRED' ? 'success' : row.status === 'WAITING' ? 'warning' : 'info'" size="small">
-            {{ row.status === 'ACQUIRED' ? '已获取' : row.status === 'WAITING' ? '等待中' : '已释放' }}
+            {{ row.status === 'ACQUIRED' ? t('lock.statusAcquired') : row.status === 'WAITING' ? t('lock.statusWaiting') : t('lock.statusReleased') }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="acquireTime" label="获取时间" width="160">
+      <el-table-column prop="acquireTime" :label="t('lock.acquireTime')" width="160">
         <template #default="{ row }">
           {{ formatDate(row.acquireTime) }}
         </template>
       </el-table-column>
-      <el-table-column prop="expireTime" label="过期时间" width="160">
+      <el-table-column prop="expireTime" :label="t('lock.expireTime')" width="160">
         <template #default="{ row }">
           <span :class="isExpiring(row.expireTime) ? 'text-warning' : ''">
             {{ formatDate(row.expireTime) }}
           </span>
         </template>
       </el-table-column>
-      <el-table-column prop="ttl" label="剩余TTL" width="100" align="center">
+      <el-table-column prop="ttl" :label="t('lock.ttl')" width="100" align="center">
         <template #default="{ row }">
           <span :class="row.ttl < 10 ? 'text-danger' : ''">{{ row.ttl }}s</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="180" fixed="right" align="center">
+      <el-table-column :label="t('lock.actions')" width="180" fixed="right" align="center">
         <template #default="{ row }">
-          <el-button link type="primary" @click="renewLock(row)" :disabled="row.status !== 'ACQUIRED'">续期</el-button>
-          <el-button link type="danger" @click="releaseLock(row)" :disabled="row.status !== 'ACQUIRED'">释放</el-button>
-          <el-button link type="warning" @click="viewLockDetail(row)">详情</el-button>
+          <el-button link type="primary" @click="renewLock(row)" :disabled="row.status !== 'ACQUIRED'">{{ t('lock.renew') }}</el-button>
+          <el-button link type="danger" @click="releaseLock(row)" :disabled="row.status !== 'ACQUIRED'">{{ t('lock.release') }}</el-button>
+          <el-button link type="warning" @click="viewLockDetail(row)">{{ t('lock.detail') }}</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -110,33 +110,33 @@
     <!-- 锁使用统计 -->
     <el-card shadow="hover" style="margin-top: 20px">
       <template #header>
-        <span>锁使用统计</span>
+        <span>{{ t('lock.lockStats') }}</span>
       </template>
       <div class="lock-stats">
         <div class="stat-chart">
-          <div class="chart-title">今日锁操作趋势</div>
+          <div class="chart-title">{{ t('lock.todayTrend') }}</div>
           <div class="simple-chart">
             <div v-for="(val, hour) in lockTrend" :key="hour" class="chart-bar">
               <div class="bar-fill" :style="{ height: (val / maxTrendValue * 100) + '%' }"></div>
-              <div class="bar-label">{{ hour }}时</div>
+              <div class="bar-label">{{ hour }}{{ t('lock.ttlUnit') }}</div>
             </div>
           </div>
         </div>
         <div class="stat-info">
           <div class="info-item">
-            <span class="label">获取成功:</span>
+            <span class="label">{{ t('lock.acquireSuccess') }}:</span>
             <span class="value success">{{ lockStats.acquireSuccess }}</span>
           </div>
           <div class="info-item">
-            <span class="label">获取失败:</span>
+            <span class="label">{{ t('lock.acquireFailed') }}:</span>
             <span class="value danger">{{ lockStats.acquireFailed }}</span>
           </div>
           <div class="info-item">
-            <span class="label">平均等待时间:</span>
+            <span class="label">{{ t('lock.avgWaitTime') }}:</span>
             <span class="value">{{ lockStats.avgWaitTime }}ms</span>
           </div>
           <div class="info-item">
-            <span class="label">锁竞争次数:</span>
+            <span class="label">{{ t('lock.contentionCount') }}:</span>
             <span class="value">{{ lockStats.contentionCount }}</span>
           </div>
         </div>
@@ -144,57 +144,57 @@
     </el-card>
 
     <!-- 获取锁对话框 -->
-    <el-dialog v-model="acquireDialogVisible" title="获取分布式锁" width="500px">
+    <el-dialog v-model="acquireDialogVisible" :title="t('lock.acquireDialogTitle')" width="500px">
       <el-form :model="acquireForm" :rules="formRules" ref="formRef" label-width="100px">
-        <el-form-item label="锁名称" prop="lockName">
-          <el-input v-model="acquireForm.lockName" placeholder="如: task_execution_001" />
+        <el-form-item :label="t('lock.lockName')" prop="lockName">
+          <el-input v-model="acquireForm.lockName" :placeholder="t('lock.lockNamePlaceholder')" />
         </el-form-item>
-        <el-form-item label="锁类型" prop="type">
+        <el-form-item :label="t('lock.lockType')" prop="type">
           <el-select v-model="acquireForm.type" style="width: 100%">
-            <el-option label="任务锁" value="TASK" />
-            <el-option label="资源锁" value="RESOURCE" />
-            <el-option label="集群锁" value="CLUSTER" />
+            <el-option :label="t('lock.typeTask')" value="TASK" />
+            <el-option :label="t('lock.typeResource')" value="RESOURCE" />
+            <el-option :label="t('lock.typeCluster')" value="CLUSTER" />
           </el-select>
         </el-form-item>
-        <el-form-item label="持有者" prop="holder">
-          <el-input v-model="acquireForm.holder" placeholder="如: robot-001" />
+        <el-form-item :label="t('lock.holderLabel')" prop="holder">
+          <el-input v-model="acquireForm.holder" :placeholder="t('lock.holderPlaceholder')" />
         </el-form-item>
-        <el-form-item label="TTL" prop="ttl">
+        <el-form-item :label="t('lock.ttlLabel')" prop="ttl">
           <el-input-number v-model="acquireForm.ttl" :min="5" :max="3600" />
-          <span style="margin-left: 10px">秒</span>
+          <span style="margin-left: 10px">{{ t('lock.ttlUnit') }}</span>
         </el-form-item>
-        <el-form-item label="等待超时" prop="waitTime">
+        <el-form-item :label="t('lock.waitTimeout')" prop="waitTime">
           <el-input-number v-model="acquireForm.waitTime" :min="0" :max="300" />
-          <span style="margin-left: 10px">秒 (0表示不等待)</span>
+          <span style="margin-left: 10px">{{ t('lock.waitTimeoutTip') }}</span>
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="acquireDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleAcquireLock" :loading="acquiring">获取锁</el-button>
+        <el-button @click="acquireDialogVisible = false">{{ t('lock.cancel') }}</el-button>
+        <el-button type="primary" @click="handleAcquireLock" :loading="acquiring">{{ t('lock.acquireBtn') }}</el-button>
       </template>
     </el-dialog>
 
     <!-- 锁详情对话框 -->
-    <el-dialog v-model="detailDialogVisible" title="锁详情" width="600px">
+    <el-dialog v-model="detailDialogVisible" :title="t('lock.detailTitle')" width="600px">
       <el-descriptions v-if="currentLock" :column="2" border>
-        <el-descriptions-item label="锁名称">{{ currentLock.lockName }}</el-descriptions-item>
-        <el-descriptions-item label="类型">{{ getTypeText(currentLock.type) }}</el-descriptions-item>
-        <el-descriptions-item label="持有者">{{ currentLock.holder || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="状态">
+        <el-descriptions-item :label="t('lock.lockName')">{{ currentLock.lockName }}</el-descriptions-item>
+        <el-descriptions-item :label="t('lock.lockType')">{{ getTypeText(currentLock.type) }}</el-descriptions-item>
+        <el-descriptions-item :label="t('lock.holder')">{{ currentLock.holder || '-' }}</el-descriptions-item>
+        <el-descriptions-item :label="t('lock.status')">
           <el-tag :type="currentLock.status === 'ACQUIRED' ? 'success' : 'info'" size="small">
             {{ currentLock.status }}
           </el-tag>
         </el-descriptions-item>
-        <el-descriptions-item label="获取时间">{{ formatDate(currentLock.acquireTime) }}</el-descriptions-item>
-        <el-descriptions-item label="过期时间">{{ formatDate(currentLock.expireTime) }}</el-descriptions-item>
-        <el-descriptions-item label="剩余TTL">{{ currentLock.ttl }}秒</el-descriptions-item>
-        <el-descriptions-item label="获取次数">{{ currentLock.acquireCount }}</el-descriptions-item>
+        <el-descriptions-item :label="t('lock.acquireTime')">{{ formatDate(currentLock.acquireTime) }}</el-descriptions-item>
+        <el-descriptions-item :label="t('lock.expireTime')">{{ formatDate(currentLock.expireTime) }}</el-descriptions-item>
+        <el-descriptions-item :label="t('lock.ttl')">{{ currentLock.ttl }}{{ t('lock.seconds') }}</el-descriptions-item>
+        <el-descriptions-item :label="t('lock.acquireCount')">{{ currentLock.acquireCount }}</el-descriptions-item>
       </el-descriptions>
       
-      <el-divider>锁历史</el-divider>
+      <el-divider>{{ t('lock.lockHistory') }}</el-divider>
       <el-timeline>
         <el-timeline-item v-for="(log, index) in lockHistory" :key="index" :timestamp="formatDate(log.time)" placement="top">
-          <p>{{ log.action }} - {{ log.operator || '系统' }}</p>
+          <p>{{ log.action }} - {{ log.operator || t('lock.operator') }}</p>
         </el-timeline-item>
       </el-timeline>
     </el-dialog>
@@ -203,9 +203,12 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { Search, Plus, Refresh } from '@element-plus/icons-vue'
 import { apiGet, apiPost } from '../../utils/api'
+
+const { t } = useI18n()
 
 const loading = ref(false)
 const acquiring = ref(false)
@@ -231,11 +234,11 @@ const acquireForm = reactive({
   waitTime: 10
 })
 
-const formRules = {
-  lockName: [{ required: true, message: '请输入锁名称', trigger: 'blur' }],
-  type: [{ required: true, message: '请选择锁类型', trigger: 'change' }],
-  holder: [{ required: true, message: '请输入持有者', trigger: 'blur' }]
-}
+const formRules = computed(() => ({
+  lockName: [{ required: true, message: t('lock.inputLockName'), trigger: 'blur' }],
+  type: [{ required: true, message: t('lock.selectLockType'), trigger: 'change' }],
+  holder: [{ required: true, message: t('lock.inputHolder'), trigger: 'blur' }]
+}))
 
 const maxTrendValue = computed(() => {
   const values = Object.values(lockTrend)
@@ -264,11 +267,11 @@ const fetchLocks = async () => {
       stats.acquired = locks.value.filter(l => l.status === 'ACQUIRED').length
       stats.waiting = locks.value.filter(l => l.status === 'WAITING').length
     } else {
-      ElMessage.error(res.message || '获取锁列表失败')
+      ElMessage.error(res.message || t('lock.getListFailed'))
     }
   } catch (e) {
-    console.error('获取锁列表失败:', e)
-    ElMessage.error('获取锁列表失败')
+    console.error('Get lock list failed:', e)
+    ElMessage.error(t('lock.getListFailed'))
   } finally {
     loading.value = false
   }
@@ -284,7 +287,7 @@ const fetchLockStats = async () => {
       lockStats.contentionCount = res.data.contentionCount || 0
     }
   } catch (e) {
-    console.error('获取锁统计失败:', e)
+    console.error('Get lock stats failed:', e)
   }
 }
 
@@ -311,7 +314,7 @@ const generateTrendData = () => {
 const refreshList = () => {
   fetchLocks()
   fetchLockStats()
-  ElMessage.success('刷新成功')
+  ElMessage.success(t('lock.refreshSuccess'))
 }
 
 const showAcquireDialog = () => {
@@ -320,7 +323,7 @@ const showAcquireDialog = () => {
 
 const handleAcquireLock = async () => {
   if (!acquireForm.lockName || !acquireForm.holder) {
-    ElMessage.warning('请填写完整信息')
+    ElMessage.warning(t('lock.fillComplete'))
     return
   }
   
@@ -334,7 +337,7 @@ const handleAcquireLock = async () => {
     })
     
     if (res.code === 0) {
-      ElMessage.success('获取锁成功')
+      ElMessage.success(t('lock.acquireLockSuccess'))
       acquireDialogVisible.value = false
       // 重置表单
       acquireForm.lockName = ''
@@ -345,11 +348,11 @@ const handleAcquireLock = async () => {
       await fetchLocks()
       await fetchLockStats()
     } else {
-      ElMessage.error(res.message || '获取锁失败')
+      ElMessage.error(res.message || t('lock.acquireLockFailed'))
     }
   } catch (e) {
-    console.error('获取锁异常:', e)
-    ElMessage.error('获取锁失败')
+    console.error('Acquire lock failed:', e)
+    ElMessage.error(t('lock.acquireLockFailed'))
   } finally {
     acquiring.value = false
   }
@@ -364,15 +367,15 @@ const renewLock = async (row) => {
     })
     
     if (res.code === 0) {
-      ElMessage.success('续期成功，TTL重置为30秒')
+      ElMessage.success(t('lock.renewSuccess'))
       // 刷新列表以获取最新数据
       await fetchLocks()
     } else {
-      ElMessage.error(res.message || '续期失败')
+      ElMessage.error(res.message || t('lock.renewFailed'))
     }
   } catch (e) {
-    console.error('续期异常:', e)
-    ElMessage.error('续期失败')
+    console.error('Renew failed:', e)
+    ElMessage.error(t('lock.renewFailed'))
   }
 }
 
@@ -384,16 +387,16 @@ const releaseLock = async (row) => {
     })
     
     if (res.code === 0) {
-      ElMessage.success('锁已释放')
+      ElMessage.success(t('lock.releaseSuccess'))
       // 刷新列表以获取最新数据
       await fetchLocks()
       await fetchLockStats()
     } else {
-      ElMessage.error(res.message || '释放失败')
+      ElMessage.error(res.message || t('lock.releaseFailed'))
     }
   } catch (e) {
-    console.error('释放异常:', e)
-    ElMessage.error('释放失败')
+    console.error('Release failed:', e)
+    ElMessage.error(t('lock.releaseFailed'))
   }
 }
 
@@ -410,13 +413,13 @@ const viewLockDetail = async (row) => {
       }
     }
   } catch (e) {
-    console.error('获取锁详情失败:', e)
+    console.error('Get lock detail failed:', e)
   }
   
   // 模拟锁历史（后端暂未提供历史记录接口）
   lockHistory.value = [
-    { time: Date.now() - 60000, action: '获取锁', operator: row.holder },
-    { time: Date.now() - 30000, action: '续期', operator: row.holder },
+    { time: Date.now() - 60000, action: t('lock.acquireLock'), operator: row.holder },
+    { time: Date.now() - 30000, action: t('lock.renew'), operator: row.holder },
   ]
   detailDialogVisible.value = true
 }
@@ -427,13 +430,13 @@ const getTypeTag = (type) => {
 }
 
 const getTypeText = (type) => {
-  const texts = { TASK: '任务锁', RESOURCE: '资源锁', CLUSTER: '集群锁' }
+  const texts = { TASK: t('lock.typeTask'), RESOURCE: t('lock.typeResource'), CLUSTER: t('lock.typeCluster') }
   return texts[type] || type
 }
 
 const formatDate = (timestamp) => {
   if (!timestamp) return '-'
-  return new Date(timestamp).toLocaleString('zh-CN')
+  return new Date(timestamp).toLocaleString()
 }
 
 const isExpiring = (timestamp) => {

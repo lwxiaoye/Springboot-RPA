@@ -421,13 +421,14 @@ public class AiController {
 
             Map<String, Object> response = new HashMap<>();
             if (result.isSuccess()) {
+                Map<String, Object> data = new HashMap<>();
+                data.put("text", result.getText() != null ? result.getText() : "");
+                data.put("confidence", result.getConfidence() != null ? result.getConfidence() : 0.0);
+                data.put("duration", result.getDuration());
+
                 response.put("code", 0);
                 response.put("message", "识别成功");
-                response.put("data", Map.of(
-                    "text", result.getText(),
-                    "confidence", result.getConfidence(),
-                    "duration", result.getDuration()
-                ));
+                response.put("data", data);
             } else {
                 response.put("code", -1);
                 response.put("message", result.getErrorMessage());
@@ -456,16 +457,21 @@ public class AiController {
 
             Map<String, Object> response = new HashMap<>();
             if (result.isSuccess()) {
+                Map<String, Object> data = new HashMap<>();
+                data.put("name", result.getName() != null ? result.getName() : "");
+                data.put("idNumber", result.getIdNumber() != null ? result.getIdNumber() : "");
+                data.put("gender", result.getGender() != null ? result.getGender() : "");
+                data.put("address", result.getAddress() != null ? result.getAddress() : "");
+                data.put("birthDate", result.getBirthDate() != null ? result.getBirthDate() : "");
+                data.put("ethnicity", result.getEthnicity() != null ? result.getEthnicity() : "");
+                data.put("issueAuthority", result.getIssueAuthority() != null ? result.getIssueAuthority() : "");
+                data.put("validDate", result.getValidDate() != null ? result.getValidDate() : "");
+                data.put("confidence", result.getConfidence() != null ? result.getConfidence() : 0.0);
+                data.put("duration", result.getDuration());
+
                 response.put("code", 0);
                 response.put("message", "识别成功");
-                response.put("data", Map.of(
-                    "name", result.getName(),
-                    "idNumber", result.getIdNumber(),
-                    "gender", result.getGender(),
-                    "address", result.getAddress(),
-                    "confidence", result.getConfidence(),
-                    "duration", result.getDuration()
-                ));
+                response.put("data", data);
             } else {
                 response.put("code", -1);
                 response.put("message", result.getErrorMessage());
@@ -493,19 +499,21 @@ public class AiController {
 
             Map<String, Object> response = new HashMap<>();
             if (result.isSuccess()) {
+                Map<String, Object> data = new HashMap<>();
+                data.put("invoiceCode", result.getInvoiceCode() != null ? result.getInvoiceCode() : "");
+                data.put("invoiceNumber", result.getInvoiceNumber() != null ? result.getInvoiceNumber() : "");
+                data.put("invoiceDate", result.getInvoiceDate() != null ? result.getInvoiceDate() : "");
+                data.put("invoiceAmount", result.getInvoiceAmount() != null ? result.getInvoiceAmount() : "");
+                data.put("taxAmount", result.getTaxAmount() != null ? result.getTaxAmount() : "");
+                data.put("sellerName", result.getSellerName() != null ? result.getSellerName() : "");
+                data.put("buyerName", result.getBuyerName() != null ? result.getBuyerName() : "");
+                data.put("invoiceType", result.getInvoiceType() != null ? result.getInvoiceType() : "");
+                data.put("confidence", result.getConfidence() != null ? result.getConfidence() : 0.0);
+                data.put("duration", result.getDuration());
+
                 response.put("code", 0);
                 response.put("message", "识别成功");
-                response.put("data", Map.of(
-                    "invoiceCode", result.getInvoiceCode(),
-                    "invoiceNumber", result.getInvoiceNumber(),
-                    "invoiceDate", result.getInvoiceDate(),
-                    "invoiceAmount", result.getInvoiceAmount(),
-                    "taxAmount", result.getTaxAmount(),
-                    "sellerName", result.getSellerName(),
-                    "buyerName", result.getBuyerName(),
-                    "confidence", result.getConfidence(),
-                    "duration", result.getDuration()
-                ));
+                response.put("data", data);
             } else {
                 response.put("code", -1);
                 response.put("message", result.getErrorMessage());
@@ -533,13 +541,14 @@ public class AiController {
 
             Map<String, Object> response = new HashMap<>();
             if (result.isSuccess()) {
+                Map<String, Object> data = new HashMap<>();
+                data.put("text", result.getText() != null ? result.getText() : "");
+                data.put("confidence", result.getConfidence() != null ? result.getConfidence() : 0.0);
+                data.put("duration", result.getDuration());
+
                 response.put("code", 0);
                 response.put("message", "识别成功");
-                response.put("data", Map.of(
-                    "text", result.getText(),
-                    "confidence", result.getConfidence(),
-                    "duration", result.getDuration()
-                ));
+                response.put("data", data);
             } else {
                 response.put("code", -1);
                 response.put("message", result.getErrorMessage());
@@ -567,14 +576,16 @@ public class AiController {
 
             Map<String, Object> response = new HashMap<>();
             if (result.isSuccess()) {
+                Map<String, Object> data = new HashMap<>();
+                data.put("text", result.getText() != null ? result.getText() : "");
+                data.put("rows", result.getRows() != null ? result.getRows() : new java.util.ArrayList<>());
+                data.put("data", result.getData() != null ? result.getData() : new HashMap<>());
+                data.put("confidence", result.getConfidence() != null ? result.getConfidence() : 0.0);
+                data.put("duration", result.getDuration());
+
                 response.put("code", 0);
                 response.put("message", "识别成功");
-                response.put("data", Map.of(
-                    "text", result.getText(),
-                    "rows", result.getRows(),
-                    "confidence", result.getConfidence(),
-                    "duration", result.getDuration()
-                ));
+                response.put("data", data);
             } else {
                 response.put("code", -1);
                 response.put("message", result.getErrorMessage());
@@ -586,6 +597,89 @@ public class AiController {
             Map<String, Object> response = new HashMap<>();
             response.put("code", -1);
             response.put("message", "表格识别失败: " + e.getMessage());
+            return ResponseEntity.ok(response);
+        }
+    }
+
+    /**
+     * 文档处理（PDF、Word）
+     */
+    @PostMapping("/document")
+    public ResponseEntity<Map<String, Object>> document(@RequestParam("file") MultipartFile file) {
+        try {
+            log.info("文档处理请求 - 文件名: {}, 大小: {} bytes", file.getOriginalFilename(), file.getSize());
+
+            // 检查文件类型
+            String filename = file.getOriginalFilename();
+            if (filename == null || (!filename.toLowerCase().endsWith(".pdf")
+                    && !filename.toLowerCase().endsWith(".docx")
+                    && !filename.toLowerCase().endsWith(".doc"))) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("code", -1);
+                response.put("message", "不支持的文件格式，仅支持PDF、DOC、DOCX格式");
+                return ResponseEntity.ok(response);
+            }
+
+            AiService.AiResult result = aiService.processFile(file, AiService.AiServiceType.DOCUMENT, null, null);
+
+            Map<String, Object> response = new HashMap<>();
+            if (result.isSuccess()) {
+                Map<String, Object> data = new HashMap<>();
+                data.put("text", result.getText() != null ? result.getText() : "");
+                data.put("pages", result.getPages() != null ? result.getPages() : 1);
+                data.put("confidence", result.getConfidence() != null ? result.getConfidence() : 0.0);
+                data.put("duration", result.getDuration());
+
+                response.put("code", 0);
+                response.put("message", "文档处理成功");
+                response.put("data", data);
+            } else {
+                response.put("code", -1);
+                response.put("message", result.getErrorMessage());
+            }
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("文档处理失败: {}", e.getMessage(), e);
+            Map<String, Object> response = new HashMap<>();
+            response.put("code", -1);
+            response.put("message", "文档处理失败: " + e.getMessage());
+            return ResponseEntity.ok(response);
+        }
+    }
+
+    /**
+     * 条码识别
+     */
+    @PostMapping("/barcode")
+    public ResponseEntity<Map<String, Object>> barcode(@RequestParam("file") MultipartFile file) {
+        try {
+            log.info("条码识别请求 - 文件大小: {} bytes", file.getSize());
+
+            AiService.AiResult result = aiService.processFile(file, AiService.AiServiceType.BARCODE, null, null);
+
+            Map<String, Object> response = new HashMap<>();
+            if (result.isSuccess()) {
+                Map<String, Object> data = new HashMap<>();
+                data.put("text", result.getText() != null ? result.getText() : "");
+                data.put("format", result.getBarcodeFormat() != null ? result.getBarcodeFormat() : "UNKNOWN");
+                data.put("confidence", result.getConfidence() != null ? result.getConfidence() : 1.0);
+                data.put("duration", result.getDuration());
+
+                response.put("code", 0);
+                response.put("message", "识别成功");
+                response.put("data", data);
+            } else {
+                response.put("code", -1);
+                response.put("message", result.getErrorMessage());
+            }
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("条码识别失败: {}", e.getMessage(), e);
+            Map<String, Object> response = new HashMap<>();
+            response.put("code", -1);
+            response.put("message", "条码识别失败: " + e.getMessage());
             return ResponseEntity.ok(response);
         }
     }

@@ -2,7 +2,7 @@
   <div class="login-page">
     <!-- 顶部导航栏 -->
     <div class="top-nav">
-      <span class="nav-platform">RPA运营管理系统</span>
+      <span class="nav-platform">{{ t('login.title') }}</span>
     </div>
 
     <!-- 英文标题区域 -->
@@ -17,8 +17,8 @@
       <div class="left-hero">
         <div class="left-content">
           <div class="left-overlay-text">
-            <span>智能运营 · 高效管理</span>
-            <p>RPA自动化流程解决方案</p>
+            <span>{{ t('login.leftTitle') }}</span>
+            <p>{{ t('login.leftSubtitle') }}</p>
           </div>
         </div>
       </div>
@@ -26,7 +26,7 @@
       <!-- 右侧卡片区域 -->
       <div class="right-card-area">
         <div class="login-card">
-          <div class="card-welcome">欢迎登录</div>
+          <div class="card-welcome">{{ t('login.welcome') }}</div>
 
           <!-- 密码登录表单 -->
           <el-form
@@ -36,19 +36,19 @@
             label-position="top"
             @keyup.enter="handlePasswordLogin"
           >
-            <el-form-item label="用户名" prop="username">
+            <el-form-item :label="t('login.username')" prop="username">
               <el-input
                 v-model="passwordForm.username"
-                placeholder="请输入用户名"
+                :placeholder="t('login.usernamePlaceholder')"
                 size="large"
               />
             </el-form-item>
 
-            <el-form-item label="密码" prop="password">
+            <el-form-item :label="t('login.password')" prop="password">
               <el-input
                 v-model="passwordForm.password"
                 type="password"
-                placeholder="密码"
+                :placeholder="t('login.passwordPlaceholder')"
                 size="large"
                 show-password
                 autocomplete="new-password"
@@ -58,12 +58,12 @@
             </el-form-item>
 
             <div class="password-tip">
-              <span>请输入用户名和密码</span>
+              <span>{{ t('login.passwordTip') }}</span>
             </div>
 
             <div class="form-options">
-              <el-checkbox v-model="rememberMe">记住我</el-checkbox>
-              <span class="forgot-text" @click="openForget">忘记密码？</span>
+              <el-checkbox v-model="rememberMe">{{ t('login.rememberMe') }}</el-checkbox>
+              <span class="forgot-text" @click="openForget">{{ t('login.forgotPassword') }}</span>
             </div>
 
             <el-button
@@ -72,12 +72,12 @@
               class="login-button"
               @click="handlePasswordLogin"
             >
-              登录
+              {{ t('login.loginBtn') }}
             </el-button>
           </el-form>
 
           <div class="default-account-tip">
-            欢迎登录
+            {{ t('login.defaultTip') }}
           </div>
         </div>
       </div>
@@ -86,19 +86,19 @@
     <!-- 忘记密码弹窗 -->
     <el-dialog
       v-model="forgetVisible"
-      title="重置密码"
+      :title="t('login.resetPassword')"
       width="420px"
       :close-on-click-modal="false"
     >
-      <el-form :model="resetForm" label-width="80px" style="margin-top:20px">
-        <el-form-item label="手机号">
-          <el-input v-model="resetForm.phone" placeholder="请输入注册手机号" />
+      <el-form :model="resetForm" :label-width="80" style="margin-top:20px">
+        <el-form-item :label="t('login.phone')">
+          <el-input v-model="resetForm.phone" :placeholder="t('login.phonePlaceholder')" />
         </el-form-item>
-        <el-form-item label="验证码">
+        <el-form-item :label="t('login.verificationCode')">
           <div style="display:flex;gap:10px">
             <el-input
               v-model="resetForm.code"
-              placeholder="6 位验证码"
+              :placeholder="t('login.codePlaceholder')"
               style="flex:1"
               maxlength="6"
             />
@@ -107,24 +107,24 @@
               @click="getResetCode"
               :disabled="!resetForm.phone || countdown > 0"
             >
-              {{ countdown > 0 ? `${countdown}秒后重发` : '获取验证码' }}
+              {{ countdown > 0 ? `${countdown}${t('login.resendAfter')}` : t('login.getCode') }}
             </el-button>
           </div>
         </el-form-item>
-        <el-form-item label="新密码">
+        <el-form-item :label="t('login.newPassword')">
           <el-input
             v-model="resetForm.newPassword"
             type="password"
-            placeholder="输入新密码（6-20 位）"
+            :placeholder="t('login.newPasswordPlaceholder')"
             show-password
             maxlength="20"
           />
         </el-form-item>
       </el-form>
       <div style="text-align:right;margin-top:20px">
-        <el-button @click="forgetVisible = false">取消</el-button>
+        <el-button @click="forgetVisible = false">{{ t('common.cancel') }}</el-button>
         <el-button type="primary" :loading="loading" @click="resetPassword">
-          确认重置
+          {{ t('login.confirmReset') }}
         </el-button>
       </div>
     </el-dialog>
@@ -135,9 +135,11 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { apiPost } from '@/utils/api'
 
 const router = useRouter()
+const { t } = useI18n()
 
 
 // 响应式数据
@@ -165,20 +167,20 @@ const countdown = ref(0) // 倒计时
 
 // 验证规则
 const passwordRules = {
-  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
+  username: [{ required: true, message: t('login.usernameRequired'), trigger: 'blur' }],
+  password: [{ required: true, message: t('login.passwordRequired'), trigger: 'blur' }]
 }
 
 // 禁止密码复制粘贴
 const preventCopyPaste = (e) => {
   e.preventDefault()
-  ElMessage.warning('禁止复制/粘贴密码！')
+  ElMessage.warning(t('login.noCopyPaste'))
 }
 
 // 密码登录 - 对接后端真实接口
 const handlePasswordLogin = async () => {
   if (isLocked.value) {
-    ElMessage.error('账号已临时锁定，请稍后再试！')
+    ElMessage.error(t('login.accountLocked'))
     return
   }
 
@@ -198,7 +200,8 @@ const handlePasswordLogin = async () => {
       // 后端返回格式: code: 0表示成功, -1表示失败
       if (result.code === 0) {
         // 登录成功
-        ElMessage.success(result.message || '登录成功！')
+        ElMessage.success(result.message || t('login.loginSuccess'))
+        
       
         // 保存用户信息到本地存储
         const userInfo = {
@@ -240,18 +243,18 @@ const handlePasswordLogin = async () => {
         const remainingAttempts = 5 - loginFailCount.value
         if (loginFailCount.value >= 5) {
           isLocked.value = true
-          ElMessage.error('连续失败5次，账号已锁定1分钟！')
+          ElMessage.error(t('login.accountLocked5Times'))
           setTimeout(() => {
             isLocked.value = false
             loginFailCount.value = 0
           }, 60000)
         } else {
-          ElMessage.error(result.message || `用户名或密码错误，还剩 ${remainingAttempts} 次机会`)
+          ElMessage.error(result.message || t('login.wrongPassword', { count: remainingAttempts }))
         }
       }
     } catch (error) {
       console.error('登录请求失败:', error)
-      ElMessage.error('网络错误，请检查后端服务是否启动')
+      ElMessage.error(t('login.networkError'))
     } finally {
       loading.value = false
     }
@@ -270,14 +273,14 @@ const openForget = () => {
 // 获取验证码
 const getResetCode = async () => {
   if (!resetForm.phone) {
-    ElMessage.warning('请输入手机号')
+    ElMessage.warning(t('login.enterPhone'))
     return
   }
 
   // 验证手机号格式
   const phoneRegex = /^[0-9]{11}$/
   if (!phoneRegex.test(resetForm.phone)) {
-    ElMessage.warning('请输入正确的 11 位手机号')
+    ElMessage.warning(t('login.enterCorrectPhone'))
     return
   }
 
@@ -288,7 +291,7 @@ const getResetCode = async () => {
     })
 
     if (result.code === 0) {
-      ElMessage.success(result.message || '验证码已发送')
+      ElMessage.success(result.message || t('login.codeSent'))
       // 如果后端返回验证码，可以存储起来
       if (result.data?.code) {
         resetCode.value = result.data.code
@@ -302,30 +305,30 @@ const getResetCode = async () => {
         }
       }, 1000)
     } else {
-      ElMessage.error(result.message || '发送验证码失败')
+      ElMessage.error(result.message || t('login.sendCodeFailed'))
     }
   } catch (error) {
     console.error('发送验证码失败:', error)
-    ElMessage.error('网络错误，请稍后重试')
+    ElMessage.error(t('login.networkErrorRetry'))
   }
 }
 
 // 重置密码
 const resetPassword = async () => {
   if (!resetForm.phone) {
-    ElMessage.warning('请输入手机号')
+    ElMessage.warning(t('login.enterPhone'))
     return
   }
   if (!resetForm.code) {
-    ElMessage.warning('请输入验证码')
+    ElMessage.warning(t('login.enterCode'))
     return
   }
   if (resetForm.code !== resetCode.value) {
-    ElMessage.error('验证码错误')
+    ElMessage.error(t('login.codeError'))
     return
   }
   if (!resetForm.newPassword || resetForm.newPassword.length < 6 || resetForm.newPassword.length > 20) {
-    ElMessage.warning('新密码长度必须在 6-20 位之间')
+    ElMessage.warning(t('login.passwordLength'))
     return
   }
 
@@ -339,14 +342,14 @@ const resetPassword = async () => {
     })
 
     if (result.code === 0) {
-      ElMessage.success('密码重置成功！')
+      ElMessage.success(t('login.resetSuccess'))
       forgetVisible.value = false
     } else {
-      ElMessage.error(result.message || '重置失败')
+      ElMessage.error(result.message || t('login.resetFailed'))
     }
   } catch (error) {
     console.error('重置密码失败:', error)
-    ElMessage.error('网络错误，请稍后重试')
+    ElMessage.error(t('login.networkErrorRetry'))
   } finally {
     loading.value = false
   }

@@ -9,7 +9,7 @@
       <div class="header-left">
         <div class="logo-area" @click="goToDashboard">
           <div class="logo-icon">
-            <img src="/title.png" alt="logo" style="width:36px;height:36px;" />
+            <img src="/logo.png" alt="logo" style="width:36px;height:36px;" />
           </div>
           <div class="logo-text">
             <span class="logo-title">RPA</span>
@@ -30,15 +30,15 @@
         >
           <el-menu-item index="dashboard">
             <el-icon><Odometer /></el-icon>
-            <span>首页</span>
+            <span>{{ t('menu.dashboard') }}</span>
           </el-menu-item>
           <el-menu-item index="rpa">
             <el-icon><VideoCamera /></el-icon>
-            <span>RPA运营管理</span>
+            <span>{{ t('menu.rpaManagement') }}</span>
           </el-menu-item>
           <el-menu-item index="system">
             <el-icon><Setting /></el-icon>
-            <span>系统管理</span>
+            <span>{{ t('menu.systemManagement') }}</span>
           </el-menu-item>
         </el-menu>
       </div>
@@ -46,14 +46,14 @@
       <!-- 右侧工具栏 -->
       <div class="header-right">
         <!-- 聊天消息按钮 -->
-        <el-badge :value="chatUnreadCount" :hidden="chatUnreadCount === 0" class="tool-badge" :max="99">
+        <el-badge :value="chatUnreadCount" :hidden="chatUnreadCount === 0" class="tool-badge chat-badge" :max="99">
           <el-button class="tool-btn" @click="goToCollaboration">
             <el-icon><ChatLineSquare /></el-icon>
           </el-button>
         </el-badge>
 
         <!-- 通知按钮 -->
-        <el-badge :value="notificationCount" :hidden="notificationCount === 0" class="tool-badge" :max="99">
+        <el-badge :value="notificationCount" :hidden="notificationCount === 0" class="tool-badge notification-badge" :max="99">
           <el-button class="tool-btn" @click="goToNotifications">
             <el-icon><Bell /></el-icon>
           </el-button>
@@ -75,11 +75,11 @@
             <el-dropdown-menu>
               <el-dropdown-item @click="goToProfile">
                 <el-icon><User /></el-icon>
-                个人信息
+                {{ t('menu.profile') }}
               </el-dropdown-item>
               <el-dropdown-item divided @click="handleLogout">
                 <el-icon><SwitchButton /></el-icon>
-                退出登录
+                {{ t('menu.logout') }}
               </el-dropdown-item>
             </el-dropdown-menu>
           </template>
@@ -99,188 +99,131 @@
 
         <nav class="sidebar-menu">
           <!-- 工作台 -->
-          <div class="menu-item main-item"
-            :class="{ active: activeMenu === 'dashboard' }"
-            @click="switchMenu('dashboard')"
+          <el-menu
+            :default-active="activeMenu"
+            class="sidebar-el-menu"
+            @select="handleMenuSelect"
           >
-            <el-icon class="menu-icon"><DataLine /></el-icon>
-            <span class="menu-text" v-if="!sidebarCollapsed">工作台</span>
-          </div>
+            <!-- 首页 -->
+            <el-menu-item index="dashboard">
+              <el-icon><Odometer /></el-icon>
+              <span>{{ t('menu.dashboard') }}</span>
+            </el-menu-item>
 
-          <!-- 任务调度中心 -->
-          <div class="menu-item"
-            :class="{ active: activeMenu === 'tasks' }"
-            @click="switchMenu('tasks')"
-          >
-            <el-icon class="menu-icon"><List /></el-icon>
-            <span class="menu-text" v-if="!sidebarCollapsed">任务调度中心</span>
-          </div>
+            <!-- 任务中心 -->
+            <el-sub-menu index="task-center">
+              <template #title>
+                <el-icon><List /></el-icon>
+                <span>{{ t('menu.taskCenter') }}</span>
+              </template>
+              <el-menu-item index="tasks">
+                <el-icon><Timer /></el-icon>
+                <span>{{ t('menu.tasks') }}</span>
+              </el-menu-item>
+              <el-menu-item index="queues">
+                <el-icon><Operation /></el-icon>
+                <span>{{ t('menu.queues') }}</span>
+              </el-menu-item>
+              <el-menu-item index="triggers">
+                <el-icon><Switch /></el-icon>
+                <span>{{ t('menu.triggers') }}</span>
+              </el-menu-item>
+              <el-menu-item index="script">
+                <el-icon><Promotion /></el-icon>
+                <span>{{ t('menu.script') }}</span>
+              </el-menu-item>
+            </el-sub-menu>
 
-          <!-- 机器人管理 -->
-          <div class="menu-item"
-            :class="{ active: activeMenu === 'robots' }"
-            @click="switchMenu('robots')"
-          >
-            <el-icon class="menu-icon"><Monitor /></el-icon>
-            <span class="menu-text" v-if="!sidebarCollapsed">机器人管理</span>
-          </div>
+            <!-- 资源中心 -->
+            <el-sub-menu index="resource-center">
+              <template #title>
+                <el-icon><FolderOpened /></el-icon>
+                <span>{{ t('menu.resourceCenter') }}</span>
+              </template>
+              <el-menu-item index="robots">
+                <el-icon><Monitor /></el-icon>
+                <span>{{ t('menu.robots') }}</span>
+              </el-menu-item>
+              <el-menu-item index="processes">
+                <el-icon><Document /></el-icon>
+                <span>{{ t('menu.processes') }}</span>
+              </el-menu-item>
+            </el-sub-menu>
 
-          <!-- 流程仓库 -->
-          <div class="menu-item"
-            :class="{ active: activeMenu === 'processes' }"
-            @click="switchMenu('processes')"
-          >
-            <el-icon class="menu-icon"><Document /></el-icon>
-            <span class="menu-text" v-if="!sidebarCollapsed">流程仓库</span>
-          </div>
+            <!-- 日志中心 -->
+            <el-sub-menu index="log-center">
+              <template #title>
+                <el-icon><Tickets /></el-icon>
+                <span>{{ t('menu.logCenter') }}</span>
+              </template>
+              <el-menu-item index="logs">
+                <el-icon><Document /></el-icon>
+                <span>{{ t('menu.executionLogs') }}</span>
+              </el-menu-item>
+              <el-menu-item index="audit">
+                <el-icon><Clock /></el-icon>
+                <span>{{ t('menu.auditLog') }}</span>
+              </el-menu-item>
+            </el-sub-menu>
 
-          <!-- 队列管理 -->
-          <div class="menu-item submenu-item"
-            :class="{ active: activeMenu === 'queues' }"
-            @click="switchMenu('queues')"
-          >
-            <el-icon class="menu-icon"><Operation /></el-icon>
-            <span class="menu-text" v-if="!sidebarCollapsed">队列管理</span>
-          </div>
+            <!-- 数据中心 -->
+            <el-sub-menu index="data-center">
+              <template #title>
+                <el-icon><DataAnalysis /></el-icon>
+                <span>{{ t('menu.dataCenter') }}</span>
+              </template>
+              <el-menu-item index="dataQuery">
+                <el-icon><Search /></el-icon>
+                <span>{{ t('menu.dataQuery') }}</span>
+              </el-menu-item>
+              <el-menu-item index="reports">
+                <el-icon><DataBoard /></el-icon>
+                <span>{{ t('menu.reports') }}</span>
+              </el-menu-item>
+            </el-sub-menu>
 
-          <!-- 触发器管理 -->
-          <div class="menu-item submenu-item"
-            :class="{ active: activeMenu === 'triggers' }"
-            @click="switchMenu('triggers')"
-          >
-            <el-icon class="menu-icon"><Timer /></el-icon>
-            <span class="menu-text" v-if="!sidebarCollapsed">触发器管理</span>
-          </div>
+            <!-- 凭据中心 -->
+            <el-menu-item index="credentials">
+              <el-icon><Key /></el-icon>
+              <span>{{ t('menu.credentials') }}</span>
+            </el-menu-item>
 
-          <!-- 执行日志 -->
-          <div class="menu-item"
-            :class="{ active: activeMenu === 'logs' }"
-            @click="switchMenu('logs')"
-          >
-            <el-icon class="menu-icon"><Tickets /></el-icon>
-            <span class="menu-text" v-if="!sidebarCollapsed">执行日志</span>
-          </div>
+            <!-- AI能力 -->
+            <el-menu-item index="ai">
+              <el-icon><MagicStick /></el-icon>
+              <span>{{ t('menu.aiCenter') }}</span>
+            </el-menu-item>
 
-          <!-- 审计日志 -->
-          <div class="menu-item"
-            :class="{ active: activeMenu === 'audit' }"
-            @click="switchMenu('audit')"
-          >
-            <el-icon class="menu-icon"><Clock /></el-icon>
-            <span class="menu-text" v-if="!sidebarCollapsed">审计日志</span>
-          </div>
+            <!-- 系统管理 -->
+            <el-sub-menu index="system-admin">
+              <template #title>
+                <el-icon><Setting /></el-icon>
+                <span>{{ t('menu.systemManagement') }}</span>
+              </template>
+              <el-menu-item index="settings">
+                <el-icon><Tools /></el-icon>
+                <span>{{ t('menu.settings') }}</span>
+              </el-menu-item>
+              <el-menu-item index="masking">
+                <el-icon><View /></el-icon>
+                <span>{{ t('menu.dataMasking') }}</span>
+              </el-menu-item>
+              <el-menu-item index="locks">
+                <el-icon><Unlock /></el-icon>
+                <span>{{ t('menu.distributedLocks') }}</span>
+              </el-menu-item>
+              <el-menu-item index="watermark" v-if="isAdmin">
+                <el-icon><Key /></el-icon>
+                <span>{{ t('menu.watermark') }}</span>
+              </el-menu-item>
+            </el-sub-menu>
 
-          <!-- 凭据中心 -->
-          <div class="menu-item"
-            :class="{ active: activeMenu === 'credentials' }"
-            @click="switchMenu('credentials')"
-          >
-            <el-icon class="menu-icon"><Key /></el-icon>
-            <span class="menu-text" v-if="!sidebarCollapsed">凭据中心</span>
-          </div>
-
-          <!-- AI能力中心 -->
-          <div class="menu-item"
-            :class="{ active: activeMenu === 'ai' }"
-            @click="switchMenu('ai')"
-          >
-            <el-icon class="menu-icon"><MagicStick /></el-icon>
-            <span class="menu-text" v-if="!sidebarCollapsed">AI能力</span>
-          </div>
-
-
-
-          <!-- 脚本执行器 -->
-          <div class="menu-item"
-            :class="{ active: activeMenu === 'script' }"
-            @click="switchMenu('script')"
-          >
-            <el-icon class="menu-icon"><Promotion /></el-icon>
-            <span class="menu-text" v-if="!sidebarCollapsed">脚本执行</span>
-          </div>
-
-          <!-- 数据脱敏 -->
-          <div class="menu-item"
-            :class="{ active: activeMenu === 'masking' }"
-            @click="switchMenu('masking')"
-          >
-            <el-icon class="menu-icon"><View /></el-icon>
-            <span class="menu-text" v-if="!sidebarCollapsed">数据脱敏</span>
-          </div>
-
-          <!-- 分布式锁 -->
-          <div class="menu-item"
-            :class="{ active: activeMenu === 'locks' }"
-            @click="switchMenu('locks')"
-          >
-            <el-icon class="menu-icon"><Unlock /></el-icon>
-            <span class="menu-text" v-if="!sidebarCollapsed">分布式锁</span>
-          </div>
-
-          <!-- 报表分析 -->
-          <div class="menu-item"
-            :class="{ active: activeMenu === 'reports' }"
-            @click="switchMenu('reports')"
-          >
-            <el-icon class="menu-icon"><DataBoard /></el-icon>
-            <span class="menu-text" v-if="!sidebarCollapsed">报表分析</span>
-          </div>
-
-          <!-- 数据管理（带子菜单） -->
-          <div class="menu-group">
-            <div class="menu-item has-submenu"
-              :class="{ active: activeMenu.startsWith('data') || activeMenu === 'invoice' }"
-              @click="toggleDataMenu"
-            >
-              <el-icon class="menu-icon"><DataAnalysis /></el-icon>
-              <span class="menu-text" v-if="!sidebarCollapsed">数据管理</span>
-              <span class="submenu-arrow" v-if="!sidebarCollapsed">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                  <path d="M7 10l5 5 5-5z"/>
-                </svg>
-              </span>
-            </div>
-            <Transition name="submenu">
-              <div v-if="!sidebarCollapsed && showDataSubmenu" class="submenu">
-                <div class="menu-item submenu-item"
-                  :class="{ active: activeMenu === 'dataQuery' }"
-                  @click="switchMenu('dataQuery')"
-                >
-                  <el-icon class="menu-icon"><Search /></el-icon>
-                  <span class="menu-text">数据查询</span>
-                </div>
-              </div>
-            </Transition>
-          </div>
-
-          <!-- 系统设置 -->
-          <div class="menu-divider" v-if="!sidebarCollapsed"></div>
-          <div class="menu-item"
-            :class="{ active: activeMenu === 'settings' }"
-            @click="switchMenu('settings')"
-          >
-            <el-icon class="menu-icon"><Tools /></el-icon>
-            <span class="menu-text" v-if="!sidebarCollapsed">系统设置</span>
-          </div>
-
-          <!-- 水印管理（管理员专用） -->
-          <div class="menu-item"
-            v-if="isAdmin"
-            :class="{ active: activeMenu === 'watermark' }"
-            @click="switchMenu('watermark')"
-          >
-            <el-icon class="menu-icon"><Key /></el-icon>
-            <span class="menu-text" v-if="!sidebarCollapsed">水印管理</span>
-          </div>
-
-          <!-- 协作中枢 -->
-          <div class="menu-item"
-            :class="{ active: activeMenu === 'collaboration' }"
-            @click="switchMenu('collaboration')"
-          >
-            <el-icon class="menu-icon"><ChatLineSquare /></el-icon>
-            <span class="menu-text" v-if="!sidebarCollapsed">协作中枢</span>
-          </div>
+            <!-- 协作中枢 -->
+            <el-menu-item index="collaboration">
+              <el-icon><ChatLineSquare /></el-icon>
+              <span>{{ t('menu.collaboration') }}</span>
+            </el-menu-item>
+          </el-menu>
         </nav>
       </aside>
 
@@ -295,6 +238,7 @@
 <script setup>
 import { ref, onMounted, computed, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import WatermarkOverlay from '../../components/watermark/WatermarkOverlay.vue'
 import {
@@ -325,9 +269,12 @@ import {
   Unlock,
   Odometer,
   SwitchButton,
-  Key as WatermarkIcon
+  Key as WatermarkIcon,
+  FolderOpened,
+  Switch
 } from '@element-plus/icons-vue'
 
+const { t } = useI18n()
 const router = useRouter()
 const route = useRoute()
 const watermarkRef = ref(null)
@@ -340,6 +287,52 @@ const unreadCount = ref(0)
 const notificationCount = ref(0)
 const chatUnreadCount = ref(0)
 
+// 公告已读缓存（用于快速更新未读数）
+const announcementReadCache = ref(new Set())
+
+// 从本地缓存加载已读公告ID
+const loadAnnouncementReadCache = () => {
+  try {
+    const cached = localStorage.getItem('announcementReadCache')
+    if (cached) {
+      announcementReadCache.value = new Set(JSON.parse(cached))
+    }
+  } catch (e) {
+    console.error('加载公告已读缓存失败', e)
+  }
+}
+
+// 保存已读公告ID到本地缓存
+const saveAnnouncementReadCache = () => {
+  try {
+    localStorage.setItem('announcementReadCache', JSON.stringify([...announcementReadCache.value]))
+  } catch (e) {
+    console.error('保存公告已读缓存失败', e)
+  }
+}
+
+// 添加已读公告
+const addReadAnnouncement = (id) => {
+  announcementReadCache.value.add(id)
+  saveAnnouncementReadCache()
+}
+
+// 添加多个已读公告
+const addReadAnnouncements = (ids) => {
+  ids.forEach(id => announcementReadCache.value.add(id))
+  saveAnnouncementReadCache()
+}
+
+// 标记公告已读（更新本地缓存和通知组件）
+const markAnnouncementAsRead = (announcementId) => {
+  addReadAnnouncement(announcementId)
+  // 减少未读数（至少为0）
+  if (notificationCount.value > 0) {
+    notificationCount.value = notificationCount.value - 1
+  }
+  console.log('[RpaLayout] 公告已读标记:', announcementId, '剩余未读:', notificationCount.value)
+}
+
 const currentUser = ref({
   id: 1,
   username: 'admin',
@@ -349,7 +342,7 @@ const currentUser = ref({
 })
 
 const userName = computed(() => currentUser.value.realName || currentUser.value.username)
-const userRole = computed(() => currentUser.value.role === 1 ? '管理员' : '普通用户')
+const userRole = computed(() => currentUser.value.role === 1 ? t('user.admin') : t('user.normal'))
 const isAdmin = computed(() => currentUser.value.role === 1)
 const userInitial = computed(() => {
   const name = userName.value
@@ -365,16 +358,10 @@ const handleTopMenuSelect = (index) => {
   }
 }
 
-// 侧边栏菜单切换
-const switchMenu = (menu) => {
-  activeMenu.value = menu
+// 路由映射
 const routeMap = {
   dashboard: '/dashboard',
-  workbench: '/rpa/workbench',
-  monitor: '/rpa/workbench',
   tasks: '/rpa/tasks',
-  robots: '/rpa/robots',
-  processes: '/rpa/processes',
   queues: '/rpa/queues',
   triggers: '/rpa/triggers',
   logs: '/rpa/logs',
@@ -384,18 +371,30 @@ const routeMap = {
   settings: '/rpa/settings',
   notifications: '/rpa/notifications',
   collaboration: '/rpa/collaboration',
-  dataCollect: '/rpa/data-collect',
-  dataParse: '/rpa/data-parse',
-  dataProcess: '/rpa/data-process',
   dataQuery: '/rpa/data-query',
-  invoice: '/rpa/invoice',
+  robots: '/rpa/robots',
+  processes: '/rpa/processes',
   ai: '/rpa/ai',
   script: '/rpa/script',
   masking: '/rpa/masking',
   locks: '/rpa/locks',
   watermark: '/rpa/watermark-settings'
 }
-  router.push(routeMap[menu])
+
+// 菜单选择处理
+const handleMenuSelect = (index) => {
+  activeMenu.value = index
+  if (routeMap[index]) {
+    router.push(routeMap[index])
+  }
+}
+
+// 侧边栏菜单切换（兼容旧代码）
+const switchMenu = (menu) => {
+  activeMenu.value = menu
+  if (routeMap[menu]) {
+    router.push(routeMap[menu])
+  }
 }
 
 // 跳转到工作台
@@ -427,14 +426,14 @@ const goToProfile = () => {
 
 // 退出登录
 const handleLogout = () => {
-  ElMessageBox.confirm('确定要退出登录吗？', '提示', {
+  ElMessageBox.confirm(t('confirm.logout'), t('common.warning'), {
     type: 'warning',
     confirmButtonPosition: 'right',
     distinguishCancelAndClose: true
   }).then(() => {
     localStorage.removeItem('token')
     localStorage.removeItem('userInfo')
-    ElMessage.success('已退出登录')
+    ElMessage.success(t('common.success'))
     router.push('/login')
   }).catch(() => {})
 }
@@ -448,10 +447,10 @@ const loadUnreadCount = async () => {
     const user = JSON.parse(localStorage.getItem('userInfo') || '{}')
     const userId = user.id || 1
 
-    // 获取公告未读数（来自新公告系统）
-    const announcementResult = await apiGet('/announcement/list')
+    // 获取公告未读数
+    const announcementResult = await apiGet('/announcement/list', { userId })
     if (announcementResult?.code === 0 && announcementResult.data) {
-      // 过滤出未读的公告
+      // 过滤出后端返回的未读公告
       const unreadAnnouncements = announcementResult.data.filter(a => a.status === 'unread')
       notificationCount.value = unreadAnnouncements.length
       console.log('[RpaLayout] 公告未读数:', notificationCount.value, '总计:', announcementResult.data.length)
@@ -477,7 +476,17 @@ const handleChatUnreadUpdate = (event) => {
 
 // 监听通知未读数更新事件
 const handleNotificationUpdate = (event) => {
-  notificationCount.value = event.detail?.count || 0
+  // 更新未读数
+  notificationCount.value = event.detail?.count ?? notificationCount.value
+
+  // 如果传入了已读公告ID列表，更新缓存并同步未读数
+  if (event.detail?.readIds && event.detail.readIds.length > 0) {
+    addReadAnnouncements(event.detail.readIds)
+    // 如果传入了明确的count，使用它；否则减少对应数量
+    if (event.detail?.count === undefined) {
+      notificationCount.value = Math.max(0, notificationCount.value - event.detail.readIds.length)
+    }
+  }
 }
 
 // 监听路由变化
@@ -549,6 +558,7 @@ const loadUserInfo = () => {
 
 onMounted(() => {
   loadUserInfo()
+  loadAnnouncementReadCache() // 加载公告已读缓存
   loadUnreadCount()
 
   // 监听 storage 事件，当其他页面修改 userInfo 时同步更新
@@ -834,6 +844,84 @@ onUnmounted(() => {
   cursor: pointer;
 }
 
+/* 通知徽章样式 - 科技风格脉冲动画 */
+.notification-badge {
+  position: relative;
+}
+
+.notification-badge :deep(.el-badge__content) {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ff4444 100%);
+  border: none;
+  box-shadow: 0 0 10px rgba(255, 68, 68, 0.5);
+  animation: notificationPulse 2s ease-in-out infinite;
+  right: 8px;
+  top: 2px;
+}
+
+@keyframes notificationPulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 10px rgba(255, 68, 68, 0.5);
+  }
+  50% {
+    transform: scale(1.1);
+    box-shadow: 0 0 20px rgba(255, 68, 68, 0.8);
+  }
+}
+
+/* 通知图标激活状态 */
+.notification-badge .tool-btn:hover {
+  background: rgba(255, 68, 68, 0.15);
+  border-color: rgba(255, 68, 68, 0.3);
+  color: #ff6b6b;
+}
+
+/* 通知图标未读时的微光效果 */
+.tool-btn:has(~ .notification-badge .el-badge__content:not([hidden])) {
+  animation: bellGlow 2s ease-in-out infinite;
+}
+
+@keyframes bellGlow {
+  0%, 100% {
+    box-shadow: none;
+  }
+  50% {
+    box-shadow: 0 0 15px rgba(255, 68, 68, 0.4);
+  }
+}
+
+/* 聊天徽章样式 */
+.chat-badge {
+  position: relative;
+}
+
+.chat-badge :deep(.el-badge__content) {
+  background: linear-gradient(135deg, #00f5ff 0%, #0099ff 100%);
+  border: none;
+  box-shadow: 0 0 10px rgba(0, 245, 255, 0.5);
+  animation: chatPulse 2s ease-in-out infinite;
+  right: 8px;
+  top: 2px;
+}
+
+@keyframes chatPulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 10px rgba(0, 245, 255, 0.5);
+  }
+  50% {
+    transform: scale(1.1);
+    box-shadow: 0 0 20px rgba(0, 245, 255, 0.8);
+  }
+}
+
+/* 聊天图标激活状态 */
+.chat-badge .tool-btn:hover {
+  background: rgba(0, 245, 255, 0.15);
+  border-color: rgba(0, 245, 255, 0.3);
+  color: #00f5ff;
+}
+
 .tool-btn {
   border: none;
   background: rgba(255, 255, 255, 0.08);
@@ -958,130 +1046,89 @@ onUnmounted(() => {
 }
 
 .sidebar-menu {
-  padding: 16px 12px;
   height: 100%;
   overflow-y: auto;
+  padding: 12px 0;
 }
 
-.menu-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 11px 14px;
-  border-radius: 8px;
+/* Element Plus 菜单样式覆盖 */
+.sidebar-el-menu {
+  background: transparent;
+  border-right: none;
+}
+
+.sidebar-el-menu:not(.el-menu--collapse) {
+  width: 100%;
+}
+
+.sidebar-el-menu .el-menu-item,
+.sidebar-el-menu .el-sub-menu__title {
+  height: 48px;
+  line-height: 48px;
   color: #4b5563;
-  cursor: pointer;
+  padding-left: 20px !important;
   transition: all 0.2s ease;
-  font-size: 14px;
-  font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  margin-bottom: 2px;
-  border: 1px solid transparent;
 }
 
-.menu-item:hover {
+.sidebar-el-menu .el-menu-item:hover,
+.sidebar-el-menu .el-sub-menu__title:hover {
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
   color: #2563eb;
-  border-color: #e2e8f0;
 }
 
-.menu-item.active {
+.sidebar-el-menu .el-menu-item.is-active,
+.sidebar-el-menu .el-menu-item.is-active:hover {
   background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
   color: #2563eb;
   font-weight: 600;
-  border: 1px solid #bfdbfe;
-  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.1);
+  border-right: 3px solid #2563eb;
 }
 
-.menu-item.main-item {
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-  color: #374151;
-  margin-bottom: 12px;
-  border: 1px solid #e5e7eb;
-}
-
-.menu-item.main-item:hover {
-  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
-  color: #1f2937;
-  transform: translateX(2px);
-  border-color: #d1d5db;
-}
-
-.menu-item.main-item.active {
-  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-  color: #2563eb;
-  border-color: #93c5fd;
-}
-
-.menu-icon {
-  font-size: 17px;
-  flex-shrink: 0;
-  transition: all 0.2s ease;
-}
-
-.menu-item:hover .menu-icon {
-  transform: scale(1.08);
-  color: #2563eb;
-}
-
-.menu-item.active .menu-icon {
-  color: #2563eb;
-}
-
-.menu-text {
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.submenu-arrow {
-  margin-left: auto;
-  transition: transform 0.2s ease;
-  color: #9ca3af;
-  flex-shrink: 0;
-}
-
-.submenu-arrow svg {
-  display: block;
-}
-
-.submenu {
-  padding-left: 46px;
-  margin-top: 2px;
-}
-
-.submenu-item {
+.sidebar-el-menu .el-sub-menu .el-menu-item {
+  height: 42px;
+  line-height: 42px;
+  padding-left: 48px !important;
   font-size: 13px;
-  padding: 9px 14px;
-  gap: 10px;
-  color: #6b7280;
-  border-radius: 6px;
 }
 
-.submenu-item:hover {
+.sidebar-el-menu .el-sub-menu .el-menu-item:hover {
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
   color: #2563eb;
 }
 
-.submenu-item.active {
+.sidebar-el-menu .el-sub-menu .el-menu-item.is-active {
   background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
   color: #2563eb;
   font-weight: 600;
+  border-right: 3px solid #2563eb;
 }
 
-.submenu-item .menu-icon {
-  font-size: 15px;
+.sidebar-el-menu .el-sub-menu__title {
+  color: #374151;
+  font-weight: 500;
 }
 
-.menu-divider {
-  height: 1px;
-  background: linear-gradient(90deg, transparent, #e5e7eb 20%, #e5e7eb 80%, transparent);
-  margin: 12px 14px;
+.sidebar-el-menu .el-sub-menu__title:hover {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  color: #2563eb;
 }
 
-.menu-group {
-  margin-top: 2px;
+.sidebar-el-menu .el-sub-menu .el-sub-menu__title {
+  padding-left: 20px !important;
+}
+
+.sidebar-el-menu .el-sub-menu .el-sub-menu__title:hover {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  color: #2563eb;
+}
+
+.sidebar-el-menu .el-icon {
+  margin-right: 12px;
+  font-size: 18px;
+}
+
+.sidebar-el-menu .el-sub-menu__icon-arrow {
+  color: #9ca3af;
 }
 
 /* 内容区 - 统一背景 */

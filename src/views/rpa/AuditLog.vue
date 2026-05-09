@@ -1,53 +1,53 @@
 <template>
   <div class="audit-page">
     <div class="page-header">
-      <h2>审计日志</h2>
-      <p class="page-desc">记录和追溯所有系统操作行为</p>
+      <h2>{{ t('audit.title') }}</h2>
+      <p class="page-desc">{{ t('audit.subtitle') }}</p>
     </div>
 
     <!-- 统计卡片 -->
     <div class="stats-row">
       <div class="stat-box">
         <span class="stat-num">{{ stats.total }}</span>
-        <span class="stat-label">总操作数</span>
+        <span class="stat-label">{{ t('audit.totalOperations') }}</span>
       </div>
       <div class="stat-box warning">
         <span class="stat-num">{{ stats.today }}</span>
-        <span class="stat-label">今日操作</span>
+        <span class="stat-label">{{ t('audit.todayOperations') }}</span>
       </div>
       <div class="stat-box danger">
         <span class="stat-num">{{ stats.highRisk }}</span>
-        <span class="stat-label">高危操作</span>
+        <span class="stat-label">{{ t('audit.highRiskOperations') }}</span>
       </div>
       <div class="stat-box info">
         <span class="stat-num">{{ stats.logins }}</span>
-        <span class="stat-label">登录次数</span>
+        <span class="stat-label">{{ t('audit.loginCount') }}</span>
       </div>
     </div>
 
     <div class="toolbar">
       <div class="search-box">
         <el-icon><Search /></el-icon>
-        <input v-model="searchKeyword" placeholder="搜索操作内容/用户..." />
+        <input v-model="searchKeyword" :placeholder="t('audit.searchPlaceholder')" />
       </div>
-      <el-select v-model="typeFilter" placeholder="操作类型" clearable style="width: 140px;">
-        <el-option label="登录" value="login" />
-        <el-option label="创建" value="create" />
-        <el-option label="修改" value="update" />
-        <el-option label="删除" value="delete" />
-        <el-option label="导出" value="export" />
+      <el-select v-model="typeFilter" :placeholder="t('audit.operationType')" clearable style="width: 140px;">
+        <el-option :label="t('audit.login')" value="login" />
+        <el-option :label="t('audit.create')" value="create" />
+        <el-option :label="t('audit.update')" value="update" />
+        <el-option :label="t('audit.delete')" value="delete" />
+        <el-option :label="t('audit.export')" value="export" />
       </el-select>
-      <el-select v-model="riskFilter" placeholder="风险等级" clearable style="width: 120px;">
-        <el-option label="高危" value="high" />
-        <el-option label="中危" value="medium" />
-        <el-option label="低危" value="low" />
+      <el-select v-model="riskFilter" :placeholder="t('audit.riskLevel')" clearable style="width: 120px;">
+        <el-option :label="t('audit.highRisk')" value="high" />
+        <el-option :label="t('audit.mediumRisk')" value="medium" />
+        <el-option :label="t('audit.lowRisk')" value="low" />
       </el-select>
-      <el-date-picker v-model="dateRange" type="daterange" range-separator="至" start-placeholder="开始日期" end-placeholder="结束日期" style="width: 260px;" />
-      <el-button @click="exportLogs"><el-icon><Download /></el-icon> 导出报表</el-button>
+      <el-date-picker v-model="dateRange" type="daterange" :range-separator="t('common.to')" :start-placeholder="t('common.startDate')" :end-placeholder="t('common.endDate')" style="width: 260px;" />
+      <el-button @click="exportLogs"><el-icon><Download /></el-icon> {{ t('audit.exportReport') }}</el-button>
     </div>
 
     <el-table :data="paginatedLogs" v-loading="loading" border stripe class="unified-table" :default-sort="{ prop: 'time', order: 'descending' }">
-      <el-table-column type="index" label="序号" width="60" align="center">
+      <el-table-column type="index" :label="t('audit.seq')" width="60" align="center">
         <template #default="{ $index }">
           <div class="index-cell">
             <div class="index-line"></div>
@@ -56,29 +56,29 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column prop="time" label="操作时间" min-width="160" />
-      <el-table-column prop="user" label="操作用户" width="120" />
-      <el-table-column prop="ip" label="IP地址" width="140" />
-      <el-table-column prop="type" label="操作类型" width="100" align="center">
+      <el-table-column prop="time" :label="t('audit.operationTime')" min-width="160" />
+      <el-table-column prop="user" :label="t('audit.operationUser')" width="120" />
+      <el-table-column prop="ip" :label="t('audit.ipAddress')" width="140" />
+      <el-table-column prop="type" :label="t('audit.operationType')" width="100" align="center">
         <template #default="{ row }">
           <el-tag :type="getTypeTag(row.type)" size="small">{{ getTypeText(row.type) }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="module" label="模块" width="100" align="center">
+      <el-table-column prop="module" :label="t('audit.module')" width="100" align="center">
         <template #default="{ row }">
           <span>{{ getModuleText(row.module) }}</span>
         </template>
       </el-table-column>
-      <el-table-column prop="content" label="操作内容" min-width="250" show-overflow-tooltip />
-      <el-table-column prop="risk" label="风险" width="80" align="center">
+      <el-table-column prop="content" :label="t('audit.operationContent')" min-width="250" show-overflow-tooltip />
+      <el-table-column prop="risk" :label="t('audit.risk')" width="80" align="center">
         <template #default="{ row }">
           <el-tag :type="getRiskTag(row.risk)" size="small">{{ getRiskText(row.risk) }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="100" fixed="right" align="center">
+      <el-table-column :label="t('common.actions')" width="100" fixed="right" align="center">
         <template #default="{ row }">
           <div class="action-buttons">
-            <el-button link type="primary" @click="viewDetail(row)" class="action-btn">详情</el-button>
+            <el-button link type="primary" @click="viewDetail(row)" class="action-btn">{{ t('audit.detail') }}</el-button>
           </div>
         </template>
       </el-table-column>
@@ -97,57 +97,57 @@
     </div>
 
     <!-- 详情弹窗 -->
-    <el-dialog v-model="detailVisible" title="操作详情" width="600px">
+    <el-dialog v-model="detailVisible" :title="t('audit.operationDetail')" width="600px">
       <div class="detail-content" v-if="currentLog">
         <div class="detail-row">
-          <label>操作时间:</label>
+          <label>{{ t('audit.operationTime') }}:</label>
           <span>{{ currentLog.time }}</span>
         </div>
         <div class="detail-row">
-          <label>操作用户:</label>
+          <label>{{ t('audit.operationUser') }}:</label>
           <span>{{ currentLog.user }}</span>
         </div>
         <div class="detail-row">
-          <label>用户角色:</label>
+          <label>{{ t('audit.userRole') }}:</label>
           <span>{{ currentLog.role }}</span>
         </div>
         <div class="detail-row">
-          <label>IP地址:</label>
+          <label>{{ t('audit.ipAddress') }}:</label>
           <span>{{ currentLog.ip }}</span>
         </div>
         <div class="detail-row">
-          <label>操作类型:</label>
+          <label>{{ t('audit.operationType') }}:</label>
           <el-tag :type="getTypeTag(currentLog.type)">{{ getTypeText(currentLog.type) }}</el-tag>
         </div>
         <div class="detail-row">
-          <label>所属模块:</label>
+          <label>{{ t('audit.module') }}:</label>
           <span>{{ getModuleText(currentLog.module) }}</span>
         </div>
         <div class="detail-row">
-          <label>风险等级:</label>
+          <label>{{ t('audit.riskLevel') }}:</label>
           <el-tag :type="getRiskTag(currentLog.risk)">{{ getRiskText(currentLog.risk) }}</el-tag>
         </div>
         <div class="detail-row full">
-          <label>操作内容:</label>
+          <label>{{ t('audit.operationContent') }}:</label>
           <pre>{{ currentLog.content }}</pre>
         </div>
         <div class="detail-row full" v-if="currentLog.oldValue || currentLog.newValue">
-          <label>变更详情:</label>
+          <label>{{ t('audit.changeDetail') }}:</label>
           <div class="change-detail">
             <div v-if="currentLog.oldValue">
-              <span class="change-label">修改前:</span>
+              <span class="change-label">{{ t('audit.beforeChange') }}:</span>
               <pre>{{ currentLog.oldValue }}</pre>
             </div>
             <div v-if="currentLog.newValue">
-              <span class="change-label">修改后:</span>
+              <span class="change-label">{{ t('audit.afterChange') }}:</span>
               <pre>{{ currentLog.newValue }}</pre>
             </div>
           </div>
         </div>
         <div class="detail-row full" v-if="currentLog.result">
-          <label>执行结果:</label>
+          <label>{{ t('audit.executionResult') }}:</label>
           <span :class="currentLog.result === 'success' ? 'text-success' : 'text-danger'">
-            {{ currentLog.result === 'success' ? '成功' : '失败' }}
+            {{ currentLog.result === 'success' ? t('audit.success') : t('audit.failed') }}
           </span>
         </div>
       </div>
@@ -157,9 +157,12 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { Search, Download } from '@element-plus/icons-vue'
 import { apiGet } from '../../utils/api.js'
+
+const { t } = useI18n()
 
 const loading = ref(false)
 const searchKeyword = ref('')
@@ -209,18 +212,18 @@ const getTypeTag = (type) => {
 }
 
 const getTypeText = (type) => {
-  const map = { login: '登录', create: '创建', update: '修改', delete: '删除', export: '导出' }
+  const map = { login: t('audit.login'), create: t('audit.create'), update: t('audit.update'), delete: t('audit.delete'), export: t('audit.export') }
   return map[type] || type
 }
 
 const getModuleText = (module) => {
   const map = { 
-    user: '用户管理', 
-    robot: '机器人', 
-    process: '流程管理', 
-    task: '任务调度',
-    log: '日志管理',
-    system: '系统设置'
+    user: t('audit.userManagement'), 
+    robot: t('audit.robot'), 
+    process: t('audit.processManagement'), 
+    task: t('audit.taskScheduling'),
+    log: t('audit.logManagement'),
+    system: t('audit.systemSettings')
   }
   return map[module] || module
 }
@@ -231,7 +234,7 @@ const getRiskTag = (risk) => {
 }
 
 const getRiskText = (risk) => {
-  const map = { high: '高危', medium: '中危', low: '低危' }
+  const map = { high: t('audit.highRisk'), medium: t('audit.mediumRisk'), low: t('audit.lowRisk') }
   return map[risk] || risk
 }
 
@@ -264,7 +267,7 @@ const loadLogs = async () => {
     stats.highRisk = logs.value.filter(l => l.risk === 'high').length
     stats.logins = logs.value.filter(l => l.type === 'login').length
   } catch (e) {
-    console.error('加载审计日志失败:', e)
+    console.error(t('audit.loadFailed'), e)
     logs.value = []
   } finally {
     loading.value = false
@@ -279,15 +282,15 @@ const viewDetail = (log) => {
 const exportLogs = () => {
   // 获取要导出的数据（当前筛选后的所有数据）
   const exportData = filteredLogs.value.map(log => ({
-    '操作时间': log.time,
-    '操作用户': log.user,
-    'IP地址': log.ip,
-    '操作类型': getTypeText(log.type),
-    '模块': getModuleText(log.module),
-    '操作内容': log.content,
-    '风险等级': getRiskText(log.risk),
-    '请求参数': log.params || '',
-    '响应结果': log.result || ''
+    [t('audit.operationTime')]: log.time,
+    [t('audit.operationUser')]: log.user,
+    [t('audit.ipAddress')]: log.ip,
+    [t('audit.operationType')]: getTypeText(log.type),
+    [t('audit.module')]: getModuleText(log.module),
+    [t('audit.operationContent')]: log.content,
+    [t('audit.riskLevel')]: getRiskText(log.risk),
+    [t('audit.requestParams')]: log.params || '',
+    [t('audit.responseResult')]: log.result || ''
   }))
 
   // 生成CSV内容
@@ -304,11 +307,11 @@ const exportLogs = () => {
 
   const link = document.createElement('a')
   link.href = url
-  link.download = `审计日志_${new Date().toISOString().slice(0, 10)}.csv`
+  link.download = `${t('audit.auditLog')}_${new Date().toISOString().slice(0, 10)}.csv`
   link.click()
 
   URL.revokeObjectURL(url)
-  ElMessage.success(`审计日志导出成功，共 ${exportData.length} 条记录`)
+  ElMessage.success(t('audit.exportSuccess', { count: exportData.length }))
 }
 
 const handleSizeChange = (size) => { 

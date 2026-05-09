@@ -5,19 +5,19 @@
       <div class="nav-left">
         <el-button @click="goBack" text class="back-btn">
           <el-icon><ArrowLeft /></el-icon>
-          返回列表
+          {{ t('process.backToList') }}
         </el-button>
         <el-divider direction="vertical" />
-        <span class="nav-title">流程详情</span>
+        <span class="nav-title">{{ t('process.detail') }}</span>
       </div>
       <div class="nav-actions">
         <el-button @click="openDesigner" type="primary">
           <el-icon><Edit /></el-icon>
-          编辑流程
+          {{ t('process.design') }}
         </el-button>
         <el-button @click="handleExecute" type="success" :loading="executing">
           <el-icon><VideoPlay /></el-icon>
-          立即执行
+          {{ t('process.execute') }}
         </el-button>
       </div>
     </div>
@@ -33,39 +33,39 @@
               <el-icon><Document /></el-icon>
             </div>
             <div class="card-title">
-              <h3>基本信息</h3>
-              <p>流程核心属性</p>
+              <h3>{{ t('process.basicInfo') }}</h3>
+              <p>{{ t('process.basicInfoDesc') }}</p>
             </div>
             <el-tag :type="process.status === 'active' ? 'success' : 'info'" effect="dark">
-              {{ process.status === 'active' ? '已发布' : '草稿' }}
+              {{ process.status === 'active' ? t('process.published') : t('process.draft') }}
             </el-tag>
           </div>
           <div class="card-body">
             <div class="info-item">
-              <label>流程名称</label>
+              <label>{{ t('process.name') }}</label>
               <div class="info-value primary">{{ process.name }}</div>
             </div>
             <div class="info-item">
-              <label>流程编码</label>
+              <label>{{ t('process.code') }}</label>
               <div class="info-value code">{{ process.code }}</div>
             </div>
             <div class="info-item">
-              <label>版本号</label>
+              <label>{{ t('process.versionNumber') }}</label>
               <div class="info-value">
                 <el-tag size="small" effect="plain">v{{ process.version }}</el-tag>
               </div>
             </div>
             <div class="info-item">
-              <label>创建人</label>
+              <label>{{ t('process.creator') }}</label>
               <div class="info-value">{{ process.creatorName || '-' }}</div>
             </div>
             <div class="info-item">
-              <label>创建时间</label>
+              <label>{{ t('process.createTime') }}</label>
               <div class="info-value">{{ process.createTime || '-' }}</div>
             </div>
             <div class="info-item full">
-              <label>流程描述</label>
-              <div class="info-value desc">{{ process.description || '暂无描述' }}</div>
+              <label>{{ t('process.description') }}</label>
+              <div class="info-value desc">{{ process.description || t('process.noDescription') }}</div>
             </div>
           </div>
         </div>
@@ -77,12 +77,12 @@
               <el-icon><List /></el-icon>
             </div>
             <div class="card-title">
-              <h3>执行步骤</h3>
-              <p>{{ steps.length }} 个步骤</p>
+              <h3>{{ t('process.processSteps') }}</h3>
+              <p>{{ t('process.stepsCount', { count: steps.length }) }}</p>
             </div>
             <el-button size="small" @click="refreshSteps" text>
               <el-icon><Refresh /></el-icon>
-              刷新
+              {{ t('common.refresh') }}
             </el-button>
           </div>
           <div class="card-body">
@@ -91,7 +91,7 @@
                 <div class="step-number">{{ index + 1 }}</div>
                 <div class="step-content">
                   <div class="step-header">
-                    <span class="step-name">{{ step.name || '未命名步骤' }}</span>
+                    <span class="step-name">{{ step.name || t('process.noNamedStep') }}</span>
                     <el-tag v-if="step.type" :type="getStepTypeTag(step.type)" size="small" effect="light">
                       {{ getStepTypeLabel(step.type) }}
                     </el-tag>
@@ -108,7 +108,7 @@
                     <template v-else>
                       <el-tag type="info" size="small" effect="plain">
                         <el-icon><Warning /></el-icon>
-                        未绑定机器人
+                        {{ t('process.unboundRobot') }}
                       </el-tag>
                     </template>
                   </div>
@@ -116,8 +116,8 @@
               </div>
             </div>
             <div v-else class="empty-steps">
-              <el-empty description="暂无执行步骤" :image-size="60">
-                <el-button type="primary" size="small" @click="openDesigner">去设计</el-button>
+              <el-empty :description="t('process.noSteps')" :image-size="60">
+                <el-button type="primary" size="small" @click="openDesigner">{{ t('process.goDesign') }}</el-button>
               </el-empty>
             </div>
           </div>
@@ -130,11 +130,11 @@
               <el-icon><Tickets /></el-icon>
             </div>
             <div class="card-title">
-              <h3>执行结果数据</h3>
-              <p>各步骤执行结果</p>
+              <h3>{{ t('process.executionResultData') }}</h3>
+              <p>{{ t('process.executionResultDataDesc') }}</p>
             </div>
             <el-tag :type="latestExecutionResult.status === 'completed' ? 'success' : 'warning'" effect="dark">
-              {{ latestExecutionResult.status === 'completed' ? '已完成' : '进行中' }}
+              {{ latestExecutionResult.status === 'completed' ? t('task.statusCompleted') : t('task.statusRunning') }}
             </el-tag>
           </div>
           <div class="card-body">
@@ -147,7 +147,7 @@
                 </div>
                 <div class="result-content">
                   <div class="result-header">
-                    <span class="result-step">{{ stepResult.stepIndex }}. {{ stepResult.stepName || '步骤' + stepResult.stepIndex }}</span>
+                    <span class="result-step">{{ stepResult.stepIndex }}. {{ stepResult.stepName || t('process.step') + stepResult.stepIndex }}</span>
                     <el-tag v-if="stepResult.stepType" size="small" :type="getStepTypeTag(stepResult.stepType)">
                       {{ getStepTypeLabel(stepResult.stepType) }}
                     </el-tag>
@@ -155,11 +155,11 @@
                   <div class="result-details">
                     <div class="result-robot">
                       <el-icon><Monitor /></el-icon>
-                      {{ stepResult.robotName || '未知机器人' }}
+                      {{ stepResult.robotName || t('process.unknownRobot') }}
                     </div>
                     <div v-if="stepResult.result" class="result-info">
                       <span v-if="stepResult.result.dataCount" class="result-count">
-                        处理数据：{{ stepResult.result.dataCount }} 条
+                        {{ t('process.processedData') }}：{{ stepResult.result.dataCount }} {{ t('process.items') }}
                       </span>
                       <span v-if="stepResult.result.message" class="result-message">
                         {{ stepResult.result.message }}
@@ -173,7 +173,7 @@
               </div>
             </div>
             <div v-else class="empty-result">
-              <el-empty description="暂无执行结果" :image-size="60" />
+              <el-empty :description="t('process.noExecutionResult')" :image-size="60" />
             </div>
           </div>
         </div>
@@ -188,8 +188,8 @@
               <el-icon><VideoPlay /></el-icon>
             </div>
             <div class="card-title">
-              <h3>执行进度</h3>
-              <p>{{ executing ? '执行中...' : '最近一次执行' }}</p>
+              <h3>{{ t('process.executionProgress') }}</h3>
+              <p>{{ executing ? t('process.executing') : t('process.lastExecution') }}</p>
             </div>
             <div class="progress-actions">
               <el-button 
@@ -199,7 +199,7 @@
                 :disabled="!executing && executionProgress.length === 0"
               >
                 <el-icon><Monitor /></el-icon>
-                {{ showVisualizer ? '隐藏监控' : '可视化' }}
+                {{ showVisualizer ? t('process.hideMonitor') : t('process.visualization') }}
               </el-button>
               <el-button size="small" @click="clearProgress" text v-if="!executing">
                 <el-icon><Delete /></el-icon>
@@ -210,10 +210,10 @@
           <!-- 可视化监控面板 -->
           <div v-if="showVisualizer" class="visualizer-panel">
             <div class="visualizer-header">
-              <span class="viz-title">实时监控</span>
+              <span class="viz-title">{{ t('process.realtimeMonitor') }}</span>
               <div class="viz-status">
                 <span class="status-indicator" :class="{ active: executing }"></span>
-                <span>{{ executing ? '运行中' : '已停止' }}</span>
+                <span>{{ executing ? t('process.running') : t('process.stopped') }}</span>
               </div>
             </div>
             <div class="visualizer-body">
@@ -236,12 +236,12 @@
                     <el-icon v-if="index < currentStepIndex"><Check /></el-icon>
                     <span v-else>{{ index + 1 }}</span>
                   </div>
-                  <div class="viz-step-name">{{ step.name || '步骤' + (index + 1) }}</div>
+                  <div class="viz-step-name">{{ step.name || t('process.step') + (index + 1) }}</div>
                 </div>
               </div>
               <div class="viz-console">
                 <div class="console-header">
-                  <span>控制台输出</span>
+                  <span>{{ t('process.consoleOutput') }}</span>
                   <span class="console-blink" v-if="executing">▌</span>
                 </div>
                 <div class="console-body" ref="consoleContainer">
@@ -255,7 +255,7 @@
                     <span class="console-text">{{ log.message }}</span>
                   </div>
                   <div v-if="realtimeLogs.length === 0" class="console-empty">
-                    等待机器人输出...
+                    {{ t('process.waitingRobotOutput') }}
                   </div>
                 </div>
               </div>
@@ -274,7 +274,7 @@
               </div>
             </div>
             <div v-else class="empty-progress">
-              <el-empty description="暂无执行进度" :image-size="40" />
+              <el-empty :description="t('process.noExecutionProgress')" :image-size="40" />
             </div>
           </div>
         </div>
@@ -286,13 +286,13 @@
               <el-icon><Tickets /></el-icon>
             </div>
             <div class="card-title">
-              <h3>执行日志</h3>
-              <p>详细执行记录</p>
+              <h3>{{ t('process.executionLog') }}</h3>
+              <p>{{ t('process.executionLogDesc') }}</p>
             </div>
             <div class="log-actions">
               <el-button size="small" @click="loadLogs" text>
                 <el-icon><Refresh /></el-icon>
-                刷新
+                {{ t('common.refresh') }}
               </el-button>
             </div>
           </div>
@@ -301,8 +301,8 @@
               <div class="empty-icon">
                 <el-icon><Document /></el-icon>
               </div>
-              <p>暂无执行日志</p>
-              <span>点击"立即执行"开始运行流程</span>
+              <p>{{ t('process.noExecutionLog') }}</p>
+              <span>{{ t('process.clickExecuteToStart') }}</span>
             </div>
             <div v-else class="log-timeline">
               <div v-for="(log, index) in executeLogs" :key="index" class="log-item" :class="getLogType(log.status)">
@@ -314,8 +314,8 @@
                       {{ getStatusText(log.status) }}
                     </el-tag>
                   </div>
-                  <div class="log-message">{{ log.message || log.action || '执行完成' }}</div>
-                  <div v-if="log.duration" class="log-duration">耗时: {{ log.duration }}</div>
+                  <div class="log-message">{{ log.message || log.action || t('process.executionCompleted') }}</div>
+                  <div v-if="log.duration" class="log-duration">{{ t('process.duration') }}: {{ log.duration }}</div>
                 </div>
               </div>
             </div>
@@ -329,26 +329,26 @@
               <el-icon><DataAnalysis /></el-icon>
             </div>
             <div class="card-title">
-              <h3>执行统计</h3>
-              <p>历史执行数据</p>
+              <h3>{{ t('process.executionStats') }}</h3>
+              <p>{{ t('process.executionStatsDesc') }}</p>
             </div>
           </div>
           <div class="stats-body">
             <div class="stat-item">
               <div class="stat-value">{{ stats.total }}</div>
-              <div class="stat-label">总执行次数</div>
+              <div class="stat-label">{{ t('process.totalExecutions') }}</div>
             </div>
             <div class="stat-item success">
               <div class="stat-value">{{ stats.completed }}</div>
-              <div class="stat-label">已完成</div>
+              <div class="stat-label">{{ t('task.statusCompleted') }}</div>
             </div>
             <div class="stat-item danger">
               <div class="stat-value">{{ stats.failed }}</div>
-              <div class="stat-label">失败</div>
+              <div class="stat-label">{{ t('task.statusFailed') }}</div>
             </div>
             <div class="stat-item warning">
               <div class="stat-value">{{ stats.running }}</div>
-              <div class="stat-label">进行中</div>
+              <div class="stat-label">{{ t('task.statusRunning') }}</div>
             </div>
           </div>
         </div>
@@ -356,23 +356,17 @@
     </div>
 
     <!-- 流程设计器弹窗 - 画布模式 -->
-    <el-dialog v-model="designerVisible" :title="`流程设计 - ${process.name || ''}`" width="90%" top="5vh" class="process-designer-dialog-canvas" :close-on-click-modal="false">
+    <el-dialog v-model="designerVisible" :title="`${t('process.designTitle')} - ${process.name || ''}`" width="90%" top="5vh" class="process-designer-dialog-canvas" :close-on-click-modal="false">
       <div class="canvas-designer-wrapper">
-        <CanvasDesigner 
+        <CanvasDesigner
           ref="canvasDesignerRef"
           v-model="canvasData"
           :robots="robots"
           :robot-categories="robotCategories"
+          :process-id="process.id"
+          @save="saveDesign"
         />
       </div>
-      <template #footer>
-        <div class="dialog-footer">
-          <el-button @click="designerVisible = false">关闭</el-button>
-          <el-button type="primary" @click="saveDesign" :loading="savingDesign">
-            <el-icon><Check /></el-icon> 保存设计
-          </el-button>
-        </div>
-      </template>
     </el-dialog>
   </div>
 </template>
@@ -381,6 +375,7 @@
 import { ref, reactive, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { useI18n } from 'vue-i18n'
 import {
   ArrowLeft, Document, List, Monitor, Warning, Edit, VideoPlay,
   Check, Delete, Rank, Plus, Setting, Tickets, Refresh, DataAnalysis,
@@ -392,6 +387,7 @@ import { apiGet, apiPost } from '../../utils/api.js'
 
 const router = useRouter()
 const route = useRoute()
+const { t } = useI18n()
 
 const process = ref({})
 const steps = ref([])
@@ -424,7 +420,7 @@ const loadProcess = async () => {
       await loadSteps()
     }
   } catch {
-    ElMessage.error('加载流程详情失败')
+    ElMessage.error(t('process.loadFailed'))
   }
 }
 
@@ -561,9 +557,9 @@ const getRobotStatus = (robotId) => {
   const robot = robots.value.find(r => r.id === robotId)
   if (!robot) return { name: '', statusText: '', type: 'info' }
   const statusMap = {
-    idle: { text: '空闲', type: 'success' },
-    busy: { text: '忙碌', type: 'warning' },
-    offline: { text: '离线', type: 'info' }
+    idle: { text: t('robot.idle'), type: 'success' },
+    busy: { text: t('robot.busy'), type: 'warning' },
+    offline: { text: t('robot.offline'), type: 'info' }
   }
   const status = statusMap[robot.status] || { text: robot.status, type: 'info' }
   return { name: robot.name, statusText: status.text, type: status.type }
@@ -571,14 +567,14 @@ const getRobotStatus = (robotId) => {
 
 // 步骤类型标签映射
 const stepTypeMap = {
-  collect: { label: '数据采集', tag: 'primary' },
-  parse: { label: '数据解析', tag: 'success' },
-  process: { label: '数据加工', tag: 'warning' },
-  query: { label: '数据查询', tag: 'info' },
-  transform: { label: '数据转换', tag: '' },
-  output: { label: '数据输出', tag: 'danger' },
-  validate: { label: '数据校验', tag: '' },
-  default: { label: '通用步骤', tag: 'info' }
+  collect: { label: t('process.stepTypeCollect'), tag: 'primary' },
+  parse: { label: t('process.stepTypeParse'), tag: 'success' },
+  process: { label: t('process.stepTypeProcess'), tag: 'warning' },
+  query: { label: t('process.stepTypeQuery'), tag: 'info' },
+  transform: { label: t('process.stepTypeTransform'), tag: '' },
+  output: { label: t('process.stepTypeOutput'), tag: 'danger' },
+  validate: { label: t('process.stepTypeValidate'), tag: '' },
+  default: { label: t('process.stepTypeDefault'), tag: 'info' }
 }
 
 // 获取步骤类型标签
@@ -594,13 +590,13 @@ const getStepTypeTag = (type) => {
 // 刷新步骤数据
 const refreshSteps = async () => {
   await loadSteps()
-  ElMessage.success('已刷新')
+  ElMessage.success(t('process.refreshed'))
 }
 
 // 真实执行流程
 const handleExecute = async () => {
   if (steps.value.length === 0) {
-    ElMessage.warning('请先设计流程步骤')
+    ElMessage.warning(t('process.pleaseDesignFirst'))
     return
   }
 
@@ -636,15 +632,15 @@ const handleExecute = async () => {
         showVisualizer.value = true
       }
     } else {
-      addProgressLog('error', result.message || '执行失败')
-      addRealtimeLog(`执行失败: ${result.message || '未知错误'}`, 'error')
-      ElMessage.error(result.message || '执行失败')
+      addProgressLog('error', result.message || t('process.executionFailed'))
+      addRealtimeLog(`${t('process.executionFailed')}: ${result.message || t('process.unknownError')}`, 'error')
+      ElMessage.error(result.message || t('process.executionFailed'))
       executing.value = false
     }
   } catch {
-    addProgressLog('error', '执行异常，请检查网络或机器人状态')
-    addRealtimeLog('执行异常，请检查网络或机器人状态', 'error')
-    ElMessage.error('执行异常')
+    addProgressLog('error', t('process.executionError'))
+    addRealtimeLog(t('process.executionErrorHint'), 'error')
+    ElMessage.error(t('process.executionError'))
     executing.value = false
   }
 }
@@ -667,7 +663,7 @@ const startPolling = (logId) => {
     if (pollCount > maxPolls) {
       clearInterval(pollInterval)
       executing.value = false
-      addRealtimeLog('执行超时，已停止轮询', 'warning')
+        addRealtimeLog(t('process.pollTimeout'), 'warning')
       return
     }
     
@@ -740,9 +736,9 @@ const startPolling = (logId) => {
           // 刷新日志列表和统计
           await loadLogs()
           
-          addProgressLog(log.status === 'completed' ? 'success' : 'warning', '执行已完成')
-          addRealtimeLog('=== 执行完成 ===', 'success')
-          ElMessage.success(log.status === 'completed' ? '流程执行成功' : '流程执行完成（有错误）')
+          addProgressLog(log.status === 'completed' ? 'success' : 'warning', t('process.executionCompleted'))
+          addRealtimeLog('=== ' + t('process.executionDone') + ' ===', 'success')
+          ElMessage.success(log.status === 'completed' ? t('process.executionSuccess') : t('process.executionCompletedWithErrors'))
         }
       } else {
         // 日志不存在或其他错误
@@ -810,14 +806,14 @@ const getStatusTagType = (status) => {
 // 获取状态文本
 const getStatusText = (status) => {
   const map = {
-    pending: '待执行',
-    running: '执行中',
-    completed: '已完成',
-    completed_with_errors: '完成(有错误)',
-    failed: '失败',
-    cancelled: '已取消'
+    pending: t('task.statusPending'),
+    running: t('task.statusRunning'),
+    completed: t('task.statusCompleted'),
+    completed_with_errors: t('task.statusCompletedWithErrors'),
+    failed: t('task.statusFailed'),
+    cancelled: t('task.statusCancelled')
   }
-  return map[status] || status || '未知'
+  return map[status] || status || t('process.unknown')
 }
 
 // 格式化时间
@@ -864,7 +860,7 @@ const convertOldStepsToCanvas = (oldSteps) => {
   const nodes = oldSteps.map((step, index) => ({
     id: step.id || `node_${index}`,
     type: 'process',
-    name: step.name || '未命名步骤',
+    name: step.name || t('process.noNamedStep'),
     stepType: step.type || '',
     category: step.category || '',
     robotId: step.robotId || null,
@@ -897,14 +893,14 @@ const saveDesign = async () => {
     const stepsData = JSON.stringify(data)
     const result = await apiPost(`/process/${process.value.id}/design`, { steps: stepsData })
     if (result.code === 0) {
-      ElMessage.success('保存成功')
+      ElMessage.success(t('process.saveSuccess'))
       await loadSteps()
       designerVisible.value = false
     } else {
-      ElMessage.error(result.message || '保存失败')
+      ElMessage.error(result.message || t('process.saveFailed'))
     }
   } catch {
-    ElMessage.error('请求失败')
+    ElMessage.error(t('process.requestFailed'))
   } finally {
     savingDesign.value = false
   }

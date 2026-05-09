@@ -2,7 +2,7 @@
   <div class="robot-detail-page">
     <div class="page-header">
       <div class="header-content">
-        <h2>{{ robot.name || '加载中...' }} - 详情</h2>
+        <h2>{{ robot.name || t('robot.loading') }} - {{ t('robot.detail') }}</h2>
         <div class="header-tags">
           <el-tag :type="getCategoryType(robot.robotCategory)" size="large">
             {{ getCategoryText(robot.robotCategory) }}
@@ -13,7 +13,7 @@
         </div>
       </div>
       <el-button @click="goBack">
-        <el-icon><Back /></el-icon> 返回列表
+        <el-icon><Back /></el-icon> {{ t('robot.backToList') }}
       </el-button>
     </div>
 
@@ -21,43 +21,43 @@
     <el-card class="info-card" shadow="hover">
       <template #header>
         <div class="card-header">
-          <span><el-icon><InfoFilled /></el-icon> 机器人基本信息</span>
+          <span><el-icon><InfoFilled /></el-icon> {{ t('robot.basicInfo') }}</span>
           <el-button type="primary" size="small" @click="loadRobotDetail">
-            <el-icon><Refresh /></el-icon> 刷新
+            <el-icon><Refresh /></el-icon> {{ t('common.refresh') }}
           </el-button>
         </div>
       </template>
       <el-descriptions :column="2" border>
-        <el-descriptions-item label="机器人名称">{{ robot.name || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="机器人分类">
+        <el-descriptions-item :label="t('robot.name')">{{ robot.name || '-' }}</el-descriptions-item>
+        <el-descriptions-item :label="t('robot.category')">
           <el-tag :type="getCategoryType(robot.robotCategory)" size="small">
             {{ getCategoryText(robot.robotCategory) }}
           </el-tag>
         </el-descriptions-item>
-        <el-descriptions-item label="IP地址">{{ robot.ip || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="主机名">{{ robot.hostname || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="端口">{{ robot.port || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="当前状态">
+        <el-descriptions-item :label="t('robot.ip')">{{ robot.ip || '-' }}</el-descriptions-item>
+        <el-descriptions-item :label="t('robot.hostname')">{{ robot.hostname || '-' }}</el-descriptions-item>
+        <el-descriptions-item :label="t('robot.port')">{{ robot.port || '-' }}</el-descriptions-item>
+        <el-descriptions-item :label="t('robot.currentStatus')">
           <el-tag :type="getStatusType(robot.status)" size="small">
             {{ getStatusText(robot.status) }}
           </el-tag>
         </el-descriptions-item>
-        <el-descriptions-item label="CPU使用率">
+        <el-descriptions-item :label="t('robot.cpuUsage')">
           <el-progress :percentage="robot.cpuUsage || 0" :color="getProgressColor(robot.cpuUsage)" :stroke-width="8" style="width: 120px;" />
         </el-descriptions-item>
-        <el-descriptions-item label="内存使用率">
+        <el-descriptions-item :label="t('robot.memoryUsage')">
           <el-progress :percentage="robot.memoryUsage || 0" :color="getProgressColor(robot.memoryUsage)" :stroke-width="8" style="width: 120px;" />
         </el-descriptions-item>
-        <el-descriptions-item label="最后心跳时间">{{ formatTime(robot.lastHeartbeat) }}</el-descriptions-item>
-        <el-descriptions-item label="创建时间">{{ formatTime(robot.createTime) }}</el-descriptions-item>
-        <el-descriptions-item label="绑定的流程" :span="2">
+        <el-descriptions-item :label="t('robot.lastHeartbeat')">{{ formatTime(robot.lastHeartbeat) }}</el-descriptions-item>
+        <el-descriptions-item :label="t('robot.createTime')">{{ formatTime(robot.createTime) }}</el-descriptions-item>
+        <el-descriptions-item :label="t('robot.boundProcess')" :span="2">
           <el-tag v-if="robot.boundProcessName" type="info">{{ robot.boundProcessName }}</el-tag>
-          <span v-else class="text-muted">未绑定（由流程仓库进行绑定）</span>
+          <span v-else class="text-muted">{{ t('robot.notBound') }}</span>
         </el-descriptions-item>
-        <el-descriptions-item label="能力描述" :span="2">
+        <el-descriptions-item :label="t('robot.capabilities')" :span="2">
           {{ robot.capabilities || '-' }}
         </el-descriptions-item>
-        <el-descriptions-item label="机器人描述" :span="2">
+        <el-descriptions-item :label="t('robot.description')" :span="2">
           {{ robot.description || '-' }}
         </el-descriptions-item>
       </el-descriptions>
@@ -67,9 +67,9 @@
     <el-card class="info-card" shadow="hover">
       <template #header>
         <div class="card-header">
-          <span><el-icon><Operation /></el-icon> 流程执行统计</span>
+          <span><el-icon><Operation /></el-icon> {{ t('robot.processStats') }}</span>
           <el-button type="primary" size="small" @click="refreshStats">
-            <el-icon><Refresh /></el-icon> 刷新
+            <el-icon><Refresh /></el-icon> {{ t('common.refresh') }}
           </el-button>
         </div>
       </template>
@@ -79,62 +79,62 @@
           <div class="stat-icon"><el-icon><CircleCheck /></el-icon></div>
           <div class="stat-info">
             <div class="stat-value">{{ stats.collectSuccess }}</div>
-            <div class="stat-label">采集成功</div>
+            <div class="stat-label">{{ t('robot.collectSuccess') }}</div>
           </div>
         </div>
         <div class="stat-item danger">
           <div class="stat-icon"><el-icon><CircleClose /></el-icon></div>
           <div class="stat-info">
             <div class="stat-value">{{ stats.collectFailed }}</div>
-            <div class="stat-label">采集失败</div>
+            <div class="stat-label">{{ t('robot.collectFailed') }}</div>
           </div>
         </div>
         <div class="stat-item success">
           <div class="stat-icon"><el-icon><SuccessFilled /></el-icon></div>
           <div class="stat-info">
             <div class="stat-value">{{ stats.parseSuccess }}</div>
-            <div class="stat-label">解析成功</div>
+            <div class="stat-label">{{ t('robot.parseSuccess') }}</div>
           </div>
         </div>
         <div class="stat-item danger">
           <div class="stat-icon"><el-icon><CloseBold /></el-icon></div>
           <div class="stat-info">
             <div class="stat-value">{{ stats.parseFailed }}</div>
-            <div class="stat-label">解析失败</div>
+            <div class="stat-label">{{ t('robot.parseFailed') }}</div>
           </div>
         </div>
         <div class="stat-item success">
           <div class="stat-icon"><el-icon><Select /></el-icon></div>
           <div class="stat-info">
             <div class="stat-value">{{ stats.processSuccess }}</div>
-            <div class="stat-label">加工成功</div>
+            <div class="stat-label">{{ t('robot.processSuccess') }}</div>
           </div>
         </div>
         <div class="stat-item danger">
           <div class="stat-icon"><el-icon><Delete /></el-icon></div>
           <div class="stat-info">
             <div class="stat-value">{{ stats.processFailed }}</div>
-            <div class="stat-label">加工失败</div>
+            <div class="stat-label">{{ t('robot.processFailed') }}</div>
           </div>
         </div>
       </div>
 
       <!-- 执行记录表格 -->
-      <el-divider content-position="left">最近执行记录</el-divider>
+      <el-divider content-position="left">{{ t('robot.recentExecution') }}</el-divider>
       <el-table :data="executionLogs" v-loading="loading" border stripe size="small" max-height="300">
-        <el-table-column type="index" label="序号" width="60" align="center" />
-        <el-table-column prop="taskName" label="任务名称" min-width="150" show-overflow-tooltip />
-        <el-table-column prop="action" label="执行动作" width="120" />
-        <el-table-column prop="status" label="状态" width="100" align="center">
+        <el-table-column type="index" :label="t('robot.seq')" width="60" align="center" />
+        <el-table-column prop="taskName" :label="t('robot.taskName')" min-width="150" show-overflow-tooltip />
+        <el-table-column prop="action" :label="t('robot.action')" width="120" />
+        <el-table-column prop="status" :label="t('task.status')" width="100" align="center">
           <template #default="{ row }">
             <el-tag :type="row.status === 'success' ? 'success' : row.status === 'failed' ? 'danger' : 'warning'" size="small">
-              {{ row.status === 'success' ? '成功' : row.status === 'failed' ? '失败' : '运行中' }}
+              {{ row.status === 'success' ? t('task.statusSuccess') : row.status === 'failed' ? t('task.statusFailed') : t('task.statusRunning') }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="message" label="消息" min-width="200" show-overflow-tooltip />
-        <el-table-column prop="duration" label="耗时" width="100" align="center" />
-        <el-table-column prop="createTime" label="执行时间" width="160" />
+        <el-table-column prop="message" :label="t('robot.message')" min-width="200" show-overflow-tooltip />
+        <el-table-column prop="duration" :label="t('robot.duration')" width="100" align="center" />
+        <el-table-column prop="createTime" :label="t('robot.executeTime')" width="160" />
       </el-table>
     </el-card>
 
@@ -142,16 +142,16 @@
     <el-card class="info-card" shadow="hover">
       <template #header>
         <div class="card-header">
-          <span><el-icon><Cpu /></el-icon> 机器人执行代码</span>
-          <el-tag type="warning" size="small">可编辑</el-tag>
+          <span><el-icon><Cpu /></el-icon> {{ t('robot.executionCode') }}</span>
+          <el-tag type="warning" size="small">{{ t('robot.editable') }}</el-tag>
         </div>
       </template>
       
       <div v-if="!editingCode" class="code-display">
-        <pre class="code-block">{{ robot.robotCode || '// 暂无执行代码，请在编辑模式下添加机器人的执行代码' }}</pre>
+        <pre class="code-block">{{ robot.robotCode || t('robot.noCode') }}</pre>
         <div class="code-actions">
           <el-button type="primary" @click="editCode">
-            <el-icon><Edit /></el-icon> 编辑代码
+            <el-icon><Edit /></el-icon> {{ t('robot.editCode') }}
           </el-button>
         </div>
       </div>
@@ -161,13 +161,13 @@
           v-model="codeForm"
           type="textarea"
           :rows="15"
-          placeholder="请输入机器人执行代码..."
+          :placeholder="t('robot.enterCode')"
           class="code-textarea"
         />
         <div class="code-actions">
-          <el-button @click="cancelEditCode">取消</el-button>
+          <el-button @click="cancelEditCode">{{ t('common.cancel') }}</el-button>
           <el-button type="primary" @click="saveCode" :loading="saveLoading">
-            <el-icon><Check /></el-icon> 保存代码
+            <el-icon><Check /></el-icon> {{ t('robot.saveCode') }}
           </el-button>
         </div>
       </div>
@@ -178,12 +178,15 @@
 <script setup>
 import { ref, reactive, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { 
   Back, InfoFilled, Operation, CircleCheck, CircleClose, 
   SuccessFilled, CloseBold, Select, Delete, Cpu, Edit, Check, Refresh
 } from '@element-plus/icons-vue'
 import { apiGet, apiPut } from '../../utils/api.js'
+
+const { t } = useI18n()
 
 const router = useRouter()
 const route = useRoute()
@@ -206,12 +209,12 @@ const stats = reactive({
 
 const getCategoryText = (category) => {
   const map = {
-    'DATA_COLLECT': '数据采集',
-    'DATA_PARSE': '数据解析',
-    'DATA_PROCESS': '数据加工',
-    'GENERAL': '通用执行'
+    'DATA_COLLECT': t('robot.categoryCollect'),
+    'DATA_PARSE': t('robot.categoryParse'),
+    'DATA_PROCESS': t('robot.categoryProcess'),
+    'GENERAL': t('robot.categoryGeneral')
   }
-  return map[category] || category || '通用执行'
+  return map[category] || category || t('robot.categoryGeneral')
 }
 
 const getCategoryType = (category) => {
@@ -225,7 +228,7 @@ const getCategoryType = (category) => {
 }
 
 const getStatusText = (status) => {
-  const map = { idle: '空闲', busy: '忙碌', offline: '离线' }
+  const map = { idle: t('robot.idle'), busy: t('robot.busy'), offline: t('robot.offline') }
   return map[status] || status
 }
 
@@ -257,10 +260,10 @@ const loadRobotDetail = async () => {
     if (result.code === 0) {
       robot.value = result.data || {}
     } else {
-      ElMessage.error(result.message || '获取机器人详情失败')
+      ElMessage.error(result.message || t('robot.loadFailed'))
     }
   } catch {
-    ElMessage.error('获取机器人详情失败')
+    ElMessage.error(t('robot.loadFailed'))
   } finally {
     loading.value = false
   }
@@ -308,7 +311,7 @@ const calculateStats = (logs) => {
 
 const refreshStats = () => {
   loadExecutionLogs()
-  ElMessage.success('统计数据已刷新')
+  ElMessage.success(t('robot.statsRefreshed'))
 }
 
 const editCode = () => {
@@ -328,14 +331,14 @@ const saveCode = async () => {
       robotCode: codeForm.value
     })
     if (result.code === 0) {
-      ElMessage.success('代码保存成功')
+      ElMessage.success(t('robot.codeSaved'))
       robot.value.robotCode = codeForm.value
       editingCode.value = false
     } else {
-      ElMessage.error(result.message || '保存失败')
+      ElMessage.error(result.message || t('robot.saveFailed'))
     }
   } catch {
-    ElMessage.error('保存失败')
+    ElMessage.error(t('robot.saveFailed'))
   } finally {
     saveLoading.value = false
   }

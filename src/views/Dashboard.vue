@@ -6,13 +6,13 @@
         <!-- 页面标题区 -->
         <div class="page-header">
           <div class="header-text">
-            <h1 class="page-title">运营概览</h1>
+            <h1 class="page-title">{{ t('dashboard.title') }}</h1>
             <p class="page-subtitle">{{ currentDate }}</p>
           </div>
           <div class="header-actions">
             <el-button type="primary" plain @click="refreshData">
               <el-icon><Refresh /></el-icon>
-              刷新数据
+              {{ t('dashboard.refresh') }}
             </el-button>
           </div>
         </div>
@@ -21,7 +21,7 @@
         <div class="kpi-section">
           <div class="section-title">
             <span class="title-icon"><el-icon><TrendCharts /></el-icon></span>
-            <span>关键指标</span>
+            <span>{{ t('dashboard.keyMetrics') }}</span>
           </div>
           <div class="kpi-grid">
             <!-- 任务统计 -->
@@ -36,8 +36,8 @@
                 </div>
               </div>
               <div class="kpi-value">{{ stats.tasks }}</div>
-              <div class="kpi-label">总任务数</div>
-              <div class="kpi-desc">较上周期</div>
+              <div class="kpi-label">{{ t('dashboard.totalTasks') }}</div>
+              <div class="kpi-desc">{{ t('dashboard.vsLastPeriod') }}</div>
             </div>
 
             <!-- 成功率 -->
@@ -52,8 +52,8 @@
                 </div>
               </div>
               <div class="kpi-value">{{ stats.tasks - stats.failedTasks }}</div>
-              <div class="kpi-label">成功任务</div>
-              <div class="kpi-desc">执行成功率</div>
+              <div class="kpi-label">{{ t('dashboard.successTasks') }}</div>
+              <div class="kpi-desc">{{ t('dashboard.successRate') }}</div>
             </div>
 
             <!-- 在线机器人 -->
@@ -68,8 +68,8 @@
                 </div>
               </div>
               <div class="kpi-value">{{ activeRobots }}</div>
-              <div class="kpi-label">在线机器人</div>
-              <div class="kpi-desc">总数: {{ stats.robots }}</div>
+              <div class="kpi-label">{{ t('dashboard.onlineRobots') }}</div>
+              <div class="kpi-desc">{{ t('dashboard.total') }}: {{ stats.robots }}</div>
             </div>
 
             <!-- 队列状态 -->
@@ -80,8 +80,8 @@
                 </div>
               </div>
               <div class="kpi-value">{{ queueBacklog }}</div>
-              <div class="kpi-label">队列积压</div>
-              <div class="kpi-desc">待处理任务</div>
+              <div class="kpi-label">{{ t('dashboard.queueBacklog') }}</div>
+              <div class="kpi-desc">{{ t('dashboard.pendingTasks') }}</div>
             </div>
 
             <!-- 响应时间 -->
@@ -92,8 +92,8 @@
                 </div>
               </div>
               <div class="kpi-value">{{ avgResponseTime }}</div>
-              <div class="kpi-label">平均响应时间</div>
-              <div class="kpi-desc">单位: ms</div>
+              <div class="kpi-label">{{ t('dashboard.avgResponseTime') }}</div>
+              <div class="kpi-desc">{{ t('dashboard.unitMs') }}</div>
             </div>
           </div>
         </div>
@@ -104,14 +104,14 @@
           <div class="chart-card-large">
             <div class="card-header">
               <div class="header-left">
-                <span class="card-title"><el-icon><DataLine /></el-icon> 任务执行趋势</span>
-                <span class="card-subtitle">近30天执行情况</span>
+                <span class="card-title"><el-icon><DataLine /></el-icon> {{ t('dashboard.taskTrend') }}</span>
+                <span class="card-subtitle">{{ t('dashboard.last30Days') }}</span>
               </div>
               <div class="period-selector">
                 <el-radio-group v-model="selectedPeriod" size="small">
-                  <el-radio-button value="7">近7天</el-radio-button>
-                  <el-radio-button value="30">近30天</el-radio-button>
-                  <el-radio-button value="90">近90天</el-radio-button>
+                  <el-radio-button value="7">{{ t('dashboard.last7Days') }}</el-radio-button>
+                  <el-radio-button value="30">{{ t('dashboard.last30Days') }}</el-radio-button>
+                  <el-radio-button value="90">{{ t('dashboard.last90Days') }}</el-radio-button>
                 </el-radio-group>
               </div>
             </div>
@@ -125,8 +125,8 @@
             <!-- 机器人状态 -->
             <div class="status-card">
               <div class="card-header">
-                <span class="card-title"><el-icon><Monitor /></el-icon> 机器人状态</span>
-                <el-link type="primary" @click="goToRobots">查看全部</el-link>
+                <span class="card-title"><el-icon><Monitor /></el-icon> {{ t('robot.title') }}</span>
+                <el-link type="primary" @click="goToRobots">{{ t('common.viewAll') }}</el-link>
               </div>
               <div class="robot-list">
                 <div v-for="robot in robotStatusList.slice(0, 5)" :key="robot.id" class="robot-item">
@@ -146,19 +146,19 @@
                       <el-progress :percentage="robot.cpuUsage || 0" :color="getProgressColor(robot.cpuUsage)" :stroke-width="6" :show-text="false" />
                     </div>
                     <div class="resource-bar">
-                      <span class="resource-label">内存 {{ robot.memoryUsage || 0 }}%</span>
+                      <span class="resource-label">{{ t('dashboard.memory') }} {{ robot.memoryUsage || 0 }}%</span>
                       <el-progress :percentage="robot.memoryUsage || 0" :color="getProgressColor(robot.memoryUsage)" :stroke-width="6" :show-text="false" />
                     </div>
                   </div>
                 </div>
-                <el-empty v-if="robotStatusList.length === 0" description="暂无数据" :image-size="80" />
+                <el-empty v-if="robotStatusList.length === 0" :description="t('common.noData')" :image-size="80" />
               </div>
             </div>
 
             <!-- 许可证使用 -->
             <div class="license-card">
               <div class="card-header">
-                <span class="card-title"><el-icon><Key /></el-icon> 许可证</span>
+                <span class="card-title"><el-icon><Key /></el-icon> {{ t('dashboard.license') }}</span>
               </div>
               <div class="license-content">
                 <el-progress
@@ -169,20 +169,20 @@
                 >
                   <template #default>
                     <span class="license-percent">{{ licenseUsage }}%</span>
-                    <span class="license-label">使用率</span>
+                    <span class="license-label">{{ t('dashboard.usage') }}</span>
                   </template>
                 </el-progress>
                 <div class="license-details">
                   <div class="license-item">
-                    <span class="label">已用</span>
+                    <span class="label">{{ t('dashboard.used') }}</span>
                     <span class="value">{{ usedLicenses }}</span>
                   </div>
                   <div class="license-item">
-                    <span class="label">总数</span>
+                    <span class="label">{{ t('dashboard.total') }}</span>
                     <span class="value">{{ totalLicenses }}</span>
                   </div>
                   <div class="license-item">
-                    <span class="label">到期</span>
+                    <span class="label">{{ t('dashboard.expires') }}</span>
                     <span class="value">{{ licenseExpiry }}</span>
                   </div>
                 </div>
@@ -196,8 +196,8 @@
           <!-- 告警消息 -->
           <div class="alert-card">
             <div class="card-header">
-              <span class="card-title"><el-icon><BellFilled /></el-icon> 告警消息</span>
-              <el-link type="primary" @click="goToNotifications">查看全部</el-link>
+              <span class="card-title"><el-icon><BellFilled /></el-icon> {{ t('dashboard.alerts') }}</span>
+              <el-link type="primary" @click="goToNotifications">{{ t('common.viewAll') }}</el-link>
             </div>
             <div class="alert-list">
               <div v-for="alert in recentAlerts.slice(0, 4)" :key="alert.id" class="alert-item" @click="viewAlert(alert)">
@@ -212,15 +212,15 @@
                   {{ getAlertText(alert.type) }}
                 </el-tag>
               </div>
-              <el-empty v-if="recentAlerts.length === 0" description="暂无告警" :image-size="60" />
+              <el-empty v-if="recentAlerts.length === 0" :description="t('dashboard.noAlerts')" :image-size="60" />
             </div>
           </div>
 
           <!-- 热门流程 -->
           <div class="process-card">
             <div class="card-header">
-              <span class="card-title"><el-icon><StarFilled /></el-icon> 热门流程</span>
-              <el-link type="primary" @click="goToProcesses">流程仓库</el-link>
+              <span class="card-title"><el-icon><StarFilled /></el-icon> {{ t('dashboard.hotProcesses') }}</span>
+              <el-link type="primary" @click="goToProcesses">{{ t('menu.processes') }}</el-link>
             </div>
             <div class="process-list">
               <div v-for="(process, index) in hotProcesses.slice(0, 5)" :key="process.id" class="process-item" @click="goToProcessDetail(process)">
@@ -230,46 +230,46 @@
                 <div class="process-info">
                   <div class="process-name">{{ process.name }}</div>
                   <div class="process-meta">
-                    <span class="process-count">执行 {{ process.execCount }} 次</span>
+                    <span class="process-count">{{ t('dashboard.exec') }} {{ process.execCount }} {{ t('dashboard.times') }}</span>
                   </div>
                 </div>
                 <el-button type="primary" link @click.stop="goToProcessDetail(process)">
-                  查看
+                  {{ t('common.view') }}
                 </el-button>
               </div>
-              <el-empty v-if="hotProcesses.length === 0" description="暂无流程" :image-size="60" />
+              <el-empty v-if="hotProcesses.length === 0" :description="t('dashboard.noProcesses')" :image-size="60" />
             </div>
           </div>
 
           <!-- 快速操作 -->
           <div class="quick-actions-card">
             <div class="card-header">
-              <span class="card-title"><el-icon><MagicStick /></el-icon> 快速操作</span>
+              <span class="card-title"><el-icon><MagicStick /></el-icon> {{ t('dashboard.quickActions') }}</span>
             </div>
             <div class="action-grid">
               <div class="action-item" @click="goToProcesses">
                 <div class="action-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
                   <el-icon><Document /></el-icon>
                 </div>
-                <span>创建流程</span>
+                <span>{{ t('process.create') }}</span>
               </div>
               <div class="action-item" @click="goToRobots">
                 <div class="action-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
                   <el-icon><Cpu /></el-icon>
                 </div>
-                <span>机器人管理</span>
+                <span>{{ t('robot.title') }}</span>
               </div>
               <div class="action-item" @click="goToTasks">
                 <div class="action-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
                   <el-icon><VideoPlay /></el-icon>
                 </div>
-                <span>任务监控</span>
+                <span>{{ t('menu.monitor') }}</span>
               </div>
               <div class="action-item" @click="goToSystemSettings">
                 <div class="action-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
                   <el-icon><Setting /></el-icon>
                 </div>
-                <span>系统设置</span>
+                <span>{{ t('menu.systemSettings') }}</span>
               </div>
             </div>
           </div>
@@ -282,6 +282,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Bell, ArrowDown, User, SwitchButton, List, CircleCheck, Monitor, Warning, Timer, Star, Key,
@@ -296,6 +297,7 @@ import { TitleComponent, TooltipComponent, LegendComponent, GridComponent } from
 
 use([CanvasRenderer, LineChart, TitleComponent, TooltipComponent, LegendComponent, GridComponent])
 
+const { t } = useI18n()
 const router = useRouter()
 const selectedPeriod = ref('30')
 
@@ -311,7 +313,7 @@ const currentUser = ref({
 
 const userName = computed(() => currentUser.value.realName || currentUser.value.username)
 const userInitial = computed(() => userName.value.charAt(0).toUpperCase())
-const userRole = computed(() => currentUser.value.role === 1 ? '管理员' : '用户')
+const userRole = computed(() => currentUser.value.role === 1 ? t('user.admin') : t('user.normal'))
 
 const unreadCount = ref(0)
 
@@ -427,7 +429,7 @@ const getRobotStatusType = (s) => {
 }
 
 const getRobotStatusText = (s) => {
-  const map = { idle: '空闲', busy: '忙碌', offline: '离线', active: '活跃' }
+  const map = { idle: t('robot.idle'), busy: t('robot.busy'), offline: t('robot.offline'), active: t('robot.active') }
   return map[s] || s
 }
 
@@ -449,7 +451,7 @@ const getAlertType = (type) => {
 }
 
 const getAlertText = (type) => {
-  const map = { danger: '紧急', warning: '警告', info: '提示', success: '成功' }
+  const map = { danger: t('dashboard.critical'), warning: t('dashboard.warning'), info: t('common.info'), success: t('common.success') }
   return map[type] || type
 }
 
@@ -474,14 +476,14 @@ const goToProcessDetail = (process) => router.push('/rpa/processes')
 const goToSystemSettings = () => router.push('/system/settings')
 
 const refreshData = () => {
-  ElMessage.success('数据已刷新')
+  ElMessage.success(t('dashboard.dataRefreshed'))
   loadStats()
   loadNotifications()
   loadHotProcesses()
 }
 
 const viewAlert = (alert) => {
-  ElMessageBox.alert(alert.content || alert.title, alert.title, { confirmButtonText: '确定' })
+  ElMessageBox.alert(alert.content || alert.title, alert.title, { confirmButtonText: t('common.confirm') })
 }
 
 // 数据加载

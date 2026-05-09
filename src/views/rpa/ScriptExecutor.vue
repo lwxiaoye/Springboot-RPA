@@ -1,8 +1,8 @@
 <template>
   <div class="script-page">
     <div class="page-header">
-      <h2>脚本执行器</h2>
-      <p class="page-desc">编写和执行Python、JavaScript脚本，扩展RPA自动化能力</p>
+      <h2>{{ t('script.title') }}</h2>
+      <p class="page-desc">{{ t('script.subtitle') }}</p>
     </div>
 
     <el-row :gutter="20">
@@ -11,30 +11,30 @@
         <el-card shadow="hover">
           <template #header>
             <div class="card-header">
-              <span>脚本编辑器</span>
+              <span>{{ t('script.editor') }}</span>
               <el-select v-model="scriptType" size="small" style="width: 120px;">
-                <el-option label="Python" value="python" />
-                <el-option label="JavaScript" value="javascript" />
-                <el-option label="Shell" value="shell" />
+                <el-option :label="t('script.python')" value="python" />
+                <el-option :label="t('script.javascript')" value="javascript" />
+                <el-option :label="t('script.shell')" value="shell" />
               </el-select>
             </div>
           </template>
 
           <div class="editor-toolbar">
             <el-button-group>
-              <el-button size="small" @click="loadTemplate">加载模板</el-button>
-              <el-button size="small" @click="validateScript">验证脚本</el-button>
-              <el-button size="small" @click="clearEditor">清空</el-button>
+              <el-button size="small" @click="loadTemplate">{{ t('script.loadTemplate') }}</el-button>
+              <el-button size="small" @click="validateScript">{{ t('script.validate') }}</el-button>
+              <el-button size="small" @click="clearEditor">{{ t('script.clear') }}</el-button>
             </el-button-group>
             <el-button-group>
               <el-button size="small" type="success" @click="showAiDialog">
-                <el-icon><MagicStick /></el-icon> AI生成
+                <el-icon><MagicStick /></el-icon> {{ t('script.aiGenerate') }}
               </el-button>
               <el-button size="small" type="primary" @click="executeScript" :loading="executing">
-                <el-icon><VideoPlay /></el-icon> 执行
+                <el-icon><VideoPlay /></el-icon> {{ t('script.execute') }}
               </el-button>
               <el-button size="small" type="danger" @click="stopScript" :disabled="!runningScriptId">
-                <el-icon><VideoPause /></el-icon> 停止
+                <el-icon><VideoPause /></el-icon> {{ t('script.stop') }}
               </el-button>
             </el-button-group>
           </div>
@@ -44,7 +44,7 @@
             type="textarea"
             :rows="20"
             class="code-editor"
-            placeholder="在此编写脚本代码..."
+            :placeholder="t('script.codePlaceholder')"
             spellcheck="false"
           />
         </el-card>
@@ -53,30 +53,30 @@
         <el-card shadow="hover" style="margin-top: 20px">
           <template #header>
             <div class="card-header">
-              <span>执行结果</span>
+              <span>{{ t('script.result') }}</span>
               <el-tag v-if="executionResult" :type="executionResult.success ? 'success' : 'danger'">
-                {{ executionResult.success ? '执行成功' : '执行失败' }}
+                {{ executionResult.success ? t('script.executeSuccess') : t('script.executeFailed') }}
               </el-tag>
             </div>
           </template>
           
           <div v-if="executionResult" class="result-panel">
             <div class="result-meta">
-              <el-tag>耗时: {{ executionResult.duration }}ms</el-tag>
-              <el-tag v-if="executionResult.exitCode !== undefined">退出码: {{ executionResult.exitCode }}</el-tag>
-              <el-tag v-if="executionResult.killed" type="warning">被终止</el-tag>
+              <el-tag>{{ t('script.duration') }}: {{ executionResult.duration }}ms</el-tag>
+              <el-tag v-if="executionResult.exitCode !== undefined">{{ t('script.exitCode') }}: {{ executionResult.exitCode }}</el-tag>
+              <el-tag v-if="executionResult.killed" type="warning">{{ t('script.terminated') }}</el-tag>
             </div>
             
             <el-tabs>
-              <el-tab-pane label="输出" name="output">
-                <pre class="output-content">{{ executionResult.output || '（无输出）' }}</pre>
+              <el-tab-pane :label="t('script.output')" name="output">
+                <pre class="output-content">{{ executionResult.output || t('script.noOutput') }}</pre>
               </el-tab-pane>
-              <el-tab-pane label="错误" name="error" v-if="executionResult.errorMessage">
+              <el-tab-pane :label="t('script.error')" name="error" v-if="executionResult.errorMessage">
                 <pre class="error-content">{{ executionResult.errorMessage }}</pre>
               </el-tab-pane>
             </el-tabs>
           </div>
-          <el-empty v-else description="暂无执行结果" />
+          <el-empty v-else :description="t('script.noResult')" />
         </el-card>
       </el-col>
 
@@ -85,7 +85,7 @@
         <!-- 变量注入 -->
         <el-card shadow="hover">
           <template #header>
-            <span>环境变量</span>
+            <span>{{ t('script.envVariables') }}</span>
           </template>
           <div class="variables-list">
             <div v-for="(value, key) in variables" :key="key" class="variable-item">
@@ -97,9 +97,9 @@
               </el-button>
             </div>
             <div class="add-variable">
-              <el-input v-model="newVarKey" placeholder="变量名" style="width: 120px;">
+              <el-input v-model="newVarKey" :placeholder="t('script.varName')" style="width: 120px;">
                 <template #append>
-                  <el-button @click="addVariable">添加</el-button>
+                  <el-button @click="addVariable">{{ t('script.add') }}</el-button>
                 </template>
               </el-input>
             </div>
@@ -109,10 +109,10 @@
         <!-- 执行配置 -->
         <el-card shadow="hover" style="margin-top: 20px">
           <template #header>
-            <span>执行配置</span>
+            <span>{{ t('script.execConfig') }}</span>
           </template>
           <el-form label-width="80px">
-            <el-form-item label="超时时间">
+            <el-form-item :label="t('script.timeout')">
               <el-input-number v-model="timeout" :min="1000" :max="300000" :step="1000" />
               <span class="unit">ms</span>
             </el-form-item>
@@ -122,42 +122,42 @@
         <!-- 脚本模板 -->
         <el-card shadow="hover" style="margin-top: 20px">
           <template #header>
-            <span>常用模板</span>
+            <span>{{ t('script.templates') }}</span>
           </template>
           <div class="templates-list">
             <div class="template-item" @click="loadTemplate('python_data_process')">
               <div class="template-icon">🐍</div>
               <div class="template-info">
-                <div class="template-name">Python数据处理</div>
-                <div class="template-desc">JSON数据处理示例</div>
+                <div class="template-name">{{ t('script.tplPythonData') }}</div>
+                <div class="template-desc">{{ t('script.tplPythonDataDesc') }}</div>
               </div>
             </div>
             <div class="template-item" @click="loadTemplate('python_http')">
               <div class="template-icon">🌐</div>
               <div class="template-info">
-                <div class="template-name">Python HTTP请求</div>
-                <div class="template-desc">发送HTTP请求示例</div>
+                <div class="template-name">{{ t('script.tplPythonHttp') }}</div>
+                <div class="template-desc">{{ t('script.tplPythonHttpDesc') }}</div>
               </div>
             </div>
             <div class="template-item" @click="loadTemplate('js_data_process')">
               <div class="template-icon">📜</div>
               <div class="template-info">
-                <div class="template-name">JS数据处理</div>
-                <div class="template-desc">JavaScript数据处理</div>
+                <div class="template-name">{{ t('script.tplJsData') }}</div>
+                <div class="template-desc">{{ t('script.tplJsDataDesc') }}</div>
               </div>
             </div>
             <div class="template-item" @click="loadTemplate('js_http')">
               <div class="template-icon">⚡</div>
               <div class="template-info">
-                <div class="template-name">JS HTTP请求</div>
-                <div class="template-desc">Node.js请求示例</div>
+                <div class="template-name">{{ t('script.tplJsHttp') }}</div>
+                <div class="template-desc">{{ t('script.tplJsHttpDesc') }}</div>
               </div>
             </div>
             <div class="template-item" @click="loadTemplate('python_excel')">
               <div class="template-icon">📊</div>
               <div class="template-info">
-                <div class="template-name">Python Excel</div>
-                <div class="template-desc">Excel数据处理</div>
+                <div class="template-name">{{ t('script.tplPythonExcel') }}</div>
+                <div class="template-desc">{{ t('script.tplPythonExcelDesc') }}</div>
               </div>
             </div>
           </div>
@@ -166,20 +166,20 @@
         <!-- 安全说明 -->
         <el-card shadow="hover" style="margin-top: 20px" class="security-note">
           <template #header>
-            <span>安全提示</span>
+            <span>{{ t('script.securityTips') }}</span>
           </template>
           <ul class="security-list">
-            <li>危险命令已禁用：rm -rf /, format c: 等</li>
-            <li>网络访问受限：subprocess, socket 等已禁用</li>
-            <li>脚本长度限制：最大100KB</li>
-            <li>执行超时保护：防止脚本死循环</li>
+            <li>{{ t('script.securityTip1') }}</li>
+            <li>{{ t('script.securityTip2') }}</li>
+            <li>{{ t('script.securityTip3') }}</li>
+            <li>{{ t('script.securityTip4') }}</li>
           </ul>
         </el-card>
       </el-col>
     </el-row>
 
     <!-- 模板选择对话框 -->
-    <el-dialog v-model="templateDialogVisible" title="选择模板" width="600px">
+    <el-dialog v-model="templateDialogVisible" :title="t('script.selectTemplate')" width="600px">
       <div class="template-grid">
         <div v-for="tpl in templates" :key="tpl.key" class="template-card" @click="selectTemplate(tpl)">
           <div class="template-icon">{{ tpl.icon }}</div>
@@ -190,59 +190,59 @@
     </el-dialog>
 
     <!-- AI生成对话框 -->
-    <el-dialog v-model="aiDialogVisible" title="AI生成脚本" width="600px" :close-on-click-modal="false">
+    <el-dialog v-model="aiDialogVisible" :title="t('script.aiGenerateScript')" width="600px" :close-on-click-modal="false">
       <el-alert
         v-if="!aiConfigured"
         type="warning"
         :closable="false"
         style="margin-bottom: 15px"
       >
-        AI未配置，请在系统设置中配置LLM服务
+        {{ t('script.aiNotConfigured') }}
       </el-alert>
 
       <el-form :model="aiForm" label-width="100px">
-        <el-form-item label="脚本类型">
+        <el-form-item :label="t('script.scriptType')">
           <el-select v-model="aiForm.scriptType" style="width: 100%">
-            <el-option label="Python" value="python" />
-            <el-option label="JavaScript" value="javascript" />
-            <el-option label="Shell" value="shell" />
+            <el-option :label="t('script.python')" value="python" />
+            <el-option :label="t('script.javascript')" value="javascript" />
+            <el-option :label="t('script.shell')" value="shell" />
           </el-select>
         </el-form-item>
-        <el-form-item label="需求描述">
+        <el-form-item :label="t('script.requirementDesc')">
           <el-input
             v-model="aiForm.prompt"
             type="textarea"
             :rows="4"
-            placeholder="用自然语言描述你想要的脚本功能，例如：读取当前目录下所有CSV文件，合并成一个文件，并统计每列的总和"
+            :placeholder="t('script.promptPlaceholder')"
           />
         </el-form-item>
       </el-form>
 
       <template #footer>
-        <el-button @click="aiDialogVisible = false">取消</el-button>
+        <el-button @click="aiDialogVisible = false">{{ t('common.cancel') }}</el-button>
         <el-button type="primary" @click="generateByAi" :loading="aiGenerating" :disabled="!aiConfigured">
           <el-icon v-if="!aiGenerating"><MagicStick /></el-icon>
-          AI生成代码
+          {{ t('script.aiGenerateCode') }}
         </el-button>
       </template>
     </el-dialog>
 
     <!-- AI生成结果预览对话框 -->
-    <el-dialog v-model="aiPreviewVisible" title="AI生成结果" width="800px">
+    <el-dialog v-model="aiPreviewVisible" :title="t('script.aiResultPreview')" width="800px">
       <div v-if="aiGeneratedCode" class="ai-preview">
         <el-alert type="success" :closable="false" style="margin-bottom: 15px">
-          AI生成成功！生成的代码已填充到编辑器中。
+          {{ t('script.aiGenerateSuccess') }}
         </el-alert>
         <pre class="generated-code-preview">{{ aiGeneratedCode }}</pre>
       </div>
       <div v-else class="ai-preview">
         <el-alert type="warning" :closable="false">
-          未生成代码，请重试。
+          {{ t('script.noCodeGenerated') }}
         </el-alert>
       </div>
       <template #footer>
-        <el-button @click="aiPreviewVisible = false">关闭</el-button>
-        <el-button type="primary" @click="applyAiCode">应用代码</el-button>
+        <el-button @click="aiPreviewVisible = false">{{ t('common.close') }}</el-button>
+        <el-button type="primary" @click="applyAiCode">{{ t('script.applyCode') }}</el-button>
       </template>
     </el-dialog>
   </div>
@@ -250,8 +250,11 @@
 
 <script setup>
 import { ref, reactive } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { VideoPlay, VideoPause, Delete, MagicStick } from '@element-plus/icons-vue'
+
+const { t } = useI18n()
 
 const apiBase = '/api'
 const token = localStorage.getItem('token') || ''
@@ -300,7 +303,7 @@ const showAiDialog = () => {
 
 const generateByAi = async () => {
   if (!aiForm.prompt.trim()) {
-    ElMessage.warning('请输入需求描述')
+    ElMessage.warning(t('script.enterPromptDesc'))
     return
   }
 
@@ -323,14 +326,14 @@ const generateByAi = async () => {
       if (aiGeneratedCode.value) {
         aiPreviewVisible.value = true
       } else {
-        ElMessage.warning('AI未返回有效代码')
+        ElMessage.warning(t('script.aiNoValidCode'))
       }
     } else {
-      ElMessage.error(data.message || 'AI生成失败')
+      ElMessage.error(data.message || t('script.aiGenerateFailed'))
     }
   } catch (e) {
-    console.error('AI生成失败:', e)
-    ElMessage.error('AI生成失败: ' + (e.message || '请检查网络连接'))
+    console.error(t('script.aiGenerateFailed') + ':', e)
+    ElMessage.error(t('script.aiGenerateFailed') + ': ' + (e.message || t('script.checkNetwork')))
   } finally {
     aiGenerating.value = false
   }
@@ -348,7 +351,7 @@ const applyAiCode = () => {
       scriptType.value = 'shell'
     }
     aiPreviewVisible.value = false
-    ElMessage.success('代码已应用到编辑器')
+    ElMessage.success(t('script.codeApplied'))
   }
 }
 
@@ -366,7 +369,7 @@ const loadTemplate = (key) => {
     if (tpl) {
       scriptType.value = tpl.type
       scriptCode.value = tpl.code
-      ElMessage.success('已加载模板: ' + tpl.name)
+      ElMessage.success(t('script.templateLoaded') + ': ' + tpl.name)
     }
   } else {
     templateDialogVisible.value = true
@@ -377,7 +380,7 @@ const selectTemplate = (tpl) => {
   scriptType.value = tpl.type
   scriptCode.value = tpl.code
   templateDialogVisible.value = false
-  ElMessage.success('已加载模板: ' + tpl.name)
+  ElMessage.success(t('script.templateLoaded') + ': ' + tpl.name)
 }
 
 const clearEditor = () => {
@@ -387,7 +390,7 @@ const clearEditor = () => {
 
 const validateScript = async () => {
   if (!scriptCode.value.trim()) {
-    ElMessage.warning('请输入脚本内容')
+    ElMessage.warning(t('script.enterScriptContent'))
     return
   }
   try {
@@ -399,19 +402,19 @@ const validateScript = async () => {
     const data = await res.json()
     if (data.code === 0 && data.data) {
       if (data.data.valid) {
-        ElMessage.success('验证通过: ' + data.data.reason)
+        ElMessage.success(t('script.validatePass') + ': ' + data.data.reason)
       } else {
-        ElMessage.error('验证失败: ' + data.data.reason)
+        ElMessage.error(t('script.validateFailed') + ': ' + data.data.reason)
       }
     }
   } catch (e) {
-    ElMessage.error('验证请求失败')
+    ElMessage.error(t('script.validateRequestFailed'))
   }
 }
 
 const executeScript = async () => {
   if (!scriptCode.value.trim()) {
-    ElMessage.warning('请输入脚本内容')
+    ElMessage.warning(t('script.enterScriptContent'))
     return
   }
   
@@ -433,15 +436,15 @@ const executeScript = async () => {
     if (data.code === 0) {
       executionResult.value = data.data
       if (data.data.success) {
-        ElMessage.success('执行成功')
+        ElMessage.success(t('script.executeSuccess'))
       } else {
-        ElMessage.error('执行失败: ' + (data.data.errorMessage || '未知错误'))
+        ElMessage.error(t('script.executeFailed') + ': ' + (data.data.errorMessage || t('script.unknownError')))
       }
     } else {
-      ElMessage.error(data.message || '执行失败')
+      ElMessage.error(data.message || t('script.executeFailed'))
     }
   } catch (e) {
-    ElMessage.error('执行请求失败')
+    ElMessage.error(t('script.executeRequestFailed'))
   } finally {
     executing.value = false
   }
@@ -449,7 +452,7 @@ const executeScript = async () => {
 
 const stopScript = async () => {
   if (!runningScriptId.value) {
-    ElMessage.warning('没有正在运行的脚本')
+    ElMessage.warning(t('script.noRunningScript'))
     return
   }
   try {
@@ -458,21 +461,21 @@ const stopScript = async () => {
     })
     const data = await res.json()
     if (data.code === 0) {
-      ElMessage.success('脚本已停止')
+      ElMessage.success(t('script.scriptStopped'))
       runningScriptId.value = null
     }
   } catch (e) {
-    ElMessage.error('停止失败')
+    ElMessage.error(t('script.stopFailed'))
   }
 }
 
 const addVariable = () => {
   if (!newVarKey.value.trim()) {
-    ElMessage.warning('请输入变量名')
+    ElMessage.warning(t('script.enterVarName'))
     return
   }
   if (variables[newVarKey.value]) {
-    ElMessage.warning('变量已存在')
+    ElMessage.warning(t('script.varExists'))
     return
   }
   variables[newVarKey.value] = ''

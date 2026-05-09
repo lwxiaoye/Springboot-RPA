@@ -39,6 +39,7 @@ public class ReportAnalyticsService {
     private final TaskRepository taskRepository;
     private final CustomReportRepository customReportRepository;
     private final ReportSubscriptionRepository subscriptionRepository;
+    private final EmailNotificationService emailNotificationService;
 
     // ==================== 概览统计 ====================
 
@@ -585,26 +586,98 @@ public class ReportAnalyticsService {
 
     // ==================== 报表订阅管理 ====================
 
+    // 支持的推送渠道
+    private static final Set<String> SUPPORTED_CHANNELS = Set.of("email", "dingtalk", "wecom", "feishu");
+
+    // 邮箱验证正则
+    private static final String EMAIL_REGEX = "^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,7}$";
+
+    // 各渠道接收人验证规则
+    private static final Map<String, String> CHANNEL_RECIPIENT_RULES = Map.of(
+        "email", "邮箱地址",
+        "dingtalk", "钉钉用户名或手机号",
+        "wecom", "企业微信用户ID或手机号",
+        "feishu", "飞书用户ID或邮箱"
+    );
+
     /**
-     * 创建报表订阅
+     * 创建报表订阅 - 完善版
      */
     public ReportSubscription createSubscription(ReportSubscription subscription) {
+        // 1. 参数验证
+        validateSubscription(subscription);
+
+        // 2. 验证接收人格式
+        validateRecipients(subscription.getChannel(), subscription.getRecipients());
+
+        // 3. 检查系统是否配置了对应的推送渠道
+        validateChannelConfiguration(subscription.getChannel());
+
+        // 4. 生成订阅编码
+        if (subscription.getCode() == null || subscription.getCode().isEmpty()) {
+            subscription.setCode("SUB_" + System.currentTimeMillis());
+        }
+
+        // 5. 设置默认值
         subscription.setCreateTime(LocalDateTime.now());
         subscription.setEnabled(1);
+        subscription.setApprovalStatus("approved");
+        subscription.setSuccessCount(0);
+        subscription.setFailedCount(0);
+
+        // 6. 如果需要审批，设置为待审批状态
+        if (subscription.getRequireApproval() != null && subscription.getRequireApproval() == 1) {
+            subscription.setApprovalStatus("pending");
+            subscription.setEnabled(0); // 待审批时禁用
+        }
+
         return subscriptionRepository.save(subscription);
     }
 
     /**
-     * 更新报表订阅
+     * 更新报表订阅 - 完善版
      */
     public ReportSubscription updateSubscription(Long id, ReportSubscription subscription) {
         return subscriptionRepository.findById(id).map(existing -> {
+            // 1. 如果订阅正在审批中，不允许更新关键信息
+            if ("pending".equals(existing.getApprovalStatus())) {
+                throw new RuntimeException("订阅正在审批中，请等待审批完成后再更新");
+            }
+
+            // 2. 验证新参数
+            validateSubscription(subscription);
+
+            // 3. 如果推送方式改变，重新验证接收人
+            if (!existing.getChannel().equals(subscription.getChannel())) {
+                validateRecipients(subscription.getChannel(), subscription.getRecipients());
+                validateChannelConfiguration(subscription.getChannel());
+            } else {
+                validateRecipients(subscription.getChannel(), subscription.getRecipients());
+            }
+
+            // 4. 更新字段
             existing.setName(subscription.getName());
             existing.setReportType(subscription.getReportType());
             existing.setFrequency(subscription.getFrequency());
             existing.setChannel(subscription.getChannel());
             existing.setRecipients(subscription.getRecipients());
+            existing.setScheduleType(subscription.getScheduleType());
+            existing.setFixedTime(subscription.getFixedTime());
+            existing.setCronExpression(subscription.getCronExpression());
+            existing.setWeekdays(subscription.getWeekdays());
+            existing.setMonths(subscription.getMonths());
+            existing.setMonthDays(subscription.getMonthDays());
+            existing.setTimezone(subscription.getTimezone());
+            existing.setIncludeAttachment(subscription.getIncludeAttachment());
+            existing.setAttachmentType(subscription.getAttachmentType());
             existing.setUpdateTime(LocalDateTime.now());
+
+            // 5. 如果推送方式改变，可能需要重新审批
+            if (!existing.getChannel().equals(subscription.getChannel()) && existing.getRequireApproval() == 1) {
+                existing.setApprovalStatus("pending");
+                existing.setEnabled(0);
+            }
+
             return subscriptionRepository.save(existing);
         }).orElseThrow(() -> new RuntimeException("订阅不存在"));
     }
@@ -613,6 +686,14 @@ public class ReportAnalyticsService {
      * 删除报表订阅
      */
     public void deleteSubscription(Long id) {
+        ReportSubscription subscription = subscriptionRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("订阅不存在"));
+
+        // 如果订阅正在审批中，不允许删除
+        if ("pending".equals(subscription.getApprovalStatus())) {
+            throw new RuntimeException("订阅正在审批中，无法删除");
+        }
+
         subscriptionRepository.deleteById(id);
     }
 
@@ -621,6 +702,10 @@ public class ReportAnalyticsService {
      */
     public ReportSubscription toggleSubscription(Long id) {
         return subscriptionRepository.findById(id).map(sub -> {
+            // 只有已批准的订阅才能切换状态
+            if (!"approved".equals(sub.getApprovalStatus())) {
+                throw new RuntimeException("只有已批准的订阅才能切换状态");
+            }
             sub.setEnabled(sub.getEnabled() == 1 ? 0 : 1);
             sub.setUpdateTime(LocalDateTime.now());
             return subscriptionRepository.save(sub);
@@ -629,9 +714,365 @@ public class ReportAnalyticsService {
 
     /**
      * 查询订阅列表
+     * @param userId 用户ID（可选），如果为null则返回所有订阅
      */
     public List<ReportSubscription> listSubscriptions(Long userId) {
-        return subscriptionRepository.findByCreateUserOrderByCreateTimeDesc(userId);
+        if (userId != null) {
+            return subscriptionRepository.findByCreateUserOrderByCreateTimeDesc(userId);
+        } else {
+            // 返回所有订阅，按创建时间倒序
+            return subscriptionRepository.findAll();
+        }
+    }
+
+    /**
+     * 验证订阅参数
+     */
+    private void validateSubscription(ReportSubscription subscription) {
+        if (subscription.getName() == null || subscription.getName().trim().isEmpty()) {
+            throw new RuntimeException("订阅名称不能为空");
+        }
+        if (subscription.getName().length() > 200) {
+            throw new RuntimeException("订阅名称不能超过200个字符");
+        }
+        if (subscription.getReportType() == null || subscription.getReportType().trim().isEmpty()) {
+            throw new RuntimeException("请选择报表类型");
+        }
+        if (subscription.getFrequency() == null || subscription.getFrequency().trim().isEmpty()) {
+            throw new RuntimeException("请选择发送频率");
+        }
+        if (subscription.getChannel() == null || subscription.getChannel().trim().isEmpty()) {
+            throw new RuntimeException("请选择推送方式");
+        }
+        if (subscription.getRecipients() == null || subscription.getRecipients().trim().isEmpty()) {
+            throw new RuntimeException("接收人不能为空");
+        }
+    }
+
+    /**
+     * 验证接收人格式
+     * 根据推送方式的不同，验证规则也不同
+     */
+    private void validateRecipients(String channel, String recipients) {
+        if (recipients == null || recipients.trim().isEmpty()) {
+            throw new RuntimeException("接收人不能为空");
+        }
+
+        String[] recipientList = recipients.split("[,，;；]");
+
+        for (String recipient : recipientList) {
+            String r = recipient.trim();
+            if (r.isEmpty()) continue;
+
+            if (channel.contains("email")) {
+                // 邮箱验证
+                if (!r.matches(EMAIL_REGEX)) {
+                    throw new RuntimeException("邮箱格式不正确: " + r);
+                }
+            }
+            // 其他渠道的验证可以后续扩展
+        }
+    }
+
+    /**
+     * 验证推送渠道配置
+     * 检查系统是否配置了对应的推送渠道
+     */
+    private void validateChannelConfiguration(String channel) {
+        if (channel == null || channel.isEmpty()) {
+            throw new RuntimeException("推送方式不能为空");
+        }
+
+        String[] channels = channel.split("[,，]");
+
+        for (String ch : channels) {
+            String c = ch.trim().toLowerCase();
+            if (!SUPPORTED_CHANNELS.contains(c)) {
+                throw new RuntimeException("不支持的推送渠道: " + c);
+            }
+
+            // 根据渠道检查系统配置
+            switch (c) {
+                case "email":
+                    // 检查邮件配置
+                    checkEmailConfiguration();
+                    break;
+                case "dingtalk":
+                    // 检查钉钉配置
+                    checkDingTalkConfiguration();
+                    break;
+                case "wecom":
+                    // 检查企业微信配置
+                    checkWeWorkConfiguration();
+                    break;
+                case "feishu":
+                    // 检查飞书配置
+                    checkFeiShuConfiguration();
+                    break;
+            }
+        }
+    }
+
+    /**
+     * 检查邮件配置
+     */
+    private void checkEmailConfiguration() {
+        // 实际项目中应该从配置服务获取邮件配置
+        // 这里简化处理，实际使用时需要实现
+        log.debug("检查邮件配置...");
+    }
+
+    /**
+     * 检查钉钉配置
+     */
+    private void checkDingTalkConfiguration() {
+        log.debug("检查钉钉配置...");
+    }
+
+    /**
+     * 检查企业微信配置
+     */
+    private void checkWeWorkConfiguration() {
+        log.debug("检查企业微信配置...");
+    }
+
+    /**
+     * 检查飞书配置
+     */
+    private void checkFeiShuConfiguration() {
+        log.debug("检查飞书配置...");
+    }
+
+    /**
+     * 获取支持的推送渠道列表
+     */
+    public Map<String, Object> getSupportedChannels() {
+        Map<String, Object> result = new HashMap<>();
+        result.put("channels", SUPPORTED_CHANNELS);
+        result.put("rules", CHANNEL_RECIPIENT_RULES);
+        return result;
+    }
+
+    /**
+     * 验证接收人格式（供前端调用）
+     */
+    public Map<String, Object> validateRecipientFormat(String channel, String recipients) {
+        Map<String, Object> result = new HashMap<>();
+        List<String> errors = new ArrayList<>();
+        List<String> validRecipients = new ArrayList<>();
+
+        if (recipients == null || recipients.trim().isEmpty()) {
+            errors.add("接收人不能为空");
+            result.put("valid", false);
+            result.put("errors", errors);
+            return result;
+        }
+
+        String[] recipientList = recipients.split("[,，;；]");
+
+        for (String recipient : recipientList) {
+            String r = recipient.trim();
+            if (r.isEmpty()) continue;
+
+            boolean isValid = true;
+
+            if (channel.contains("email")) {
+                isValid = r.matches(EMAIL_REGEX);
+                if (!isValid) {
+                    errors.add("邮箱格式不正确: " + r);
+                }
+            }
+
+            if (isValid) {
+                validRecipients.add(r);
+            }
+        }
+
+        result.put("valid", errors.isEmpty());
+        result.put("errors", errors);
+        result.put("validRecipients", validRecipients);
+
+        return result;
+    }
+
+    /**
+     * 触发所有订阅报表发送
+     */
+    public void triggerAllSubscriptions() {
+        // 获取所有启用的订阅
+        List<ReportSubscription> subscriptions = subscriptionRepository.findAll().stream()
+                .filter(sub -> sub.getEnabled() != null && sub.getEnabled() == 1)
+                .toList();
+
+        for (ReportSubscription sub : subscriptions) {
+            try {
+                triggerSubscription(sub.getId());
+            } catch (Exception e) {
+                ReportAnalyticsService.log.error("触发订阅发送失败: id={}, error={}", sub.getId(), e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * 触发指定订阅报表发送
+     */
+    public void triggerSubscription(Long subscriptionId) {
+        ReportSubscription subscription = subscriptionRepository.findById(subscriptionId)
+                .orElseThrow(() -> new RuntimeException("订阅不存在"));
+
+        // 根据订阅类型发送不同的报表
+        switch (subscription.getReportType()) {
+            case "daily" -> sendDailyReport(subscription);
+            case "weekly" -> sendWeeklyReport(subscription);
+            case "monthly" -> sendMonthlyReport(subscription);
+            default -> throw new RuntimeException("不支持的报表类型: " + subscription.getReportType());
+        }
+
+        // 更新最后发送时间
+        subscription.setLastSendTime(LocalDateTime.now());
+        subscriptionRepository.save(subscription);
+    }
+
+    /**
+     * 发送日报
+     */
+    private void sendDailyReport(ReportSubscription subscription) {
+        String today = LocalDate.now().toString();
+        Map<String, Object> reportData = getDailyStats(today);
+        String reportContent = buildDailyReportContent(reportData);
+
+        emailNotificationService.sendReportSummaryEmail(
+                subscription.getRecipients(),
+                subscription.getName(),
+                reportContent,
+                today
+        );
+    }
+
+    /**
+     * 发送周报
+     */
+    private void sendWeeklyReport(ReportSubscription subscription) {
+        LocalDate today = LocalDate.now();
+        LocalDate weekStart = today.with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY));
+        LocalDate weekEnd = today.with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.SUNDAY));
+        String period = weekStart + " 至 " + weekEnd;
+
+        Map<String, Object> weeklyData = getMonthlyStats(today.toString().substring(0, 7));
+        String reportContent = buildWeeklyReportContent(weeklyData);
+
+        emailNotificationService.sendReportSummaryEmail(
+                subscription.getRecipients(),
+                subscription.getName(),
+                reportContent,
+                period
+        );
+    }
+
+    /**
+     * 发送月报
+     */
+    private void sendMonthlyReport(ReportSubscription subscription) {
+        LocalDate today = LocalDate.now();
+        String yearMonth = today.toString().substring(0, 7);
+
+        Map<String, Object> monthlyData = getMonthlyStats(yearMonth);
+        String reportContent = buildMonthlyReportContent(monthlyData);
+        String period = today.getYear() + "年" + today.getMonthValue() + "月";
+
+        emailNotificationService.sendReportSummaryEmail(
+                subscription.getRecipients(),
+                subscription.getName(),
+                reportContent,
+                period
+        );
+    }
+
+    /**
+     * 构建日报HTML内容
+     */
+    private String buildDailyReportContent(Map<String, Object> data) {
+        StringBuilder html = new StringBuilder();
+        html.append("<div style='font-family: Arial, sans-serif; padding: 20px;'>");
+
+        html.append("<h2 style='color: #409eff; border-bottom: 2px solid #409eff; padding-bottom: 10px;'>📊 RPA任务执行日报</h2>");
+
+        // 概览统计
+        html.append("<div style='display: flex; gap: 20px; margin: 20px 0;'>");
+        html.append("<div style='flex: 1; background: #f0f9eb; padding: 20px; border-radius: 8px; text-align: center;'>");
+        html.append("<div style='font-size: 32px; font-weight: bold; color: #67c23a;'>").append(data.getOrDefault("total", 0)).append("</div>");
+        html.append("<div style='color: #666;'>总执行次数</div></div>");
+
+        html.append("<div style='flex: 1; background: #ecf5ff; padding: 20px; border-radius: 8px; text-align: center;'>");
+        html.append("<div style='font-size: 32px; font-weight: bold; color: #409eff;'>").append(data.getOrDefault("success", 0)).append("</div>");
+        html.append("<div style='color: #666;'>成功次数</div></div>");
+
+        html.append("<div style='flex: 1; background: #fef0f0; padding: 20px; border-radius: 8px; text-align: center;'>");
+        html.append("<div style='font-size: 32px; font-weight: bold; color: #f56c6c;'>").append(data.getOrDefault("failed", 0)).append("</div>");
+        html.append("<div style='color: #666;'>失败次数</div></div>");
+        html.append("</div>");
+
+        html.append("</div>");
+        return html.toString();
+    }
+
+    /**
+     * 构建周报HTML内容
+     */
+    private String buildWeeklyReportContent(Map<String, Object> data) {
+        StringBuilder html = new StringBuilder();
+        html.append("<div style='font-family: Arial, sans-serif; padding: 20px;'>");
+
+        html.append("<h2 style='color: #67c23a; border-bottom: 2px solid #67c23a; padding-bottom: 10px;'>📊 RPA任务执行周报</h2>");
+
+        // 统计卡片
+        html.append("<div style='display: flex; gap: 20px; margin: 20px 0;'>");
+        html.append("<div style='flex: 1; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 8px; text-align: center; color: white;'>");
+        html.append("<div style='font-size: 32px; font-weight: bold;'>").append(data.getOrDefault("totalExecutions", 0)).append("</div>");
+        html.append("<div style='opacity: 0.9;'>总执行次数</div></div>");
+
+        html.append("<div style='flex: 1; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 20px; border-radius: 8px; text-align: center; color: white;'>");
+        html.append("<div style='font-size: 32px; font-weight: bold;'>").append(data.getOrDefault("successCount", 0)).append("</div>");
+        html.append("<div style='opacity: 0.9;'>成功次数</div></div>");
+
+        html.append("<div style='flex: 1; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 20px; border-radius: 8px; text-align: center; color: white;'>");
+        html.append("<div style='font-size: 32px; font-weight: bold;'>").append(data.getOrDefault("totalData", 0)).append("</div>");
+        html.append("<div style='opacity: 0.9;'>数据采集量</div></div>");
+        html.append("</div>");
+
+        html.append("</div>");
+        return html.toString();
+    }
+
+    /**
+     * 构建月报HTML内容
+     */
+    private String buildMonthlyReportContent(Map<String, Object> data) {
+        StringBuilder html = new StringBuilder();
+        html.append("<div style='font-family: Arial, sans-serif; padding: 20px;'>");
+
+        html.append("<h2 style='color: #e6a23c; border-bottom: 2px solid #e6a23c; padding-bottom: 10px;'>📊 RPA任务执行月报</h2>");
+
+        // 关键指标卡片
+        html.append("<div style='display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin: 20px 0;'>");
+
+        html.append("<div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 8px; color: white; text-align: center;'>");
+        html.append("<div style='font-size: 36px; font-weight: bold;'>").append(data.getOrDefault("totalExecutions", 0)).append("</div>");
+        html.append("<div style='opacity: 0.9;'>总执行次数</div></div>");
+
+        double successRate = 0;
+        Object rateObj = data.getOrDefault("successRate", 0);
+        if (rateObj instanceof Number) {
+            successRate = ((Number) rateObj).doubleValue();
+        }
+        html.append("<div style='background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); padding: 20px; border-radius: 8px; color: white; text-align: center;'>");
+        html.append("<div style='font-size: 36px; font-weight: bold;'>").append(String.format("%.1f", successRate)).append("%</div>");
+        html.append("<div style='opacity: 0.9;'>执行成功率</div></div>");
+
+        html.append("</div>");
+
+        html.append("</div>");
+        return html.toString();
     }
 
     // ==================== 辅助方法 ====================

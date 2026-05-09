@@ -28,6 +28,10 @@ public class ReportSubscription {
     @Column(nullable = false, length = 200)
     private String name;
 
+    /** 订阅编码（系统生成） */
+    @Column(length = 50)
+    private String code;
+
     /** 报表类型（daily/weekly/monthly/robot/roi） */
     @Column(nullable = false, length = 50)
     private String reportType;
@@ -172,6 +176,10 @@ public class ReportSubscription {
         }
         if (includeAttachment == null) {
             includeAttachment = 1;
+        }
+        if (code == null || code.isEmpty()) {
+            // 生成订阅编码
+            code = "SUB_" + System.currentTimeMillis();
         }
     }
 

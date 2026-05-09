@@ -1,48 +1,48 @@
 <template>
   <div class="credential-page">
     <div class="page-header">
-      <h2>凭据中心</h2>
-      <p class="page-desc">集中管理和安全存储系统凭据信息</p>
+      <h2>{{ t('credential.title') }}</h2>
+      <p class="page-desc">{{ t('credential.pageDesc') }}</p>
     </div>
 
     <!-- 统计卡片 -->
     <div class="stats-row">
       <div class="stat-box">
         <span class="stat-num">{{ stats.total }}</span>
-        <span class="stat-label">凭据总数</span>
+        <span class="stat-label">{{ t('credential.totalCount') }}</span>
       </div>
       <div class="stat-box warning">
         <span class="stat-num">{{ stats.expiring }}</span>
-        <span class="stat-label">即将过期</span>
+        <span class="stat-label">{{ t('credential.expiring') }}</span>
       </div>
       <div class="stat-box success">
         <span class="stat-num">{{ stats.active }}</span>
-        <span class="stat-label">使用中</span>
+        <span class="stat-label">{{ t('credential.active') }}</span>
       </div>
       <div class="stat-box info">
         <span class="stat-num">{{ stats.usedToday }}</span>
-        <span class="stat-label">今日使用</span>
+        <span class="stat-label">{{ t('credential.usedToday') }}</span>
       </div>
     </div>
 
     <div class="toolbar">
       <div class="search-box">
         <el-icon><Search /></el-icon>
-        <input v-model="searchKeyword" placeholder="搜索凭据名称..." />
+        <input v-model="searchKeyword" :placeholder="t('credential.searchPlaceholder')" />
       </div>
-      <el-select v-model="typeFilter" placeholder="凭据类型" clearable style="width: 140px;">
-        <el-option label="用户名/密码" value="password" />
-        <el-option label="API密钥" value="apiKey" />
-        <el-option label="SSH密钥" value="sshKey" />
-        <el-option label="证书" value="certificate" />
+      <el-select v-model="typeFilter" :placeholder="t('credential.typePlaceholder')" clearable style="width: 140px;">
+        <el-option :label="t('credential.typePassword')" value="password" />
+        <el-option :label="t('credential.typeApiKey')" value="apiKey" />
+        <el-option :label="t('credential.typeSshKey')" value="sshKey" />
+        <el-option :label="t('credential.typeCertificate')" value="certificate" />
       </el-select>
       <el-button type="primary" @click="showCreateModal">
-        <el-icon><Plus /></el-icon> 添加凭据
+        <el-icon><Plus /></el-icon> {{ t('credential.add') }}
       </el-button>
     </div>
 
     <el-table :data="paginatedCredentials" v-loading="loading" border stripe class="unified-table">
-      <el-table-column type="index" label="序号" width="60" align="center">
+      <el-table-column type="index" :label="t('credential.index')" width="60" align="center">
         <template #default="{ $index }">
           <div class="index-cell">
             <div class="index-line"></div>
@@ -51,44 +51,44 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column prop="name" label="凭据名称" min-width="150" show-overflow-tooltip />
-      <el-table-column prop="type" label="类型" width="120" align="center">
+      <el-table-column prop="name" :label="t('credential.name')" min-width="150" show-overflow-tooltip />
+      <el-table-column prop="type" :label="t('credential.type')" width="120" align="center">
         <template #default="{ row }">
           <el-tag :type="getTypeTag(row.type)" size="small">{{ getTypeText(row.type) }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="username" label="用户名" min-width="120" />
-      <el-table-column prop="description" label="描述" min-width="150" show-overflow-tooltip />
-      <el-table-column prop="expireTime" label="过期时间" min-width="120">
+      <el-table-column prop="username" :label="t('credential.username')" min-width="120" />
+      <el-table-column prop="description" :label="t('credential.description')" min-width="150" show-overflow-tooltip />
+      <el-table-column prop="expireTime" :label="t('credential.expireTime')" min-width="120">
         <template #default="{ row }">
           <span :class="getExpireClass(row.expireTime)">
             {{ getExpireText(row.expireTime) }}
           </span>
         </template>
       </el-table-column>
-      <el-table-column prop="status" label="状态" width="80" align="center">
+      <el-table-column prop="status" :label="t('credential.status')" width="80" align="center">
         <template #default="{ row }">
           <el-tag :type="getStatusTagType(row)" size="small">
             {{ getStatusText(row) }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="lastUsed" label="最后使用" min-width="160" />
-      <el-table-column label="操作" width="150" fixed="right" align="center">
+      <el-table-column prop="lastUsed" :label="t('credential.lastUsedLabel')" min-width="160" />
+      <el-table-column :label="t('credential.actions')" width="150" fixed="right" align="center">
         <template #default="{ row }">
           <div class="action-buttons">
-            <el-button link type="primary" @click="viewDetail(row)" class="action-btn">详情</el-button>
-            <el-button link type="primary" @click="editCredential(row)" class="action-btn">编辑</el-button>
+            <el-button link type="primary" @click="viewDetail(row)" class="action-btn">{{ t('credential.detail') }}</el-button>
+            <el-button link type="primary" @click="editCredential(row)" class="action-btn">{{ t('credential.editBtn') }}</el-button>
             <el-popconfirm
-              :title="'确定要删除凭据「' + row.name + '」吗？'"
-              confirmButtonText="确认删除"
-              cancelButtonText="取消"
+              :title="t('credential.confirmDelete', { name: row.name })"
+              :confirmButtonText="t('credential.confirmDeleteBtn')"
+              :cancelButtonText="t('credential.cancelBtn')"
               icon="Delete"
               iconColor="#f56c6c"
               @confirm="deleteCredential(row)"
             >
               <template #reference>
-                <el-button link type="danger" class="action-btn">删除</el-button>
+                <el-button link type="danger" class="action-btn">{{ t('credential.delete') }}</el-button>
               </template>
             </el-popconfirm>
           </div>
@@ -111,81 +111,81 @@
     <!-- 添加/编辑凭据弹窗 -->
     <el-dialog v-model="dialogVisible" :title="dialogTitle" width="520px">
       <el-form :model="credentialForm" :rules="formRules" ref="formRef" label-width="100px">
-        <el-form-item label="凭据名称" prop="name">
-          <el-input v-model="credentialForm.name" placeholder="请输入凭据名称" />
+        <el-form-item :label="t('credential.name')" prop="name">
+          <el-input v-model="credentialForm.name" :placeholder="t('credential.namePlaceholder')" />
         </el-form-item>
-        <el-form-item label="凭据类型" prop="type">
+        <el-form-item :label="t('credential.type')" prop="type">
           <el-select v-model="credentialForm.type" style="width: 100%;" @change="onTypeChange">
-            <el-option label="用户名/密码" value="password" />
-            <el-option label="API密钥" value="apiKey" />
-            <el-option label="SSH密钥" value="sshKey" />
-            <el-option label="证书" value="certificate" />
+            <el-option :label="t('credential.typePassword')" value="password" />
+            <el-option :label="t('credential.typeApiKey')" value="apiKey" />
+            <el-option :label="t('credential.typeSshKey')" value="sshKey" />
+            <el-option :label="t('credential.typeCertificate')" value="certificate" />
           </el-select>
         </el-form-item>
         
         <!-- 用户名/密码类型 -->
         <template v-if="credentialForm.type === 'password'">
-          <el-form-item label="用户名" prop="username">
-            <el-input v-model="credentialForm.username" placeholder="请输入用户名" />
+          <el-form-item :label="t('credential.username')" prop="username">
+            <el-input v-model="credentialForm.username" :placeholder="t('credential.usernamePlaceholder')" />
           </el-form-item>
-          <el-form-item label="密码" prop="password">
-            <el-input v-model="credentialForm.password" type="password" placeholder="请输入密码" show-password />
+          <el-form-item :label="t('credential.password')" prop="password">
+            <el-input v-model="credentialForm.password" type="password" :placeholder="t('credential.passwordPlaceholder')" show-password />
           </el-form-item>
         </template>
         
         <!-- API密钥类型 -->
         <template v-else-if="credentialForm.type === 'apiKey'">
-          <el-form-item label="密钥名称">
-            <el-input v-model="credentialForm.keyName" placeholder="如: OpenAI API Key" />
+          <el-form-item :label="t('credential.keyName')">
+            <el-input v-model="credentialForm.keyName" :placeholder="t('credential.keyNamePlaceholder')" />
           </el-form-item>
-          <el-form-item label="API密钥">
-            <el-input v-model="credentialForm.apiKey" type="password" placeholder="请输入API密钥" show-password />
+          <el-form-item :label="t('credential.apiKey')">
+            <el-input v-model="credentialForm.apiKey" type="password" :placeholder="t('credential.apiKeyPlaceholder')" show-password />
           </el-form-item>
         </template>
         
         <!-- SSH密钥类型 -->
         <template v-else-if="credentialForm.type === 'sshKey'">
-          <el-form-item label="私钥内容">
-            <el-input v-model="credentialForm.privateKey" type="textarea" :rows="4" placeholder="请输入SSH私钥内容" />
+          <el-form-item :label="t('credential.privateKey')">
+            <el-input v-model="credentialForm.privateKey" type="textarea" :rows="4" :placeholder="t('credential.privateKeyPlaceholder')" />
           </el-form-item>
         </template>
         
         <!-- 证书类型 -->
         <template v-else-if="credentialForm.type === 'certificate'">
-          <el-form-item label="证书内容">
-            <el-input v-model="credentialForm.certContent" type="textarea" :rows="4" placeholder="请输入证书内容" />
+          <el-form-item :label="t('credential.certContent')">
+            <el-input v-model="credentialForm.certContent" type="textarea" :rows="4" :placeholder="t('credential.certContentPlaceholder')" />
           </el-form-item>
         </template>
 
-        <el-form-item label="过期时间">
-          <el-date-picker v-model="credentialForm.expireTime" type="date" placeholder="选择过期时间，为空则永不过期" style="width: 100%;" />
+        <el-form-item :label="t('credential.expireTime')">
+          <el-date-picker v-model="credentialForm.expireTime" type="date" :placeholder="t('credential.expireTimePlaceholder')" style="width: 100%;" />
         </el-form-item>
-        <el-form-item label="描述">
-          <el-input v-model="credentialForm.description" type="textarea" :rows="2" placeholder="请输入描述" />
+        <el-form-item :label="t('credential.description')">
+          <el-input v-model="credentialForm.description" type="textarea" :rows="2" :placeholder="t('credential.descriptionPlaceholder')" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitCredential" :loading="submitLoading">保存</el-button>
+        <el-button @click="dialogVisible = false">{{ t('credential.cancel') }}</el-button>
+        <el-button type="primary" @click="submitCredential" :loading="submitLoading">{{ t('credential.save') }}</el-button>
       </template>
     </el-dialog>
 
     <!-- 详情弹窗 -->
-    <el-dialog v-model="detailVisible" title="凭据详情" width="500px">
+    <el-dialog v-model="detailVisible" :title="t('credential.detailTitle')" width="500px">
       <div class="detail-content" v-if="currentCredential">
-        <div class="detail-item"><label>凭据名称：</label><span>{{ currentCredential.name }}</span></div>
-        <div class="detail-item"><label>类型：</label><span>{{ getTypeText(currentCredential.type) }}</span></div>
-        <div class="detail-item"><label>用户名：</label><span>{{ currentCredential.username || '-' }}</span></div>
-        <div class="detail-item full"><label>密码/密钥：</label><span class="masked">{{ currentCredential.type === 'password' ? '••••••••' : '••••••••' }}</span></div>
-        <div class="detail-item"><label>过期时间：</label><span :class="getExpireClass(currentCredential.expireTime)">{{ getExpireText(currentCredential.expireTime) }}</span></div>
-        <div class="detail-item"><label>状态：</label><el-tag :type="getStatusTagType(currentCredential)" size="small">{{ getStatusText(currentCredential) }}</el-tag></div>
-        <div class="detail-item"><label>创建时间：</label><span>{{ currentCredential.createTime }}</span></div>
-        <div class="detail-item"><label>最后使用：</label><span>{{ currentCredential.lastUsed || '从未使用' }}</span></div>
-        <div class="detail-item full"><label>描述：</label><span>{{ currentCredential.description || '-' }}</span></div>
+        <div class="detail-item"><label>{{ t('credential.name') }}：</label><span>{{ currentCredential.name }}</span></div>
+        <div class="detail-item"><label>{{ t('credential.typeLabel') }}</label><span>{{ getTypeText(currentCredential.type) }}</span></div>
+        <div class="detail-item"><label>{{ t('credential.usernameLabel') }}</label><span>{{ currentCredential.username || '-' }}</span></div>
+        <div class="detail-item full"><label>{{ t('credential.passwordKey') }}</label><span class="masked">••••••••</span></div>
+        <div class="detail-item"><label>{{ t('credential.expireTimeLabel') }}</label><span :class="getExpireClass(currentCredential.expireTime)">{{ getExpireText(currentCredential.expireTime) }}</span></div>
+        <div class="detail-item"><label>{{ t('credential.statusLabel') }}</label><el-tag :type="getStatusTagType(currentCredential)" size="small">{{ getStatusText(currentCredential) }}</el-tag></div>
+        <div class="detail-item"><label>{{ t('credential.createTimeLabel') }}</label><span>{{ currentCredential.createTime }}</span></div>
+        <div class="detail-item"><label>{{ t('credential.lastUsedLabel') }}</label><span>{{ currentCredential.lastUsed || t('credential.neverUsed') }}</span></div>
+        <div class="detail-item full"><label>{{ t('credential.descriptionLabel') }}</label><span>{{ currentCredential.description || '-' }}</span></div>
       </div>
       <template #footer>
-        <el-button @click="rotateCredential" type="warning">轮换凭据</el-button>
-        <el-button @click="copyCredential">复制凭据</el-button>
+        <el-button @click="rotateCredential" type="warning">{{ t('credential.rotateCredential') }}</el-button>
+        <el-button @click="copyCredential">{{ t('credential.copyCredential') }}</el-button>
       </template>
     </el-dialog>
   </div>
@@ -193,9 +193,12 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { Search, Plus } from '@element-plus/icons-vue'
 import { apiGet, apiPost, apiPut, apiDelete } from '../../utils/api.js'
+
+const { t } = useI18n()
 
 function getAuthHeaders() {
   const token = localStorage.getItem('token')
@@ -232,14 +235,14 @@ const credentialForm = reactive({
   status: 'active'
 })
 
-const formRules = {
-  name: [{ required: true, message: '请输入凭据名称', trigger: 'blur' }],
-  type: [{ required: true, message: '请选择凭据类型', trigger: 'change' }],
-  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
-}
+const formRules = computed(() => ({
+  name: [{ required: true, message: t('credential.inputName'), trigger: 'blur' }],
+  type: [{ required: true, message: t('credential.selectType'), trigger: 'change' }],
+  username: [{ required: true, message: t('credential.inputUsername'), trigger: 'blur' }],
+  password: [{ required: true, message: t('credential.inputPassword'), trigger: 'blur' }]
+}))
 
-const dialogTitle = computed(() => isEdit.value ? '编辑凭据' : '添加凭据')
+const dialogTitle = computed(() => isEdit.value ? t('credential.edit') : t('credential.add'))
 
 const filteredCredentials = computed(() => {
   let list = credentials.value
@@ -249,7 +252,6 @@ const filteredCredentials = computed(() => {
   if (typeFilter.value) {
     list = list.filter(c => c.type === typeFilter.value)
   }
-  // 更新总数
   pagination.total = list.length
   return list
 })
@@ -267,7 +269,7 @@ const getTypeTag = (type) => {
 }
 
 const getTypeText = (type) => {
-  const map = { password: '用户名/密码', apiKey: 'API密钥', sshKey: 'SSH密钥', certificate: '证书' }
+  const map = { password: t('credential.typePassword'), apiKey: t('credential.typeApiKey'), sshKey: t('credential.typeSshKey'), certificate: t('credential.typeCertificate') }
   return map[type] || type
 }
 
@@ -282,13 +284,13 @@ const isExpiring = (expireTime) => {
 // 根据过期时间判断显示状态
 const getStatusText = (credential) => {
   const expireTime = credential.expireTime
-  if (!expireTime) return '启用'
+  if (!expireTime) return t('credential.statusEnabled')
   const expire = new Date(expireTime)
   const now = new Date()
   const diff = (expire - now) / (1000 * 60 * 60 * 24)
-  if (diff < 0) return '已过期'
-  if (diff <= 7) return '即将过期'
-  return credential.status === 'inactive' ? '已禁用' : '启用'
+  if (diff < 0) return t('credential.statusExpired')
+  if (diff <= 7) return t('credential.statusExpiring')
+  return credential.status === 'inactive' ? t('credential.statusDisabled') : t('credential.statusEnabled')
 }
 
 const getStatusTagType = (credential) => {
@@ -303,12 +305,12 @@ const getStatusTagType = (credential) => {
 }
 
 const getExpireText = (expireTime) => {
-  if (!expireTime) return '永不过期'
+  if (!expireTime) return t('credential.neverExpire')
   const expire = new Date(expireTime)
   const now = new Date()
   const diff = (expire - now) / (1000 * 60 * 60 * 24)
-  if (diff < 0) return '已过期'
-  if (diff <= 7) return `${Math.ceil(diff)}天后过期`
+  if (diff < 0) return t('credential.expired')
+  if (diff <= 7) return t('credential.expireAfter', { days: Math.ceil(diff) })
   return expireTime
 }
 
@@ -357,7 +359,7 @@ const loadCredentials = async () => {
     stats.active = activeCount
     stats.usedToday = credentials.value.reduce((sum, c) => sum + (c.useCount || 0), 0)
   } catch (e) {
-    console.error('加载凭据失败:', e)
+    console.error('Load credential failed:', e)
     credentials.value = []
   } finally {
     loading.value = false
@@ -399,25 +401,25 @@ const submitCredential = async () => {
           // 调用后端更新API
           const result = await apiPut(`/credential/${currentCredential.value.id}`, credentialForm)
           if (result.code === 0) {
-            ElMessage.success('凭据更新成功')
+            ElMessage.success(t('credential.updateSuccess'))
           } else {
-            ElMessage.error(result.message || '更新失败')
+            ElMessage.error(result.message || t('credential.updateFailed'))
             return
           }
         } else {
           // 调用后端创建API
           const result = await apiPost('/credential/create', credentialForm)
           if (result.code === 0) {
-            ElMessage.success('凭据添加成功')
+            ElMessage.success(t('credential.addSuccess'))
           } else {
-            ElMessage.error(result.message || '创建失败')
+            ElMessage.error(result.message || t('credential.createFailed'))
             return
           }
         }
         dialogVisible.value = false
         await loadCredentials()
       } catch (e) {
-        ElMessage.error('操作失败')
+        ElMessage.error(t('credential.operationFailed'))
       } finally {
         submitLoading.value = false
       }
@@ -430,12 +432,12 @@ const deleteCredential = async (credential) => {
     const result = await apiDelete(`/credential/${credential.id}`)
     if (result.code === 0) {
       await loadCredentials()
-      ElMessage.success('凭据删除成功')
+      ElMessage.success(t('credential.deleteSuccess'))
     } else {
-      ElMessage.error(result.message || '删除失败')
+      ElMessage.error(result.message || t('credential.deleteFailed'))
     }
   } catch (e) {
-    ElMessage.error('删除失败')
+    ElMessage.error(t('credential.deleteFailed'))
   }
 }
 
@@ -445,11 +447,11 @@ const viewDetail = (credential) => {
 }
 
 const rotateCredential = () => {
-  ElMessage.success('凭据轮换成功，密钥已更新')
+  ElMessage.success(t('credential.rotateSuccess'))
 }
 
 const copyCredential = () => {
-  ElMessage.success('凭据已复制到剪贴板')
+  ElMessage.success(t('credential.copied'))
 }
 
 const handleSizeChange = (size) => { pagination.size = size }

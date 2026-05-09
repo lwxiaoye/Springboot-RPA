@@ -434,6 +434,47 @@ public class ReportAnalyticsController {
         return response;
     }
 
+    /**
+     * 手动触发所有订阅报表发送
+     *
+     * @return 操作结果
+     */
+    @PostMapping("/subscription/trigger")
+    public Map<String, Object> triggerAllSubscriptions() {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            reportService.triggerAllSubscriptions();
+            response.put("code", 0);
+            response.put("message", "订阅报表正在发送中，请稍候查看邮箱");
+        } catch (Exception e) {
+            log.error("触发订阅报表失败", e);
+            response.put("code", -1);
+            response.put("message", "发送失败: " + e.getMessage());
+        }
+        return response;
+    }
+
+    /**
+     * 手动触发指定订阅报表发送
+     *
+     * @param id 订阅ID
+     * @return 操作结果
+     */
+    @PostMapping("/subscription/{id}/trigger")
+    public Map<String, Object> triggerSubscription(@PathVariable Long id) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            reportService.triggerSubscription(id);
+            response.put("code", 0);
+            response.put("message", "报表正在发送中，请稍候查看邮箱");
+        } catch (Exception e) {
+            log.error("触发订阅报表失败, id={}", id, e);
+            response.put("code", -1);
+            response.put("message", "发送失败: " + e.getMessage());
+        }
+        return response;
+    }
+
     // ==================== 权限检查接口 ====================
 
     /**

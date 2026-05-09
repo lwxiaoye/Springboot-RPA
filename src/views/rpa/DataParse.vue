@@ -1,27 +1,27 @@
 <template>
   <div class="data-parse-page">
     <div class="page-header">
-      <h2>数据解析</h2>
-      <p class="page-desc">配置和管理数据解析规则</p>
+      <h2>{{ t('dataParse.title') }}</h2>
+      <p class="page-desc">{{ t('dataParse.subtitle') }}</p>
     </div>
 
     <div class="toolbar">
       <div class="search-box">
         <el-icon><Search /></el-icon>
-        <input v-model="searchKeyword" placeholder="搜索解析名称..." />
+        <input v-model="searchKeyword" :placeholder="t('dataParse.searchPlaceholder')" />
       </div>
-      <el-select v-model="statusFilter" placeholder="状态筛选" clearable style="width: 120px;">
-        <el-option label="成功" value="success" />
-        <el-option label="运行中" value="running" />
-        <el-option label="待执行" value="pending" />
+      <el-select v-model="statusFilter" :placeholder="t('dataParse.statusFilter')" clearable style="width: 120px;">
+        <el-option :label="t('task.statusSuccess')" value="success" />
+        <el-option :label="t('task.statusRunning')" value="running" />
+        <el-option :label="t('task.statusPending')" value="pending" />
       </el-select>
       <el-button type="primary" @click="showCreateModal">
-        <el-icon><Plus /></el-icon> 新建解析
+        <el-icon><Plus /></el-icon> {{ t('dataParse.newParse') }}
       </el-button>
     </div>
 
     <el-table :data="paginatedData" v-loading="loading" border stripe class="unified-table">
-      <el-table-column type="index" label="序号" width="60" align="center">
+      <el-table-column type="index" :label="t('dataParse.seq')" width="60" align="center">
         <template #default="{ $index }">
           <div class="index-cell">
             <div class="index-line"></div>
@@ -30,41 +30,41 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column prop="name" label="解析名称" min-width="160" show-overflow-tooltip />
-      <el-table-column prop="parseType" label="解析类型" width="100" align="center" />
-      <el-table-column prop="status" label="状态" width="90" align="center">
+      <el-table-column prop="name" :label="t('dataParse.parseName')" min-width="160" show-overflow-tooltip />
+      <el-table-column prop="parseType" :label="t('dataParse.parseType')" width="100" align="center" />
+      <el-table-column prop="status" :label="t('task.status')" width="90" align="center">
         <template #default="{ row }">
           <el-tag :type="getStatusType(row.status)" size="small">
             {{ getStatusText(row.status) }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="成功/失败" width="100" align="center">
+      <el-table-column :label="t('dataParse.successFailed')" width="100" align="center">
         <template #default="{ row }">{{ row.successCount || 0 }} / {{ row.failCount || 0 }}</template>
       </el-table-column>
-      <el-table-column prop="lastParseTime" label="解析时间" min-width="160">
+      <el-table-column prop="lastParseTime" :label="t('dataParse.parseTime')" min-width="160">
         <template #default="{ row }">{{ row.lastParseTime ? new Date(row.lastParseTime).toLocaleString() : '-' }}</template>
       </el-table-column>
-      <el-table-column label="操作" width="180" fixed="right" align="center">
+      <el-table-column :label="t('common.actions')" width="180" fixed="right" align="center">
         <template #default="{ row }">
           <div class="action-buttons">
             <el-button link type="success" @click="runTask(row)" class="action-btn">
-              <span>执行</span>
+              <span>{{ t('common.execute') }}</span>
             </el-button>
             <el-button link type="primary" @click="editTask(row)" class="action-btn">
-              <span>编辑</span>
+              <span>{{ t('common.edit') }}</span>
             </el-button>
             <el-popconfirm
-              :title="'确定要删除解析规则「' + row.name + '」吗？'"
-              confirmButtonText="确认删除"
-              cancelButtonText="取消"
+              :title="t('dataParse.confirmDelete', { name: row.name })"
+              :confirmButtonText="t('dataParse.confirmDeleteBtn')"
+              :cancelButtonText="t('common.cancel')"
               icon="Delete"
               iconColor="#f56c6c"
               @confirm="deleteTask(row)"
             >
               <template #reference>
                 <el-button link type="danger" class="action-btn">
-                  <span>删除</span>
+                  <span>{{ t('common.delete') }}</span>
                 </el-button>
               </template>
             </el-popconfirm>
@@ -88,31 +88,31 @@
     <!-- 新建/编辑解析弹窗 -->
     <el-dialog v-model="dialogVisible" :title="dialogTitle" width="550px">
       <el-form :model="dataForm" :rules="formRules" ref="formRef" label-width="100px">
-        <el-form-item label="解析名称" prop="name">
-          <el-input v-model="dataForm.name" placeholder="请输入解析名称" />
+        <el-form-item :label="t('dataParse.parseName')" prop="name">
+          <el-input v-model="dataForm.name" :placeholder="t('dataParse.enterParseName')" />
         </el-form-item>
-        <el-form-item label="解析类型">
-          <el-select v-model="dataForm.parseType" placeholder="请选择解析类型" style="width: 100%">
-            <el-option label="JSON解析" value="JSON" />
-            <el-option label="XML解析" value="XML" />
-            <el-option label="正则表达式" value="正则" />
-            <el-option label="CSV解析" value="CSV" />
+        <el-form-item :label="t('dataParse.parseType')">
+          <el-select v-model="dataForm.parseType" :placeholder="t('dataParse.selectParseType')" style="width: 100%">
+            <el-option :label="t('dataParse.jsonParse')" value="JSON" />
+            <el-option :label="t('dataParse.xmlParse')" value="XML" />
+            <el-option :label="t('dataParse.regexParse')" value="正则" />
+            <el-option :label="t('dataParse.csvParse')" value="CSV" />
           </el-select>
         </el-form-item>
-        <el-form-item label="输出格式">
-          <el-select v-model="dataForm.outputFormat" placeholder="请选择输出格式" style="width: 100%">
+        <el-form-item :label="t('dataParse.outputFormat')">
+          <el-select v-model="dataForm.outputFormat" :placeholder="t('dataParse.selectOutputFormat')" style="width: 100%">
             <el-option label="JSON" value="JSON" />
             <el-option label="CSV" value="CSV" />
             <el-option label="XML" value="XML" />
           </el-select>
         </el-form-item>
-        <el-form-item label="解析规则">
-          <el-input v-model="dataForm.parseRules" type="textarea" :rows="4" placeholder="请输入解析规则（JSON格式），如：{&quot;field&quot;: &quot;value&quot;}" />
+        <el-form-item :label="t('dataParse.parseRules')">
+          <el-input v-model="dataForm.parseRules" type="textarea" :rows="4" :placeholder="t('dataParse.enterParseRules')" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitTask" :loading="submitLoading">确定</el-button>
+        <el-button @click="dialogVisible = false">{{ t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="submitTask" :loading="submitLoading">{{ t('common.confirm') }}</el-button>
       </template>
     </el-dialog>
   </div>
@@ -120,10 +120,12 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { Search, Plus } from '@element-plus/icons-vue'
 
 import { apiGet, apiPost, apiPut, apiDelete } from '../../utils/api.js'
+const { t } = useI18n()
 
 const loading = ref(false)
 const submitLoading = ref(false)
@@ -146,13 +148,13 @@ const dataForm = reactive({
 })
 
 const formRules = {
-  name: [{ required: true, message: '请输入解析名称', trigger: 'blur' }]
+  name: [{ required: true, message: t('dataParse.enterParseName'), trigger: 'blur' }]
 }
 
-const dialogTitle = computed(() => isEdit.value ? '编辑解析' : '新建解析')
+const dialogTitle = computed(() => isEdit.value ? t('dataParse.editParse') : t('dataParse.newParse'))
 
 const getStatusText = (s) => {
-  const map = { success: '成功', running: '运行中', pending: '待执行', failed: '失败' }
+  const map = { success: t('task.statusSuccess'), running: t('task.statusRunning'), pending: t('task.statusPending'), failed: t('task.statusFailed') }
   return map[s] || s
 }
 
@@ -231,11 +233,11 @@ const submitTask = async () => {
             outputFormat: dataForm.outputFormat
           })
           if (result.code === 0) {
-            ElMessage.success('更新成功')
+            ElMessage.success(t('dataParse.updateSuccess'))
             dialogVisible.value = false
             await loadData()
           } else {
-            ElMessage.error(result.message || '更新失败')
+            ElMessage.error(result.message || t('dataParse.updateFailed'))
           }
         } else {
           const result = await apiPost('/dataParse', {
@@ -246,15 +248,15 @@ const submitTask = async () => {
             outputFormat: dataForm.outputFormat
           })
           if (result.code === 0) {
-            ElMessage.success('创建成功')
+            ElMessage.success(t('dataParse.createSuccess'))
             dialogVisible.value = false
             await loadData()
           } else {
-            ElMessage.error(result.message || '创建失败')
+            ElMessage.error(result.message || t('dataParse.createFailed'))
           }
         }
       } catch {
-        ElMessage.error('请求失败')
+        ElMessage.error(t('dataParse.requestFailed'))
       } finally {
         submitLoading.value = false
       }
@@ -266,13 +268,13 @@ const runTask = async (item) => {
   try {
     const result = await apiPost(`/dataParse/${item.id}/execute`)
     if (result.code === 0 || result.success) {
-      ElMessage.success(`解析任务已启动: ${item.name}`)
+      ElMessage.success(t('dataParse.taskStarted', { name: item.name }))
       await loadData()
     } else {
-      ElMessage.error(result.message || '执行失败')
+      ElMessage.error(result.message || t('dataParse.executeFailed'))
     }
   } catch {
-    ElMessage.error('请求失败')
+    ElMessage.error(t('dataParse.requestFailed'))
   }
 }
 
@@ -285,12 +287,12 @@ const deleteTask = async (item) => {
         dataList.value.splice(index, 1)
         pagination.total--
       }
-      ElMessage.success('删除成功')
+      ElMessage.success(t('dataParse.deleteSuccess'))
     } else {
-      ElMessage.error(result.message || '删除失败')
+      ElMessage.error(result.message || t('dataParse.deleteFailed'))
     }
   } catch {
-    ElMessage.error('请求失败')
+    ElMessage.error(t('dataParse.requestFailed'))
   }
 }
 

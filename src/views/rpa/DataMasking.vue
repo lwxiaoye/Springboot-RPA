@@ -1,8 +1,8 @@
 <template>
   <div class="masking-page">
     <div class="page-header">
-      <h2>数据脱敏中心</h2>
-      <p class="page-desc">对敏感数据进行脱敏处理，符合金融行业数据安全规范</p>
+      <h2>{{ t('masking.title') }}</h2>
+      <p class="page-desc">{{ t('masking.pageDesc') }}</p>
     </div>
 
     <el-row :gutter="20">
@@ -10,24 +10,24 @@
       <el-col :span="12">
         <el-card shadow="hover">
           <template #header>
-            <span>数据脱敏工具</span>
+            <span>{{ t('masking.tool') }}</span>
           </template>
           
           <el-form :model="maskForm" label-width="100px">
-            <el-form-item label="数据类型">
-              <el-select v-model="maskForm.type" placeholder="选择数据类型" style="width: 100%">
-                <el-option label="身份证" value="ID_CARD" />
-                <el-option label="手机号" value="PHONE" />
-                <el-option label="银行卡" value="BANK_CARD" />
-                <el-option label="邮箱" value="EMAIL" />
-                <el-option label="姓名" value="NAME" />
-                <el-option label="地址" value="ADDRESS" />
-                <el-option label="密码" value="PASSWORD" />
-                <el-option label="金额" value="AMOUNT" />
+            <el-form-item :label="t('masking.dataType')">
+              <el-select v-model="maskForm.type" :placeholder="t('masking.dataTypePlaceholder')" style="width: 100%">
+                <el-option :label="t('masking.typeIdCard')" value="ID_CARD" />
+                <el-option :label="t('masking.typePhone')" value="PHONE" />
+                <el-option :label="t('masking.typeBankCard')" value="BANK_CARD" />
+                <el-option :label="t('masking.typeEmail')" value="EMAIL" />
+                <el-option :label="t('masking.typeName')" value="NAME" />
+                <el-option :label="t('masking.typeAddress')" value="ADDRESS" />
+                <el-option :label="t('masking.typePassword')" value="PASSWORD" />
+                <el-option :label="t('masking.typeAmount')" value="AMOUNT" />
               </el-select>
             </el-form-item>
             
-            <el-form-item label="原始数据">
+            <el-form-item :label="t('masking.originalInput')">
               <el-input
                 v-model="maskForm.data"
                 type="textarea"
@@ -38,43 +38,43 @@
             
             <el-form-item>
               <el-button type="primary" @click="maskData">
-                <el-icon><Key /></el-icon> 脱敏
+                <el-icon><Key /></el-icon> {{ t('masking.mask') }}
               </el-button>
-              <el-button @click="maskForm.data = ''">清空</el-button>
+              <el-button @click="maskForm.data = ''">{{ t('masking.clear') }}</el-button>
             </el-form-item>
           </el-form>
 
-          <el-divider>脱敏结果</el-divider>
+          <el-divider>{{ t('masking.result') }}</el-divider>
 
           <div v-if="maskResult" class="mask-result">
             <div class="result-row">
-              <span class="label">原始数据:</span>
+              <span class="label">{{ t('masking.originalData') }}:</span>
               <span class="value original">{{ maskResult.original }}</span>
             </div>
             <div class="result-row">
-              <span class="label">脱敏后:</span>
+              <span class="label">{{ t('masking.maskedData') }}:</span>
               <span class="value masked">{{ maskResult.masked }}</span>
-              <el-button type="primary" size="small" @click="copyResult(maskResult.masked)">复制</el-button>
+              <el-button type="primary" size="small" @click="copyResult(maskResult.masked)">{{ t('masking.copyResult') }}</el-button>
             </div>
           </div>
-          <el-empty v-else description="请输入数据进行脱敏" />
+          <el-empty v-else :description="t('masking.pleaseInputData')" />
         </el-card>
 
         <!-- 批量脱敏 -->
         <el-card shadow="hover" style="margin-top: 20px">
           <template #header>
-            <span>批量脱敏</span>
+            <span>{{ t('masking.batchMask') }}</span>
           </template>
           
           <el-input
             v-model="batchData"
             type="textarea"
             :rows="6"
-            placeholder="输入JSON格式数据，每行一个字段&#10;如: {&quot;idCard&quot;: &quot;110101199001011234&quot;, &quot;phone&quot;: &quot;13812345678&quot;}"
+            :placeholder="t('masking.batchPlaceholder')"
           />
           
           <div class="batch-types">
-            <span>字段类型映射:</span>
+            <span>{{ t('masking.fieldMapping') }}:</span>
             <el-tag
               v-for="field in batchFields"
               :key="field.key"
@@ -85,11 +85,11 @@
             >
               {{ field.key }}: {{ field.type }}
             </el-tag>
-            <el-button size="small" @click="showAddBatchField = true">+ 添加映射</el-button>
+            <el-button size="small" @click="showAddBatchField = true">{{ t('masking.addMapping') }}</el-button>
           </div>
           
           <el-button type="primary" @click="batchMask" :loading="batchLoading" style="margin-top: 15px">
-            批量脱敏
+            {{ t('masking.batchMask') }}
           </el-button>
         </el-card>
       </el-col>
@@ -99,17 +99,17 @@
         <!-- 脱敏规则 -->
         <el-card shadow="hover">
           <template #header>
-            <span>脱敏规则</span>
+            <span>{{ t('masking.rules') }}</span>
           </template>
           
           <el-table :data="maskingRules" border stripe>
-            <el-table-column prop="type" label="数据类型" width="100">
+            <el-table-column prop="type" :label="t('masking.ruleType')" width="100">
               <template #default="{ row }">
                 <el-tag size="small">{{ row.typeName }}</el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="rule" label="脱敏规则" />
-            <el-table-column prop="example" label="示例">
+            <el-table-column prop="rule" :label="t('masking.ruleContent')" />
+            <el-table-column prop="example" :label="t('masking.example')">
               <template #default="{ row }">
                 <span class="example-text">{{ row.original }} → {{ row.masked }}</span>
               </template>
@@ -120,11 +120,11 @@
         <!-- API调用 -->
         <el-card shadow="hover" style="margin-top: 20px">
           <template #header>
-            <span>API调用</span>
+            <span>{{ t('masking.apiUsage') }}</span>
           </template>
           
           <el-tabs>
-            <el-tab-pane label="单个脱敏">
+            <el-tab-pane :label="t('masking.singleMask')">
               <pre class="api-code">POST /api/enterprise/mask
 Content-Type: application/json
 
@@ -133,7 +133,7 @@ Content-Type: application/json
   "type": "ID_CARD"
 }</pre>
             </el-tab-pane>
-            <el-tab-pane label="批量脱敏">
+            <el-tab-pane :label="t('masking.batchMaskApi')">
               <pre class="api-code">POST /api/enterprise/mask/batch
 Content-Type: application/json
 
@@ -155,36 +155,36 @@ Content-Type: application/json
         <!-- 使用场景 -->
         <el-card shadow="hover" style="margin-top: 20px">
           <template #header>
-            <span>使用场景</span>
+            <span>{{ t('masking.scenarios') }}</span>
           </template>
           
           <div class="scenario-list">
             <div class="scenario-item">
               <div class="scenario-icon">📋</div>
               <div class="scenario-content">
-                <div class="scenario-title">日志记录</div>
-                <div class="scenario-desc">执行日志中自动脱敏敏感信息</div>
+                <div class="scenario-title">{{ t('masking.scenarioLog') }}</div>
+                <div class="scenario-desc">{{ t('masking.scenarioLogDesc') }}</div>
               </div>
             </div>
             <div class="scenario-item">
               <div class="scenario-icon">📊</div>
               <div class="scenario-content">
-                <div class="scenario-title">报表展示</div>
-                <div class="scenario-desc">数据报表中隐藏部分敏感字段</div>
+                <div class="scenario-title">{{ t('masking.scenarioReport') }}</div>
+                <div class="scenario-desc">{{ t('masking.scenarioReportDesc') }}</div>
               </div>
             </div>
             <div class="scenario-item">
               <div class="scenario-icon">📤</div>
               <div class="scenario-content">
-                <div class="scenario-title">数据导出</div>
-                <div class="scenario-desc">导出数据时自动应用脱敏规则</div>
+                <div class="scenario-title">{{ t('masking.scenarioExport') }}</div>
+                <div class="scenario-desc">{{ t('masking.scenarioExportDesc') }}</div>
               </div>
             </div>
             <div class="scenario-item">
               <div class="scenario-icon">🔍</div>
               <div class="scenario-content">
-                <div class="scenario-title">日志审计</div>
-                <div class="scenario-desc">满足金融行业合规审计要求</div>
+                <div class="scenario-title">{{ t('masking.scenarioAudit') }}</div>
+                <div class="scenario-desc">{{ t('masking.scenarioAuditDesc') }}</div>
               </div>
             </div>
           </div>
@@ -193,27 +193,27 @@ Content-Type: application/json
     </el-row>
 
     <!-- 添加批量字段对话框 -->
-    <el-dialog v-model="showAddBatchField" title="添加字段映射" width="400px">
+    <el-dialog v-model="showAddBatchField" :title="t('masking.addFieldMapping')" width="400px">
       <el-form :model="newBatchField" label-width="80px">
-        <el-form-item label="字段名">
-          <el-input v-model="newBatchField.key" placeholder="如: idCard" />
+        <el-form-item :label="t('masking.fieldName')">
+          <el-input v-model="newBatchField.key" :placeholder="t('masking.fieldNamePlaceholder')" />
         </el-form-item>
-        <el-form-item label="脱敏类型">
-          <el-select v-model="newBatchField.type" placeholder="选择类型" style="width: 100%">
-            <el-option label="身份证" value="ID_CARD" />
-            <el-option label="手机号" value="PHONE" />
-            <el-option label="银行卡" value="BANK_CARD" />
-            <el-option label="邮箱" value="EMAIL" />
-            <el-option label="姓名" value="NAME" />
-            <el-option label="地址" value="ADDRESS" />
-            <el-option label="密码" value="PASSWORD" />
-            <el-option label="金额" value="AMOUNT" />
+        <el-form-item :label="t('masking.maskingType')">
+          <el-select v-model="newBatchField.type" :placeholder="t('masking.maskingTypePlaceholder')" style="width: 100%">
+            <el-option :label="t('masking.typeIdCard')" value="ID_CARD" />
+            <el-option :label="t('masking.typePhone')" value="PHONE" />
+            <el-option :label="t('masking.typeBankCard')" value="BANK_CARD" />
+            <el-option :label="t('masking.typeEmail')" value="EMAIL" />
+            <el-option :label="t('masking.typeName')" value="NAME" />
+            <el-option :label="t('masking.typeAddress')" value="ADDRESS" />
+            <el-option :label="t('masking.typePassword')" value="PASSWORD" />
+            <el-option :label="t('masking.typeAmount')" value="AMOUNT" />
           </el-select>
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="showAddBatchField = false">取消</el-button>
-        <el-button type="primary" @click="addBatchField">添加</el-button>
+        <el-button @click="showAddBatchField = false">{{ t('masking.cancel') }}</el-button>
+        <el-button type="primary" @click="addBatchField">{{ t('masking.add') }}</el-button>
       </template>
     </el-dialog>
   </div>
@@ -221,8 +221,11 @@ Content-Type: application/json
 
 <script setup>
 import { ref, reactive } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { Key } from '@element-plus/icons-vue'
+
+const { t } = useI18n()
 
 const apiBase = '/api'
 const token = localStorage.getItem('token') || ''
@@ -243,33 +246,33 @@ const showAddBatchField = ref(false)
 const newBatchField = reactive({ key: '', type: 'ID_CARD' })
 
 const maskingRules = [
-  { typeName: '身份证', type: 'ID_CARD', rule: '前3后4，中间脱敏', original: '110101199001011234', masked: '110****1234' },
-  { typeName: '手机号', type: 'PHONE', rule: '前3后4，中间脱敏', original: '13812345678', masked: '138****5678' },
-  { typeName: '银行卡', type: 'BANK_CARD', rule: '只显示后4位', original: '6222021234567890123', masked: '***********90123' },
-  { typeName: '邮箱', type: 'EMAIL', rule: '前缀保留1-3位+域名', original: 'zhangsan@example.com', masked: 'z***san@example.com' },
-  { typeName: '姓名', type: 'NAME', rule: '只显示姓，名字脱敏', original: '张三', masked: '张*' },
-  { typeName: '地址', type: 'ADDRESS', rule: '显示省市区，详细脱敏', original: '北京市朝阳区XX街道XX号', masked: '北京市朝阳区***' },
-  { typeName: '密码', type: 'PASSWORD', rule: '全部脱敏', original: 'MyP@ssw0rd!', masked: '**********' },
-  { typeName: '金额', type: 'AMOUNT', rule: '显示首位，保留小数', original: '12345.67', masked: '1*****.67' },
+  { typeName: t('masking.typeIdCard'), type: 'ID_CARD', rule: t('masking.ruleIdCard'), original: '110101199001011234', masked: '110****1234' },
+  { typeName: t('masking.typePhone'), type: 'PHONE', rule: t('masking.rulePhone'), original: '13812345678', masked: '138****5678' },
+  { typeName: t('masking.typeBankCard'), type: 'BANK_CARD', rule: t('masking.ruleBankCard'), original: '6222021234567890123', masked: '***********90123' },
+  { typeName: t('masking.typeEmail'), type: 'EMAIL', rule: t('masking.ruleEmail'), original: 'zhangsan@example.com', masked: 'z***san@example.com' },
+  { typeName: t('masking.typeName'), type: 'NAME', rule: t('masking.ruleName'), original: '张三', masked: '张*' },
+  { typeName: t('masking.typeAddress'), type: 'ADDRESS', rule: t('masking.ruleAddress'), original: '北京市朝阳区XX街道XX号', masked: '北京市朝阳区***' },
+  { typeName: t('masking.typePassword'), type: 'PASSWORD', rule: t('masking.rulePassword'), original: 'MyP@ssw0rd!', masked: '**********' },
+  { typeName: t('masking.typeAmount'), type: 'AMOUNT', rule: t('masking.ruleAmount'), original: '12345.67', masked: '1*****.67' },
 ]
 
 const getPlaceholder = () => {
   const placeholders = {
-    ID_CARD: '请输入身份证号，如：110101199001011234',
-    PHONE: '请输入手机号，如：13812345678',
-    BANK_CARD: '请输入银行卡号，如：6222021234567890123',
-    EMAIL: '请输入邮箱地址，如：zhangsan@example.com',
-    NAME: '请输入姓名，如：张三',
-    ADDRESS: '请输入地址，如：北京市朝阳区XX街道XX号',
-    PASSWORD: '请输入密码',
-    AMOUNT: '请输入金额，如：12345.67',
+    ID_CARD: t('masking.placeholderIdCard'),
+    PHONE: t('masking.placeholderPhone'),
+    BANK_CARD: t('masking.placeholderBankCard'),
+    EMAIL: t('masking.placeholderEmail'),
+    NAME: t('masking.placeholderName'),
+    ADDRESS: t('masking.placeholderAddress'),
+    PASSWORD: t('masking.placeholderPassword'),
+    AMOUNT: t('masking.placeholderAmount'),
   }
-  return placeholders[maskForm.type] || '请输入数据'
+  return placeholders[maskForm.type] || t('masking.placeholderInput')
 }
 
 const maskData = async () => {
   if (!maskForm.data.trim()) {
-    ElMessage.warning('请输入原始数据')
+    ElMessage.warning(t('masking.inputRequired'))
     return
   }
   
@@ -285,34 +288,34 @@ const maskData = async () => {
     const data = await res.json()
     if (data.code === 0) {
       maskResult.value = data.data
-      ElMessage.success('脱敏成功')
+      ElMessage.success(t('masking.maskSuccess'))
     } else {
-      ElMessage.error(data.message || '脱敏失败')
+      ElMessage.error(data.message || t('masking.maskFailed'))
     }
   } catch (e) {
-    ElMessage.error('请求失败')
+    ElMessage.error(t('masking.maskFailed'))
   }
 }
 
 const copyResult = (text) => {
   navigator.clipboard.writeText(text)
-  ElMessage.success('已复制到剪贴板')
+  ElMessage.success(t('masking.copied'))
 }
 
 const addBatchField = () => {
   if (!newBatchField.key || !newBatchField.type) {
-    ElMessage.warning('请填写完整信息')
+    ElMessage.warning(t('masking.fillComplete'))
     return
   }
   if (batchFields.value.find(f => f.key === newBatchField.key)) {
-    ElMessage.warning('字段已存在')
+    ElMessage.warning(t('masking.fieldExists'))
     return
   }
   batchFields.value.push({ ...newBatchField })
   newBatchField.key = ''
   newBatchField.type = 'ID_CARD'
   showAddBatchField.value = false
-  ElMessage.success('已添加')
+  ElMessage.success(t('masking.added'))
 }
 
 const removeBatchField = (key) => {
@@ -321,7 +324,7 @@ const removeBatchField = (key) => {
 
 const batchMask = async () => {
   if (!batchData.value.trim()) {
-    ElMessage.warning('请输入批量数据')
+    ElMessage.warning(t('masking.inputBatchData'))
     return
   }
   
@@ -341,10 +344,10 @@ const batchMask = async () => {
     const result = await res.json()
     if (result.code === 0) {
       batchData.value = JSON.stringify(result.data, null, 2)
-      ElMessage.success('批量脱敏成功')
+      ElMessage.success(t('masking.batchMaskSuccess'))
     }
   } catch (e) {
-    ElMessage.error('批量脱敏失败，请检查数据格式')
+    ElMessage.error(t('masking.batchMaskFailed'))
   } finally {
     batchLoading.value = false
   }

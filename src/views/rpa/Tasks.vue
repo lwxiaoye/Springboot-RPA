@@ -1,21 +1,21 @@
 <template>
   <div class="tasks-page">
     <div class="page-header">
-      <h2>任务调度中心</h2>
-      <p class="page-desc">创建任务并绑定业务流程进行自动化执行</p>
+      <h2>{{ t('task.title') }}</h2>
+      <p class="page-desc">{{ t('task.description') }}</p>
     </div>
 
     <div class="main-layout">
       <!-- 左侧：任务列表 -->
       <div class="task-list-panel">
         <div class="panel-header">
-          <h3>任务列表</h3>
+          <h3>{{ t('task.taskList') }}</h3>
           <el-button type="primary" size="small" @click="showCreateTask">
-            <el-icon><Plus /></el-icon> 新建
+            <el-icon><Plus /></el-icon> {{ t('task.create') }}
           </el-button>
         </div>
         <div class="task-filter">
-          <el-input v-model="taskSearch" placeholder="搜索任务..." size="small" clearable>
+          <el-input v-model="taskSearch" :placeholder="t('task.searchPlaceholder')" size="small" clearable>
             <template #prefix><el-icon><Search /></el-icon></template>
           </el-input>
         </div>
@@ -29,7 +29,7 @@
           >
             <div class="task-info">
               <span class="task-name">{{ task.name }}</span>
-              <span class="task-process">流程: {{ task.processName || '-' }}</span>
+              <span class="task-process">{{ t('task.process') }}: {{ task.processName || '-' }}</span>
             </div>
             <div class="task-actions">
               <el-tag size="small" :type="getStatusType(task.status)">{{ getStatusText(task.status) }}</el-tag>
@@ -38,25 +38,25 @@
               </el-button>
             </div>
           </div>
-          <el-empty v-if="filteredTasks.length === 0" description="暂无任务" />
+          <el-empty v-if="filteredTasks.length === 0" :description="t('task.noTasks')" />
         </div>
       </div>
 
       <!-- 中间：任务配置 -->
       <div class="config-panel">
         <div class="panel-header">
-          <h3>{{ isEditTask ? '编辑任务' : '任务配置' }}</h3>
+          <h3>{{ isEditTask ? t('task.editTask') : t('task.taskConfig') }}</h3>
         </div>
 
         <div class="config-content">
-          <el-form :model="taskForm" :rules="formRules" ref="formRef" label-width="100px">
-            <el-form-item label="任务名称" prop="name">
-              <el-input v-model="taskForm.name" placeholder="请输入任务名称" />
+          <el-form :model="taskForm" :rules="formRules" ref="formRef" :label-width="t('task.labelWidth')">
+            <el-form-item :label="t('task.taskName')" prop="name">
+              <el-input v-model="taskForm.name" :placeholder="t('task.taskNamePlaceholder')" />
             </el-form-item>
-            <el-form-item label="绑定流程" prop="processId">
+            <el-form-item :label="t('task.bindProcess')" prop="processId">
               <div class="process-bind-list">
                 <div v-for="(pid, index) in taskForm.processIds" :key="index" class="process-bind-item">
-                  <el-select v-model="taskForm.processIds[index]" placeholder="请选择流程" style="flex: 1">
+                  <el-select v-model="taskForm.processIds[index]" :placeholder="t('task.selectProcessPlaceholder')" style="flex: 1">
                     <el-option v-for="p in processes" :key="p.id" :label="p.name" :value="p.id">
                       <span>{{ p.name }}</span>
                       <el-tag size="small" type="info" style="margin-left: 8px;">{{ p.code }}</el-tag>
@@ -67,27 +67,27 @@
                   </el-button>
                 </div>
                 <el-button type="primary" link @click="addProcessBind">
-                  <el-icon><Plus /></el-icon> 添加流程
+                  <el-icon><Plus /></el-icon> {{ t('task.addProcess') }}
                 </el-button>
               </div>
             </el-form-item>
-            <el-form-item label="备注">
-              <el-input v-model="taskForm.remark" type="textarea" :rows="3" placeholder="任务备注（可选）" />
+            <el-form-item :label="t('task.remark')">
+              <el-input v-model="taskForm.remark" type="textarea" :rows="3" :placeholder="t('task.remarkPlaceholder')" />
             </el-form-item>
           </el-form>
 
           <div class="config-actions">
-            <el-button @click="cancelEdit" v-if="isEditTask">取消</el-button>
+            <el-button @click="cancelEdit" v-if="isEditTask">{{ t('task.cancel') }}</el-button>
             <el-button type="primary" @click="saveTask" :loading="saveLoading">
-              {{ isEditTask ? '保存修改' : '创建任务' }}
+              {{ isEditTask ? t('task.saveChanges') : t('task.createTask') }}
             </el-button>
             <el-button type="success" @click="executeTask" :disabled="!hasValidProcessIds" :loading="executeLoading">
               <el-icon><VideoPlay /></el-icon>
-              立即执行
+              {{ t('task.executeNow') }}
             </el-button>
             <el-button type="danger" @click="deleteTask(selectedTask)" v-if="isEditTask && selectedTask" :loading="deleteLoading">
               <el-icon><Delete /></el-icon>
-              删除任务
+              {{ t('task.deleteTask') }}
             </el-button>
           </div>
         </div>
@@ -95,29 +95,29 @@
         <!-- 已创建的流程（显示当前任务绑定的流程） -->
         <div class="process-list-section">
           <div class="section-header">
-            <h4>{{ isEditTask ? '已绑定的流程' : '流程列表' }}</h4>
+            <h4>{{ isEditTask ? t('task.boundProcesses') : t('task.processList') }}</h4>
           </div>
           <div class="process-list" v-if="isEditTask && selectedTask">
             <div v-for="process in boundProcesses" :key="process.id" class="process-item bound">
               <div class="process-info">
                 <div class="process-name-row">
                   <span class="process-name">{{ process.name }}</span>
-                  <el-tag size="small" type="success">已绑定</el-tag>
+                  <el-tag size="small" type="success">{{ t('task.bound') }}</el-tag>
                 </div>
-                <span class="process-desc">{{ process.description || '暂无描述' }}</span>
-                <span class="process-meta">编码: {{ process.code }} | 版本: {{ process.version }}</span>
+                <span class="process-desc">{{ process.description || t('task.noDescription') }}</span>
+                <span class="process-meta">{{ t('task.code') }}: {{ process.code }} | {{ t('task.version') }}: {{ process.version }}</span>
               </div>
               <div class="process-ops">
                 <el-button link type="primary" size="small" @click="runProcess(process)">
-                  <el-icon><VideoPlay /></el-icon> 执行
+                  <el-icon><VideoPlay /></el-icon> {{ t('task.execute') }}
                 </el-button>
               </div>
             </div>
-            <el-empty v-if="boundProcesses.length === 0" description="该任务未绑定任何流程" />
+            <el-empty v-if="boundProcesses.length === 0" :description="t('task.noBoundProcess')" />
           </div>
           <div class="process-list" v-else>
             <div class="tip-text">
-              {{ taskForm.processIds.some(pid => pid) ? '已在下方选择器中选择流程' : '请先在左侧选择任务或创建新任务' }}
+              {{ taskForm.processIds.some(pid => pid) ? t('task.processSelected') : t('task.selectTaskFirst') }}
             </div>
           </div>
         </div>
@@ -126,13 +126,13 @@
       <!-- 右侧：执行记录 -->
       <div class="log-panel">
         <div class="panel-header">
-          <h3>执行记录</h3>
-          <el-button size="small" @click="loadLogs">刷新</el-button>
+          <h3>{{ t('task.executionLogs') }}</h3>
+          <el-button size="small" @click="loadLogs">{{ t('task.refresh') }}</el-button>
         </div>
         <div class="log-list">
           <div v-for="log in recentLogs" :key="log.id" class="log-item">
             <div class="log-header">
-              <span class="log-name">{{ log.taskName || log.name || '任务' }}</span>
+              <span class="log-name">{{ log.taskName || log.name || t('task.task') }}</span>
               <el-tag size="small" :type="getStatusType(log.status)">{{ getStatusText(log.status) }}</el-tag>
             </div>
             <div class="log-info">
@@ -141,7 +141,7 @@
             </div>
             <div class="log-message" v-if="log.message">{{ log.message }}</div>
           </div>
-          <el-empty v-if="recentLogs.length === 0" description="暂无执行记录" />
+          <el-empty v-if="recentLogs.length === 0" :description="t('task.noLogs')" />
         </div>
       </div>
     </div>
@@ -153,6 +153,8 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, VideoPlay, Plus, Delete } from '@element-plus/icons-vue'
 import { apiGet, apiPost, apiPut, apiDelete } from '../../utils/api.js'
+import { useI18n } from 'vue-i18n'
+const { t } = useI18n()
 
 const saveLoading = ref(false)
 const executeLoading = ref(false)
@@ -171,13 +173,6 @@ const taskForm = reactive({
   remark: ''
 })
 
-const formRules = {
-  name: [
-    { required: true, message: '请输入任务名称', trigger: 'blur' },
-    { validator: validateTaskName, trigger: ['blur', 'change'] }
-  ]
-}
-
 // 校验任务名称是否重复
 async function validateTaskName(rule, value, callback) {
   if (!value || value.trim() === '') {
@@ -190,7 +185,7 @@ async function validateTaskName(rule, value, callback) {
       excludeId: selectedTask.value?.id || null
     })
     if (result.code === 0 && result.data === true) {
-      callback(new Error('任务名称已存在，请使用其他名称'))
+      callback(new Error(t('task.taskNameExists')))
     } else {
       callback()
     }
@@ -198,6 +193,13 @@ async function validateTaskName(rule, value, callback) {
     callback()
   }
 }
+
+const formRules = computed(() => ({
+  name: [
+    { required: true, message: t('task.taskNameRequired'), trigger: 'blur' },
+    { validator: validateTaskName, trigger: ['blur', 'change'] }
+  ]
+}))
 
 const filteredTasks = computed(() => {
   if (!taskSearch.value) {
@@ -235,7 +237,13 @@ const boundProcesses = computed(() => {
 })
 
 const getStatusText = (s) => {
-  const map = { success: '成功', failed: '失败', running: '执行中', pending: '待执行', completed: '已完成' }
+  const map = {
+    success: t('task.statusSuccess'),
+    failed: t('task.statusFailed'),
+    running: t('task.statusRunning'),
+    pending: t('task.statusPending'),
+    completed: t('task.statusCompleted')
+  }
   return map[s] || s || '-'
 }
 
@@ -348,7 +356,7 @@ const saveTask = async () => {
     // 过滤空值
     const validProcessIds = taskForm.processIds.filter(pid => pid)
     if (validProcessIds.length === 0) {
-      ElMessage.warning('请至少选择一个流程')
+      ElMessage.warning(t('task.selectAtLeastOneProcess'))
       return
     }
 
@@ -366,11 +374,11 @@ const saveTask = async () => {
           remark: taskForm.remark
         })
         if (result.code === 0) {
-          ElMessage.success('任务更新成功')
+          ElMessage.success(t('task.updateSuccess'))
           await loadTasks()
           cancelEdit()
         } else {
-          ElMessage.error(result.message || '更新失败')
+          ElMessage.error(result.message || t('task.updateFailed'))
         }
       } else {
         const result = await apiPost('/task', {
@@ -383,15 +391,15 @@ const saveTask = async () => {
           status: 'pending'
         })
         if (result.code === 0) {
-          ElMessage.success('任务创建成功')
+          ElMessage.success(t('task.createSuccess'))
           await loadTasks()
           cancelEdit()
         } else {
-          ElMessage.error(result.message || '创建失败')
+          ElMessage.error(result.message || t('task.createFailed'))
         }
       }
     } catch {
-      ElMessage.error('请求失败')
+      ElMessage.error(t('task.requestFailed'))
     } finally {
       saveLoading.value = false
     }
@@ -401,12 +409,12 @@ const saveTask = async () => {
 const executeTask = async () => {
   const processIds = taskForm.processIds.filter(pid => pid)
   if (processIds.length === 0) {
-    ElMessage.warning('请先选择要执行的流程')
+    ElMessage.warning(t('task.selectProcessFirst'))
     return
   }
   executeLoading.value = true
   try {
-    const taskName = taskForm.name || selectedTask.value?.name || '任务'
+    const taskName = taskForm.name || selectedTask.value?.name || t('task.task')
     // 批量执行多个流程
     for (const processId of processIds) {
       const process = processes.value.find(p => p.id === processId)
@@ -414,13 +422,13 @@ const executeTask = async () => {
         name: taskName + '-' + (process?.name || '')
       })
       if (result.code !== 0 && !result.success) {
-        ElMessage.error(`${process?.name || '流程'}执行失败: ${result.message || '未知错误'}`)
+        ElMessage.error(`${process?.name || t('task.process')}${t('task.executeFailed')}: ${result.message || t('task.unknownError')}`)
       }
     }
-    ElMessage.success(`已启动执行 ${processIds.length} 个流程`)
+    ElMessage.success(t('task.startedExecution', { count: processIds.length }))
     await loadLogs()
   } catch {
-    ElMessage.error('执行请求失败')
+    ElMessage.error(t('task.executeRequestFailed'))
   } finally {
     executeLoading.value = false
   }
@@ -433,13 +441,13 @@ const runProcess = async (process) => {
       name: process.name
     })
     if (result.code === 0 || result.success) {
-      ElMessage.success(`流程"${process.name}"执行已启动`)
+      ElMessage.success(t('task.processExecutionStarted', { name: process.name }))
       await loadLogs()
     } else {
-      ElMessage.error(result.message || '执行失败')
+      ElMessage.error(result.message || t('task.executeFailed'))
     }
   } catch {
-    ElMessage.error('执行请求失败')
+    ElMessage.error(t('task.executeRequestFailed'))
   } finally {
     executeLoading.value = false
   }
@@ -447,16 +455,16 @@ const runProcess = async (process) => {
 
 const deleteTask = async (task) => {
   if (!task) {
-    ElMessage.warning('请先选择要删除的任务')
+    ElMessage.warning(t('task.selectTaskFirst'))
     return
   }
   try {
     await ElMessageBox.confirm(
-      `确定要删除任务"${task.name}"吗？此操作不可恢复。`,
-      '删除确认',
+      t('task.confirmDelete', { name: task.name }),
+      t('task.deleteConfirm'),
       {
-        confirmButtonText: '确定删除',
-        cancelButtonText: '取消',
+        confirmButtonText: t('task.confirm'),
+        cancelButtonText: t('task.cancel'),
         type: 'warning',
         confirmButtonClass: 'el-button--danger'
       }
@@ -464,15 +472,15 @@ const deleteTask = async (task) => {
     deleteLoading.value = true
     const result = await apiDelete(`/task/${task.id}`)
     if (result.code === 0) {
-      ElMessage.success('任务删除成功')
+      ElMessage.success(t('task.deleteSuccess'))
       cancelEdit()
       await loadTasks()
     } else {
-      ElMessage.error(result.message || '删除失败')
+      ElMessage.error(result.message || t('task.deleteFailed'))
     }
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error('删除请求失败')
+      ElMessage.error(t('task.deleteRequestFailed'))
     }
   } finally {
     deleteLoading.value = false

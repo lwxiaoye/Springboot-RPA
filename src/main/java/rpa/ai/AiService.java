@@ -45,7 +45,9 @@ public class AiService {
         CAPTCHA,          // 验证码识别
         TABLE,            // 表格识别
         NLP,              // 文本NLP
-        TRANSLATE          // 翻译
+        TRANSLATE,         // 翻译
+        DOCUMENT,         // 文档处理
+        BARCODE           // 条码识别
     }
 
     // 识别模式
@@ -59,6 +61,8 @@ public class AiService {
     private final CaptchaService captchaService;
     private final NlpService nlpService;
     private final LlmService llmService;
+    private final DocumentService documentService;
+    private final BarcodeService barcodeService;
     private final SystemConfigService systemConfigService;
 
     @Value("${rpa.ai.mode:local}")
@@ -73,11 +77,14 @@ public class AiService {
     private String baiduSecretKey;
 
     public AiService(OcrService ocrService, CaptchaService captchaService, NlpService nlpService,
-                     LlmService llmService, SystemConfigService systemConfigService) {
+                     LlmService llmService, DocumentService documentService, BarcodeService barcodeService,
+                     SystemConfigService systemConfigService) {
         this.ocrService = ocrService;
         this.captchaService = captchaService;
         this.nlpService = nlpService;
         this.llmService = llmService;
+        this.documentService = documentService;
+        this.barcodeService = barcodeService;
         this.systemConfigService = systemConfigService;
     }
 
@@ -173,6 +180,12 @@ public class AiService {
                     break;
                 case TRANSLATE:
                     result = nlpService.translate(request);
+                    break;
+                case DOCUMENT:
+                    result = documentService.processDocument(request);
+                    break;
+                case BARCODE:
+                    result = barcodeService.recognizeBarcode(request);
                     break;
                 default:
                     result.setSuccess(false);
@@ -361,5 +374,13 @@ public class AiService {
         private String sellerName;
         private String buyerName;
         private String invoiceType;
+
+        // 文档专用字段
+        private String documentText;  // 文档解析文本
+        private Integer pages;        // 文档页数
+
+        // 条码专用字段
+        private String barcodeText;    // 条码内容
+        private String barcodeFormat;   // 条码类型（QR_CODE, EAN_13等）
     }
 }

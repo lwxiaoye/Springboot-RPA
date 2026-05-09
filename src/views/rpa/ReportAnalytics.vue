@@ -1,54 +1,81 @@
 <template>
   <div class="report-page">
     <div class="page-header">
-      <h2>报表与分析中心</h2>
-      <p class="page-desc">评估RPA投资回报率和运营效率</p>
+      <h2>{{ t('report.title') }}</h2>
+      <p class="page-desc">{{ t('report.subtitle') }}</p>
     </div>
 
     <!-- 统计概览卡片 -->
     <div class="stats-row">
-      <div class="stat-card" @click="switchToTab('daily')">
-        <div class="stat-icon primary"><el-icon><DataLine /></el-icon></div>
+      <div class="stat-card" :class="{ 'stat-card-active': currentTab === 'daily' }" @click="switchToTab('daily')">
+        <div class="stat-card-bg"></div>
+        <div class="stat-icon-wrap primary">
+          <el-icon><DataLine /></el-icon>
+        </div>
         <div class="stat-content">
           <span class="stat-value">{{ formatNumber(stats.totalTasks) }}</span>
-          <span class="stat-label">总执行任务</span>
+          <span class="stat-label">{{ t('report.totalTasks') }}</span>
         </div>
-        <div class="stat-trend up">
-          <el-icon><Top /></el-icon>
-          <span>12.5%</span>
+        <div class="stat-meta">
+          <div class="stat-trend up">
+            <el-icon><Top /></el-icon>
+            <span>12.5%</span>
+          </div>
+          <span class="stat-period">{{ t('report.comparedToLastWeek') }}</span>
         </div>
       </div>
-      <div class="stat-card" @click="switchToTab('daily')">
-        <div class="stat-icon success"><el-icon><CircleCheck /></el-icon></div>
+
+      <div class="stat-card" :class="{ 'stat-card-active': currentTab === 'daily' }" @click="switchToTab('daily')">
+        <div class="stat-card-bg"></div>
+        <div class="stat-icon-wrap success">
+          <el-icon><CircleCheck /></el-icon>
+        </div>
         <div class="stat-content">
-          <span class="stat-value">{{ stats.successRate }}%</span>
-          <span class="stat-label">任务成功率</span>
+          <span class="stat-value">{{ stats.successRate }}<span class="stat-unit">%</span></span>
+          <span class="stat-label">{{ t('report.taskSuccessRate') }}</span>
         </div>
-        <div class="stat-trend up">
-          <el-icon><Top /></el-icon>
-          <span>2.3%</span>
+        <div class="stat-meta">
+          <div class="stat-trend up">
+            <el-icon><Top /></el-icon>
+            <span>2.3%</span>
+          </div>
+          <span class="stat-period">{{ t('report.comparedToLastWeek') }}</span>
         </div>
       </div>
-      <div class="stat-card" @click="switchToTab('process')">
-        <div class="stat-icon warning"><el-icon><Timer /></el-icon></div>
+
+      <div class="stat-card" :class="{ 'stat-card-active': currentTab === 'process' }" @click="switchToTab('process')">
+        <div class="stat-card-bg"></div>
+        <div class="stat-icon-wrap warning">
+          <el-icon><Timer /></el-icon>
+        </div>
         <div class="stat-content">
-          <span class="stat-value">{{ stats.avgDuration }}h</span>
-          <span class="stat-label">平均运行时长</span>
+          <span class="stat-value">{{ stats.avgDuration }}<span class="stat-unit">h</span></span>
+          <span class="stat-label">{{ t('report.avgDuration') }}</span>
         </div>
-        <div class="stat-trend down">
-          <el-icon><Bottom /></el-icon>
-          <span>8.2%</span>
+        <div class="stat-meta">
+          <div class="stat-trend down">
+            <el-icon><Bottom /></el-icon>
+            <span>8.2%</span>
+          </div>
+          <span class="stat-period">{{ t('report.comparedToLastWeek') }}</span>
         </div>
       </div>
-      <div class="stat-card" @click="switchToTab('roi')">
-        <div class="stat-icon danger"><el-icon><Money /></el-icon></div>
+
+      <div class="stat-card" :class="{ 'stat-card-active': currentTab === 'daily' }" @click="switchToTab('daily')">
+        <div class="stat-card-bg"></div>
+        <div class="stat-icon-wrap danger">
+          <el-icon><Money /></el-icon>
+        </div>
         <div class="stat-content">
           <span class="stat-value">{{ formatNumber(stats.savedHours) }}</span>
-          <span class="stat-label">节省工时(小时)</span>
+          <span class="stat-label">{{ t('report.savedHours') }}</span>
         </div>
-        <div class="stat-trend up">
-          <el-icon><Top /></el-icon>
-          <span>15.8%</span>
+        <div class="stat-meta">
+          <div class="stat-trend up">
+            <el-icon><Top /></el-icon>
+            <span>15.8%</span>
+          </div>
+          <span class="stat-period">较上周</span>
         </div>
       </div>
     </div>
@@ -57,40 +84,36 @@
     <div class="quick-entry">
       <div class="quick-item" @click="switchToTab('daily')">
         <el-icon><Document /></el-icon>
-        <span>任务执行日报</span>
+        <span>{{ t('report.dailyReport') }}</span>
       </div>
       <div class="quick-item" @click="switchToTab('monthly')">
         <el-icon><Calendar /></el-icon>
-        <span>任务执行月报</span>
+        <span>{{ t('report.monthlyReport') }}</span>
       </div>
       <div class="quick-item" @click="switchToTab('robot')">
         <el-icon><Cpu /></el-icon>
-        <span>机器人利用率</span>
+        <span>{{ t('report.robotUtilization') }}</span>
       </div>
       <div class="quick-item" @click="switchToTab('process')">
         <el-icon><Stopwatch /></el-icon>
-        <span>流程耗时排行</span>
+        <span>{{ t('report.processDuration') }}</span>
       </div>
       <div class="quick-item" @click="switchToTab('custom')">
         <el-icon><Edit /></el-icon>
-        <span>自定义报表</span>
-      </div>
-      <div class="quick-item" @click="switchToTab('roi')">
-        <el-icon><Coin /></el-icon>
-        <span>成本节省</span>
+        <span>{{ t('report.customReport') }}</span>
       </div>
     </div>
 
     <el-tabs v-model="currentTab" class="report-tabs" @tab-change="onTabChange">
       <!-- 任务执行日报 -->
-      <el-tab-pane label="任务执行日报" name="daily">
+      <el-tab-pane :label="t('report.dailyReport')" name="daily">
         <div class="report-section">
           <div class="section-header">
-            <h3>今日任务执行概览</h3>
+            <h3>{{ t('report.todayOverview') }}</h3>
             <div class="header-actions">
-              <el-date-picker v-model="dailyDate" type="date" placeholder="选择日期" format="YYYY-MM-DD" value-format="YYYY-MM-DD" />
+              <el-date-picker v-model="dailyDate" type="date" :placeholder="t('report.selectDate')" format="YYYY-MM-DD" value-format="YYYY-MM-DD" />
               <el-button type="primary" @click="exportReport('daily')">
-                <el-icon><Download /></el-icon> 导出
+                <el-icon><Download /></el-icon> {{ t('report.export') }}
               </el-button>
             </div>
           </div>
@@ -98,104 +121,104 @@
           <div class="stats-row-mini">
             <div class="stat-mini success">
               <span class="value">{{ dailyStats.success }}</span>
-              <span class="label">成功</span>
+              <span class="label">{{ t('report.success') }}</span>
             </div>
             <div class="stat-mini danger">
               <span class="value">{{ dailyStats.failed }}</span>
-              <span class="label">失败</span>
+              <span class="label">{{ t('report.failed') }}</span>
             </div>
             <div class="stat-mini warning">
               <span class="value">{{ dailyStats.running }}</span>
-              <span class="label">进行中</span>
+              <span class="label">{{ t('report.running') }}</span>
             </div>
             <div class="stat-mini info">
               <span class="value">{{ dailyStats.total }}</span>
-              <span class="label">总计</span>
+              <span class="label">{{ t('report.total') }}</span>
             </div>
           </div>
 
           <div class="chart-row">
             <div class="chart-container">
-              <h4>每小时执行趋势</h4>
+              <h4>{{ t('report.hourlyTrend') }}</h4>
               <v-chart :option="hourlyTrendOption" autoresize style="height: 280px;"></v-chart>
             </div>
             <div class="chart-container small">
-              <h4>执行状态分布</h4>
+              <h4>{{ t('report.statusDistribution') }}</h4>
               <v-chart :option="dailyPieOption" autoresize style="height: 280px;"></v-chart>
             </div>
           </div>
 
           <div class="detail-table">
-            <h4>今日执行明细</h4>
-            <el-table :data="dailyLogs" border stripe size="small" max-height="300">
-              <el-table-column type="index" label="序号" width="60" align="center" />
-              <el-table-column prop="taskName" label="任务名称" min-width="150" show-overflow-tooltip />
-              <el-table-column prop="processName" label="流程" min-width="120" />
-              <el-table-column prop="status" label="状态" width="80" align="center">
+            <h4>{{ t('report.todayDetail') }}</h4>
+            <el-table :data="dailyLogs" border stripe size="small" max-height="300" default-sort="{ prop: 'startTime', order: 'descending' }">
+              <el-table-column type="index" :label="t('report.seq')" width="60" align="center" />
+              <el-table-column prop="taskName" :label="t('report.taskName')" min-width="150" show-overflow-tooltip />
+              <el-table-column prop="processName" :label="t('report.process')" min-width="120" />
+              <el-table-column prop="status" :label="t('report.status')" width="80" align="center">
                 <template #default="{ row }">
                   <el-tag :type="getStatusTagType(row.status)" size="small">{{ getStatusText(row.status) }}</el-tag>
                 </template>
               </el-table-column>
-              <el-table-column prop="dataCount" label="采集数据" width="90" align="center" />
-              <el-table-column prop="startTime" label="开始时间" min-width="150" />
-              <el-table-column prop="duration" label="耗时" width="80" align="center" />
+              <el-table-column prop="dataCount" :label="t('report.dataCollected')" width="90" align="center" />
+              <el-table-column prop="startTime" :label="t('report.startTime')" min-width="150" sortable :sort-method="(a, b) => new Date(b.startTime) - new Date(a.startTime)" />
+              <el-table-column prop="duration" :label="t('report.duration')" width="80" align="center" />
             </el-table>
           </div>
         </div>
       </el-tab-pane>
 
       <!-- 任务执行月报 -->
-      <el-tab-pane label="任务执行月报" name="monthly">
+      <el-tab-pane :label="t('report.monthlyReport')" name="monthly">
         <div class="report-section">
           <div class="section-header">
-            <h3>{{ currentMonth }} 月度执行汇总</h3>
+            <h3>{{ currentMonth }} {{ t('report.monthlySummary') }}</h3>
             <div class="header-actions">
-              <el-date-picker v-model="monthlyDate" type="month" placeholder="选择月份" format="YYYY-MM" value-format="YYYY-MM" />
+              <el-date-picker v-model="monthlyDate" type="month" :placeholder="t('report.selectMonth')" format="YYYY-MM" value-format="YYYY-MM" />
               <el-button type="primary" @click="exportReport('monthly')">
-                <el-icon><Download /></el-icon> 导出
+                <el-icon><Download /></el-icon> {{ t('report.export') }}
               </el-button>
             </div>
           </div>
 
           <div class="monthly-summary">
             <div class="summary-card">
-              <div class="summary-title">本月执行统计</div>
+              <div class="summary-title">{{ t('report.monthExecStats') }}</div>
               <div class="summary-grid">
                 <div class="summary-item">
-                  <span class="label">总执行次数</span>
+                  <span class="label">{{ t('report.totalExecutions') }}</span>
                   <span class="value primary">{{ formatNumber(monthlyStats.totalExecutions) }}</span>
                 </div>
                 <div class="summary-item">
-                  <span class="label">成功次数</span>
+                  <span class="label">{{ t('report.successCount') }}</span>
                   <span class="value success">{{ formatNumber(monthlyStats.successCount) }}</span>
                 </div>
                 <div class="summary-item">
-                  <span class="label">失败次数</span>
+                  <span class="label">{{ t('report.failedCount') }}</span>
                   <span class="value danger">{{ formatNumber(monthlyStats.failedCount) }}</span>
                 </div>
                 <div class="summary-item">
-                  <span class="label">成功率</span>
+                  <span class="label">{{ t('report.successRate') }}</span>
                   <span class="value">{{ monthlyStats.successRate }}%</span>
                 </div>
               </div>
             </div>
             <div class="summary-card">
-              <div class="summary-title">数据采集统计</div>
+              <div class="summary-title">{{ t('report.dataCollectionStats') }}</div>
               <div class="summary-grid">
                 <div class="summary-item">
-                  <span class="label">采集数据总量</span>
+                  <span class="label">{{ t('report.totalDataCollected') }}</span>
                   <span class="value primary">{{ formatNumber(monthlyStats.totalData) }}</span>
                 </div>
                 <div class="summary-item">
-                  <span class="label">日均采集</span>
+                  <span class="label">{{ t('report.dailyAvg') }}</span>
                   <span class="value">{{ formatNumber(monthlyStats.dailyAvg) }}</span>
                 </div>
                 <div class="summary-item">
-                  <span class="label">峰值日采集</span>
+                  <span class="label">{{ t('report.peakData') }}</span>
                   <span class="value">{{ formatNumber(monthlyStats.peakData) }}</span>
                 </div>
                 <div class="summary-item">
-                  <span class="label">采集成功率</span>
+                  <span class="label">{{ t('report.dataSuccessRate') }}</span>
                   <span class="value success">{{ monthlyStats.dataSuccessRate }}%</span>
                 </div>
               </div>
@@ -204,18 +227,18 @@
 
           <div class="chart-row full">
             <div class="chart-container">
-              <h4>月度执行趋势</h4>
+              <h4>{{ t('report.monthlyTrend') }}</h4>
               <v-chart :option="monthlyTrendOption" autoresize style="height: 300px;"></v-chart>
             </div>
           </div>
 
           <div class="chart-row">
             <div class="chart-container">
-              <h4>各流程执行占比</h4>
+              <h4>{{ t('report.processDistribution') }}</h4>
               <v-chart :option="processPieOption" autoresize style="height: 280px;"></v-chart>
             </div>
             <div class="chart-container">
-              <h4>每日采集数据量</h4>
+              <h4>{{ t('report.dailyDataTrend') }}</h4>
               <v-chart :option="dataCollectTrendOption" autoresize style="height: 280px;"></v-chart>
             </div>
           </div>
@@ -223,14 +246,14 @@
       </el-tab-pane>
 
       <!-- 机器人利用率 -->
-      <el-tab-pane label="机器人利用率" name="robot">
+      <el-tab-pane :label="t('report.robotUtilization')" name="robot">
         <div class="report-section">
           <div class="section-header">
-            <h3>机器人工作负载分析</h3>
+            <h3>{{ t('report.robotWorkloadAnalysis') }}</h3>
             <div class="header-actions">
-              <el-date-picker v-model="robotDateRange" type="daterange" range-separator="至" start-placeholder="开始日期" end-placeholder="结束日期" />
+              <el-date-picker v-model="robotDateRange" type="daterange" :range-separator="t('common.to')" :start-placeholder="t('common.startDate')" :end-placeholder="t('common.endDate')" />
               <el-button type="primary" @click="exportReport('robot')">
-                <el-icon><Download /></el-icon> 导出
+                <el-icon><Download /></el-icon> {{ t('report.export') }}
               </el-button>
             </div>
           </div>
@@ -240,110 +263,110 @@
               <div class="robot-stat-icon busy"><el-icon><Cpu /></el-icon></div>
               <div class="robot-stat-info">
                 <span class="value">{{ robotStats.busyRate }}%</span>
-                <span class="label">忙碌率</span>
+                <span class="label">{{ t('report.busyRate') }}</span>
               </div>
             </div>
             <div class="robot-stat-card">
               <div class="robot-stat-icon idle"><el-icon><Coffee /></el-icon></div>
               <div class="robot-stat-info">
                 <span class="value">{{ robotStats.idleRate }}%</span>
-                <span class="label">空闲率</span>
+                <span class="label">{{ t('report.idleRate') }}</span>
               </div>
             </div>
             <div class="robot-stat-card">
               <div class="robot-stat-icon offline"><el-icon><CloseBold /></el-icon></div>
               <div class="robot-stat-info">
                 <span class="value">{{ robotStats.offlineRate }}%</span>
-                <span class="label">离线率</span>
+                <span class="label">{{ t('report.offlineRate') }}</span>
               </div>
             </div>
             <div class="robot-stat-card">
               <div class="robot-stat-icon runtime"><el-icon><Timer /></el-icon></div>
               <div class="robot-stat-info">
                 <span class="value">{{ robotStats.totalRuntime }}</span>
-                <span class="label">总运行时长</span>
+                <span class="label">{{ t('report.totalRuntime') }}</span>
               </div>
             </div>
           </div>
 
           <div class="chart-row">
             <div class="chart-container">
-              <h4>机器人工作状态分布</h4>
+              <h4>{{ t('report.robotStatusDistribution') }}</h4>
               <v-chart :option="robotStatusOption" autoresize style="height: 280px;"></v-chart>
             </div>
             <div class="chart-container">
-              <h4>各机器人执行量排行</h4>
+              <h4>{{ t('report.robotRanking') }}</h4>
               <v-chart :option="robotRankingOption" autoresize style="height: 280px;"></v-chart>
             </div>
           </div>
 
           <div class="robot-table">
-            <h4>机器人详细数据</h4>
-            <el-table :data="robotList" border stripe size="small">
-              <el-table-column type="index" label="序号" width="60" align="center" />
-              <el-table-column prop="name" label="机器人名称" min-width="150" />
-              <el-table-column prop="status" label="状态" width="100" align="center">
+            <h4>{{ t('report.robotDetailData') }}</h4>
+            <el-table :data="robotList" border stripe size="small" default-sort="{ prop: 'lastRun', order: 'descending' }">
+              <el-table-column type="index" :label="t('report.seq')" width="60" align="center" />
+              <el-table-column prop="name" :label="t('report.robotName')" min-width="150" />
+              <el-table-column prop="status" :label="t('report.status')" width="100" align="center">
                 <template #default="{ row }">
                   <el-tag :type="getRobotStatusType(row.status)" size="small">{{ row.statusText }}</el-tag>
                 </template>
               </el-table-column>
-              <el-table-column prop="execCount" label="执行次数" width="100" align="center" />
-              <el-table-column prop="successRate" label="成功率" width="100" align="center">
+              <el-table-column prop="execCount" :label="t('report.execCount')" width="100" align="center" sortable />
+              <el-table-column prop="successRate" :label="t('report.successRate')" width="100" align="center" sortable>
                 <template #default="{ row }">
                   <span :class="row.successRate >= 90 ? 'text-success' : row.successRate >= 70 ? 'text-warning' : 'text-danger'">
                     {{ row.successRate }}%
                   </span>
                 </template>
               </el-table-column>
-              <el-table-column prop="runtime" label="运行时长" width="100" align="center" />
-              <el-table-column prop="dataCount" label="采集数据" width="100" align="center" />
-              <el-table-column prop="lastRun" label="最后执行" min-width="150" />
+              <el-table-column prop="runtime" :label="t('report.runtime')" width="100" align="center" />
+              <el-table-column prop="dataCount" :label="t('report.dataCollected')" width="100" align="center" />
+              <el-table-column prop="lastRun" :label="t('report.lastRun')" min-width="150" sortable :sort-method="(a, b) => new Date(b.lastRun) - new Date(a.lastRun)" />
             </el-table>
           </div>
         </div>
       </el-tab-pane>
 
       <!-- 流程耗时排行 -->
-      <el-tab-pane label="流程耗时排行" name="process">
+      <el-tab-pane :label="t('report.processDuration')" name="process">
         <div class="report-section">
           <div class="section-header">
-            <h3>流程执行效率分析</h3>
+            <h3>{{ t('report.processEfficiencyAnalysis') }}</h3>
             <div class="header-actions">
               <el-select v-model="processTopN" style="width: 120px;">
-                <el-option label="TOP 5" :value="5" />
-                <el-option label="TOP 10" :value="10" />
-                <el-option label="TOP 20" :value="20" />
+                <el-option :label="t('report.topN', { n: 5 })" :value="5" />
+                <el-option :label="t('report.topN', { n: 10 })" :value="10" />
+                <el-option :label="t('report.topN', { n: 20 })" :value="20" />
               </el-select>
-              <el-date-picker v-model="processDateRange" type="daterange" range-separator="至" start-placeholder="开始日期" end-placeholder="结束日期" />
+              <el-date-picker v-model="processDateRange" type="daterange" :range-separator="t('common.to')" :start-placeholder="t('common.startDate')" :end-placeholder="t('common.endDate')" />
               <el-button type="primary" @click="exportReport('process')">
-                <el-icon><Download /></el-icon> 导出
+                <el-icon><Download /></el-icon> {{ t('report.export') }}
               </el-button>
             </div>
           </div>
 
           <div class="chart-row full">
             <div class="chart-container">
-              <h4>执行耗时最长的流程 TOP {{ processTopN }}</h4>
+              <h4>{{ t('report.longestProcessTop', { n: processTopN }) }}</h4>
               <v-chart :option="processDurationOption" autoresize style="height: 350px;"></v-chart>
             </div>
           </div>
 
           <div class="process-table">
-            <h4>流程耗时明细</h4>
-            <el-table :data="processList" border stripe size="small">
-              <el-table-column type="index" label="排名" width="60" align="center" />
-              <el-table-column prop="name" label="流程名称" min-width="180" />
-              <el-table-column prop="code" label="流程编码" width="150" />
-              <el-table-column prop="execCount" label="执行次数" width="100" align="center" />
-              <el-table-column prop="avgDuration" label="平均耗时" width="100" align="center">
+            <h4>{{ t('report.processDurationDetail') }}</h4>
+            <el-table :data="processList" border stripe size="small" default-sort="{ prop: 'avgDuration', order: 'descending' }">
+              <el-table-column type="index" :label="t('report.rank')" width="60" align="center" />
+              <el-table-column prop="name" :label="t('report.processName')" min-width="180" />
+              <el-table-column prop="code" :label="t('report.processCode')" width="150" />
+              <el-table-column prop="execCount" :label="t('report.execCount')" width="100" align="center" sortable />
+              <el-table-column prop="avgDuration" :label="t('report.avgDuration')" width="100" align="center" sortable sort-by="avgDuration">
                 <template #default="{ row }">
                   <span class="text-warning">{{ row.avgDuration }}</span>
                 </template>
               </el-table-column>
-              <el-table-column prop="maxDuration" label="最长耗时" width="100" align="center" />
-              <el-table-column prop="minDuration" label="最短耗时" width="100" align="center" />
-              <el-table-column prop="totalDuration" label="总耗时" width="100" align="center" />
-              <el-table-column prop="successRate" label="成功率" width="90" align="center">
+              <el-table-column prop="maxDuration" :label="t('report.maxDuration')" width="100" align="center" sortable />
+              <el-table-column prop="minDuration" :label="t('report.minDuration')" width="100" align="center" />
+              <el-table-column prop="totalDuration" :label="t('report.totalDuration')" width="100" align="center" />
+              <el-table-column prop="successRate" :label="t('report.successRate')" width="90" align="center" sortable>
                 <template #default="{ row }">
                   <span :class="row.successRate >= 90 ? 'text-success' : 'text-danger'">{{ row.successRate }}%</span>
                 </template>
@@ -354,36 +377,36 @@
       </el-tab-pane>
 
       <!-- 自定义报表 -->
-      <el-tab-pane label="自定义报表" name="custom">
+      <el-tab-pane :label="t('report.customReport')" name="custom">
         <div class="report-section">
           <div class="toolbar">
             <el-button type="primary" @click="createCustomReport">
-              <el-icon><Plus /></el-icon> 创建报表
+              <el-icon><Plus /></el-icon> {{ t('report.createReport') }}
             </el-button>
             <el-button @click="exportReport('custom')">
-              <el-icon><Download /></el-icon> 导出
+              <el-icon><Download /></el-icon> {{ t('report.export') }}
             </el-button>
           </div>
 
           <el-table :data="customReports" v-loading="loading" border stripe>
-            <el-table-column type="index" label="序号" width="60" align="center" />
-            <el-table-column prop="name" label="报表名称" min-width="180" />
-            <el-table-column prop="type" label="报表类型" width="130" align="center">
+            <el-table-column type="index" :label="t('report.seq')" width="60" align="center" />
+            <el-table-column prop="name" :label="t('report.reportName')" min-width="180" />
+            <el-table-column prop="type" :label="t('report.reportType')" width="130" align="center">
               <template #default="{ row }">
                 <el-tag size="small" :type="getReportTypeTag(row.type)">{{ row.type }}</el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="dimensions" label="统计维度" min-width="150" />
-            <el-table-column prop="createUser" label="创建人" width="100" />
-            <el-table-column prop="createTime" label="创建时间" min-width="160" />
-            <el-table-column prop="lastRun" label="最后运行" min-width="160" />
-            <el-table-column label="操作" width="180" fixed="right" align="center">
+            <el-table-column prop="dimensions" :label="t('report.dimensions')" min-width="150" />
+            <el-table-column prop="createUser" :label="t('report.creator')" width="100" />
+            <el-table-column prop="createTime" :label="t('report.createTime')" min-width="160" />
+            <el-table-column prop="lastRun" :label="t('report.lastRun')" min-width="160" />
+            <el-table-column :label="t('common.actions')" width="180" fixed="right" align="center">
               <template #default="{ row }">
-                <el-button link type="primary" size="small" @click="runReport(row)">运行</el-button>
-                <el-button link type="primary" size="small" @click="editCustomReport(row)">编辑</el-button>
-                <el-popconfirm title="确认删除该报表吗？" @confirm="deleteCustomReport(row)">
+                <el-button link type="primary" size="small" @click="runReport(row)">{{ t('common.run') }}</el-button>
+                <el-button link type="primary" size="small" @click="editCustomReport(row)">{{ t('common.edit') }}</el-button>
+                <el-popconfirm :title="t('report.confirmDeleteReport')" @confirm="deleteCustomReport(row)">
                   <template #reference>
-                    <el-button link type="danger" size="small">删除</el-button>
+                    <el-button link type="danger" size="small">{{ t('common.delete') }}</el-button>
                   </template>
                 </el-popconfirm>
               </template>
@@ -392,130 +415,16 @@
         </div>
       </el-tab-pane>
 
-      <!-- 成本节省 -->
-      <el-tab-pane label="成本节省" name="roi">
-        <div class="report-section">
-          <div class="section-header">
-            <h3>RPA投资回报率分析</h3>
-          </div>
-
-          <div class="roi-cards">
-            <div class="roi-card primary">
-              <div class="roi-icon"><el-icon><Money /></el-icon></div>
-              <div class="roi-info">
-                <span class="roi-value">¥ {{ formatNumber(roiStats.annualSavings) }}</span>
-                <span class="roi-label">年度节省成本</span>
-              </div>
-            </div>
-            <div class="roi-card success">
-              <div class="roi-icon"><el-icon><TrendCharts /></el-icon></div>
-              <div class="roi-info">
-                <span class="roi-value">{{ roiStats.roi }}%</span>
-                <span class="roi-label">投资回报率</span>
-              </div>
-            </div>
-            <div class="roi-card warning">
-              <div class="roi-icon"><el-icon><Clock /></el-icon></div>
-              <div class="roi-info">
-                <span class="roi-value">{{ roiStats.paybackPeriod }} 月</span>
-                <span class="roi-label">投资回收期</span>
-              </div>
-            </div>
-            <div class="roi-card info">
-              <div class="roi-icon"><el-icon><User /></el-icon></div>
-              <div class="roi-info">
-                <span class="roi-value">{{ roiStats.laborReduction }}</span>
-                <span class="roi-label">减少人力(人)</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="cost-section">
-            <el-card class="cost-calculator">
-              <template #header>
-                <div class="card-header">
-                  <span>成本节省计算器</span>
-                  <el-button link type="primary" @click="resetCalculator">重置</el-button>
-                </div>
-              </template>
-              <el-form :model="costForm" label-width="120px">
-                <el-form-item label="RPA部署数量">
-                  <el-input-number v-model="costForm.rpaCount" :min="1" :max="100" />
-                  <span class="unit">个</span>
-                </el-form-item>
-                <el-form-item label="RPA年费/个">
-                  <el-input-number v-model="costForm.rpaCostPerUnit" :min="10000" :max="100000" :step="10000" />
-                  <span class="unit">元</span>
-                </el-form-item>
-                <el-form-item label="人工执行耗时">
-                  <el-input-number v-model="costForm.manualTime" :min="1" :max="1000" />
-                  <span class="unit">分钟/次</span>
-                </el-form-item>
-                <el-form-item label="执行频率">
-                  <el-input-number v-model="costForm.frequency" :min="1" :max="10000" />
-                  <span class="unit">次/月</span>
-                </el-form-item>
-                <el-form-item label="人工时薪">
-                  <el-input-number v-model="costForm.hourlyRate" :min="20" :max="1000" />
-                  <span class="unit">元/小时</span>
-                </el-form-item>
-                <el-form-item>
-                  <el-button type="primary" @click="calculateSavings">计算节省</el-button>
-                </el-form-item>
-              </el-form>
-            </el-card>
-
-            <el-card class="cost-result" v-if="showResult">
-              <template #header>
-                <div class="card-header">
-                  <span>节省估算结果</span>
-                </div>
-              </template>
-              <div class="savings-result">
-                <div class="savings-item">
-                  <span class="savings-label">每月节省工时:</span>
-                  <span class="savings-value primary">{{ savings.monthlyHours }} 小时</span>
-                </div>
-                <div class="savings-item">
-                  <span class="savings-label">每月节省成本:</span>
-                  <span class="savings-value success">¥ {{ formatNumber(savings.monthlyCost) }}</span>
-                </div>
-                <div class="savings-item">
-                  <span class="savings-label">每年节省工时:</span>
-                  <span class="savings-value primary">{{ formatNumber(savings.yearlyHours) }} 小时</span>
-                </div>
-                <div class="savings-item">
-                  <span class="savings-label">每年节省成本:</span>
-                  <span class="savings-value success">¥ {{ formatNumber(savings.yearlyCost) }}</span>
-                </div>
-                <div class="savings-item">
-                  <span class="savings-label">RPA年成本:</span>
-                  <span class="savings-value">¥ {{ formatNumber(costForm.rpaCount * costForm.rpaCostPerUnit) }}</span>
-                </div>
-                <div class="savings-item highlight">
-                  <span class="savings-label">ROI:</span>
-                  <span class="savings-value">{{ savings.roi }}%</span>
-                </div>
-                <div class="savings-item highlight">
-                  <span class="savings-label">回收期:</span>
-                  <span class="savings-value">{{ savings.paybackPeriod }} 个月</span>
-                </div>
-              </div>
-            </el-card>
-          </div>
-        </div>
-      </el-tab-pane>
-
       <!-- 趋势预测 -->
-      <el-tab-pane label="趋势预测" name="forecast">
+      <el-tab-pane :label="t('report.forecast')" name="forecast">
         <div class="report-section">
           <div class="section-header">
-            <h3>智能任务量预测</h3>
+            <h3>{{ t('report.intelligentTaskForecast') }}</h3>
             <div class="header-actions">
               <el-select v-model="forecastPeriod" style="width: 150px;">
-                <el-option label="未来7天" value="7" />
-                <el-option label="未来30天" value="30" />
-                <el-option label="未来90天" value="90" />
+                <el-option :label="t('report.nextDays', { days: 7 })" value="7" />
+                <el-option :label="t('report.nextDays', { days: 30 })" value="30" />
+                <el-option :label="t('report.nextDays', { days: 90 })" value="90" />
               </el-select>
             </div>
           </div>
@@ -524,35 +433,35 @@
             <div class="forecast-card">
               <div class="forecast-icon"><el-icon><TrendCharts /></el-icon></div>
               <div class="forecast-info">
-                <span class="forecast-value">预计增长 {{ forecastStats.growthRate }}%</span>
-                <span class="forecast-label">下期任务量预测</span>
+                <span class="forecast-value">{{ t('report.expectedGrowth', { rate: forecastStats.growthRate }) }}</span>
+                <span class="forecast-label">{{ t('report.nextPeriodForecast') }}</span>
               </div>
             </div>
             <div class="forecast-card">
               <div class="forecast-icon warning"><el-icon><Warning /></el-icon></div>
               <div class="forecast-info">
-                <span class="forecast-value">建议扩容 {{ forecastStats.suggestRobotCount }} 台</span>
-                <span class="forecast-label">机器人扩容建议</span>
+                <span class="forecast-value">{{ t('report.suggestExpand', { count: forecastStats.suggestRobotCount }) }}</span>
+                <span class="forecast-label">{{ t('report.robotExpandSuggestion') }}</span>
               </div>
             </div>
             <div class="forecast-card">
               <div class="forecast-icon success"><el-icon><Check /></el-icon></div>
               <div class="forecast-info">
                 <span class="forecast-value">{{ forecastStats.capacityRate }}%</span>
-                <span class="forecast-label">当前容量利用率</span>
+                <span class="forecast-label">{{ t('report.currentCapacityUtilization') }}</span>
               </div>
             </div>
           </div>
 
           <div class="forecast-chart">
-            <h4>未来任务量趋势预测</h4>
+            <h4>{{ t('report.futureTaskTrendForecast') }}</h4>
             <v-chart :option="forecastChartOption" autoresize style="height: 350px;"></v-chart>
           </div>
 
           <div class="forecast-tips">
             <el-alert type="info" :closable="false">
               <template #title>
-                <strong>智能建议:</strong> {{ forecastStats.suggestion }}
+                <strong>{{ t('report.intelligentSuggestion') }}:</strong> {{ forecastStats.suggestion }}
               </template>
             </el-alert>
           </div>
@@ -560,152 +469,231 @@
       </el-tab-pane>
 
       <!-- 报表订阅 -->
-      <el-tab-pane label="报表订阅" name="subscription">
+      <el-tab-pane :label="t('report.subscription')" name="subscription">
         <div class="report-section">
           <div class="toolbar">
             <el-button type="primary" @click="addSubscription">
-              <el-icon><Plus /></el-icon> 添加订阅
+              <el-icon><Plus /></el-icon> {{ t('report.addSubscription') }}
+            </el-button>
+            <el-button type="success" @click="triggerSubscription" :loading="triggerLoading">
+              <el-icon><Promotion /></el-icon> {{ t('report.sendNow') }}
             </el-button>
           </div>
 
           <el-table :data="subscriptions" v-loading="subLoading" border stripe>
-            <el-table-column type="index" label="序号" width="60" align="center" />
-            <el-table-column prop="name" label="订阅名称" min-width="180" />
-            <el-table-column prop="report" label="报表类型" min-width="130" />
-            <el-table-column prop="frequency" label="发送频率" width="100" align="center">
+            <el-table-column type="index" :label="t('report.seq')" width="60" align="center" />
+            <el-table-column prop="name" :label="t('report.subscriptionName')" min-width="180" />
+            <el-table-column prop="report" :label="t('report.reportType')" min-width="130">
               <template #default="{ row }">
-                <el-tag size="small">{{ row.frequency }}</el-tag>
+                <el-tag size="small" :type="getReportTypeTag(row.reportType)">{{ getReportTypeName(row.reportType) }}</el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="recipients" label="接收人" min-width="150" show-overflow-tooltip />
-            <el-table-column prop="channel" label="推送方式" width="100" align="center">
+            <el-table-column prop="frequency" :label="t('report.frequency')" width="100" align="center">
               <template #default="{ row }">
-                <el-tag size="small" type="info">{{ row.channel }}</el-tag>
+                <el-tag size="small">{{ getFrequencyName(row.frequency) }}</el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="status" label="状态" width="80" align="center">
+            <el-table-column prop="recipients" :label="t('report.recipients')" min-width="150" show-overflow-tooltip />
+            <el-table-column prop="channel" :label="t('report.pushChannel')" width="100" align="center">
               <template #default="{ row }">
-                <el-switch v-model="row.status" @change="toggleSubscription(row)" />
+                <el-tag size="small" type="info">{{ getChannelName(row.channel) }}</el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="lastRun" label="最后发送" min-width="160" />
-            <el-table-column label="操作" width="150" fixed="right" align="center">
+            <el-table-column prop="status" :label="t('report.status')" width="80" align="center">
               <template #default="{ row }">
-                <el-button link type="primary" size="small" @click="editSubscription(row)">编辑</el-button>
-                <el-popconfirm title="确认删除吗？" @confirm="deleteSubscription(row)">
+                <el-switch v-model="row.enabled" :active-value="1" :inactive-value="0" @change="toggleSubscription(row)" />
+              </template>
+            </el-table-column>
+            <el-table-column prop="lastSendTime" :label="t('report.lastSend')" min-width="160">
+              <template #default="{ row }">
+                {{ row.lastSendTime || t('report.neverSent') }}
+              </template>
+            </el-table-column>
+            <el-table-column :label="t('common.actions')" width="150" fixed="right" align="center">
+              <template #default="{ row }">
+                <el-button link type="primary" size="small" @click="triggerOneSubscription(row)">
+                  <el-icon><VideoPlay /></el-icon> {{ t('report.send') }}
+                </el-button>
+                <el-button link type="primary" size="small" @click="editSubscription(row)">{{ t('common.edit') }}</el-button>
+                <el-popconfirm :title="t('report.confirmDelete')" @confirm="deleteSubscription(row)">
                   <template #reference>
-                    <el-button link type="danger" size="small">删除</el-button>
+                    <el-button link type="danger" size="small">{{ t('common.delete') }}</el-button>
                   </template>
                 </el-popconfirm>
               </template>
             </el-table-column>
           </el-table>
+
+          <div class="subscription-tips">
+            <el-alert type="info" :closable="false">
+              <template #title>
+                <strong>{{ t('report.usageInstructions') }}：</strong>
+                <span style="margin-left: 8px;">{{ t('report.subscriptionDescription') }}</span>
+                <span style="margin-left: 8px; color: #67c23a;">{{ t('report.manualTriggerHint') }}</span>
+              </template>
+            </el-alert>
+          </div>
         </div>
       </el-tab-pane>
     </el-tabs>
 
     <!-- 创建自定义报表弹窗 -->
-    <el-dialog v-model="reportDialogVisible" title="创建自定义报表" width="650px">
+    <el-dialog v-model="reportDialogVisible" :title="t('report.createCustomReport')" width="650px">
       <el-form :model="reportForm" label-width="100px">
-        <el-form-item label="报表名称">
-          <el-input v-model="reportForm.name" placeholder="请输入报表名称" />
+        <el-form-item :label="t('report.reportName')">
+          <el-input v-model="reportForm.name" :placeholder="t('report.inputReportName')" />
         </el-form-item>
-        <el-form-item label="报表类型">
+        <el-form-item :label="t('report.reportType')">
           <el-select v-model="reportForm.type" style="width: 100%;">
-            <el-option label="任务执行统计" value="任务执行" />
-            <el-option label="数据采集统计" value="数据采集" />
-            <el-option label="机器人效能" value="机器人效能" />
-            <el-option label="流程效率分析" value="流程效率" />
-            <el-option label="成本效益分析" value="成本效益" />
-            <el-option label="自定义" value="自定义" />
+            <el-option :label="t('report.taskExecutionStats')" value="任务执行" />
+            <el-option :label="t('report.dataCollectionStats')" value="数据采集" />
+            <el-option :label="t('report.robotEfficiency')" value="机器人效能" />
+            <el-option :label="t('report.processEfficiency')" value="流程效率" />
+            <el-option :label="t('report.costBenefit')" value="成本效益" />
+            <el-option :label="t('report.custom')" value="自定义" />
           </el-select>
         </el-form-item>
-        <el-form-item label="统计维度">
-          <el-select v-model="reportForm.dimensions" multiple placeholder="选择统计维度" style="width: 100%;">
-            <el-option label="执行次数" value="execCount" />
-            <el-option label="成功率" value="successRate" />
-            <el-option label="采集数据量" value="dataCount" />
-            <el-option label="执行耗时" value="duration" />
-            <el-option label="流程分布" value="process" />
-            <el-option label="时间趋势" value="trend" />
+        <el-form-item :label="t('report.dimensions')">
+          <el-select v-model="reportForm.dimensions" multiple :placeholder="t('report.selectDimensions')" style="width: 100%;">
+            <el-option :label="t('report.execCount')" value="execCount" />
+            <el-option :label="t('report.successRate')" value="successRate" />
+            <el-option :label="t('report.dataCount')" value="dataCount" />
+            <el-option :label="t('report.duration')" value="duration" />
+            <el-option :label="t('report.processDistribution')" value="process" />
+            <el-option :label="t('report.timeTrend')" value="trend" />
           </el-select>
         </el-form-item>
-        <el-form-item label="时间范围">
+        <el-form-item :label="t('report.timeRange')">
           <el-select v-model="reportForm.dateRange" style="width: 100%;">
-            <el-option label="今日" value="today" />
-            <el-option label="本周" value="week" />
-            <el-option label="本月" value="month" />
-            <el-option label="本季度" value="quarter" />
-            <el-option label="本年" value="year" />
-            <el-option label="自定义" value="custom" />
+            <el-option :label="t('report.today')" value="today" />
+            <el-option :label="t('report.thisWeek')" value="week" />
+            <el-option :label="t('report.thisMonth')" value="month" />
+            <el-option :label="t('report.thisQuarter')" value="quarter" />
+            <el-option :label="t('report.thisYear')" value="year" />
+            <el-option :label="t('report.custom')" value="custom" />
           </el-select>
         </el-form-item>
-        <el-form-item label="图表类型">
+        <el-form-item :label="t('report.chartType')">
           <el-select v-model="reportForm.chartType" style="width: 100%;">
-            <el-option label="折线图" value="line" />
-            <el-option label="柱状图" value="bar" />
-            <el-option label="饼图" value="pie" />
-            <el-option label="表格" value="table" />
+            <el-option :label="t('report.lineChart')" value="line" />
+            <el-option :label="t('report.barChart')" value="bar" />
+            <el-option :label="t('report.pieChart')" value="pie" />
+            <el-option :label="t('report.table')" value="table" />
           </el-select>
         </el-form-item>
-        <el-form-item label="描述">
-          <el-input v-model="reportForm.description" type="textarea" :rows="2" placeholder="请输入报表描述" />
+        <el-form-item :label="t('report.description')">
+          <el-input v-model="reportForm.description" type="textarea" :rows="2" :placeholder="t('report.inputDescription')" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="reportDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="saveCustomReport">保存</el-button>
+        <el-button @click="reportDialogVisible = false">{{ t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="saveCustomReport">{{ t('common.save') }}</el-button>
       </template>
     </el-dialog>
 
     <!-- 添加订阅弹窗 -->
-    <el-dialog v-model="subDialogVisible" title="添加报表订阅" width="550px">
-      <el-form :model="subForm" label-width="100px">
-        <el-form-item label="订阅名称">
-          <el-input v-model="subForm.name" placeholder="请输入订阅名称" />
+    <el-dialog v-model="subDialogVisible" :title="isEditSubscription ? t('report.editSubscription') : t('report.addSubscription')" width="600px">
+      <el-form :model="subForm" :rules="subFormRules" ref="subFormRef" label-width="110px">
+        <el-form-item :label="t('report.subscriptionName')" prop="name">
+          <el-input v-model="subForm.name" :placeholder="t('report.inputSubscriptionName')" maxlength="100" show-word-limit />
         </el-form-item>
-        <el-form-item label="报表类型">
-          <el-select v-model="subForm.report" style="width: 100%;">
-            <el-option label="任务执行日报" value="daily" />
-            <el-option label="任务执行周报" value="weekly" />
-            <el-option label="任务执行月报" value="monthly" />
-            <el-option label="机器人利用率" value="robot" />
-            <el-option label="成本节省报告" value="roi" />
+        <el-form-item :label="t('report.reportType')" prop="reportType">
+          <el-select v-model="subForm.reportType" style="width: 100%;">
+            <el-option :label="t('report.dailyReport')" value="daily" />
+            <el-option :label="t('report.weeklyReport')" value="weekly" />
+            <el-option :label="t('report.monthlyReport')" value="monthly" />
+            <el-option :label="t('report.robotUtilization')" value="robot" />
+            <el-option :label="t('report.roiReport')" value="roi" />
           </el-select>
         </el-form-item>
-        <el-form-item label="发送频率">
+        <el-form-item :label="t('report.frequency')" prop="frequency">
           <el-select v-model="subForm.frequency" style="width: 100%;">
-            <el-option label="每日" value="daily" />
-            <el-option label="每周一" value="weekly" />
-            <el-option label="每月1日" value="monthly" />
+            <el-option :label="t('report.daily')" value="daily" />
+            <el-option :label="t('report.weeklyMonday')" value="weekly" />
+            <el-option :label="t('report.monthlyFirstDay')" value="monthly" />
           </el-select>
         </el-form-item>
-        <el-form-item label="推送方式">
-          <el-select v-model="subForm.channel" style="width: 100%;">
-            <el-option label="邮件" value="email" />
-            <el-option label="钉钉" value="dingtalk" />
-            <el-option label="企业微信" value="wecom" />
+        <el-form-item :label="t('report.pushChannel')" prop="channel">
+          <el-select v-model="subForm.channel" style="width: 100%;" @change="onChannelChange">
+            <el-option :label="t('report.email')" value="email">
+              <div class="channel-option">
+                <el-icon><Message /></el-icon>
+                <span>{{ t('report.email') }}</span>
+                <el-tag size="small" type="success">{{ t('report.recommended') }}</el-tag>
+              </div>
+            </el-option>
+            <el-option :label="t('report.dingtalk')" value="dingtalk">
+              <div class="channel-option">
+                <el-icon><ChatDotRound /></el-icon>
+                <span>{{ t('report.dingtalk') }}</span>
+              </div>
+            </el-option>
+            <el-option :label="t('report.wecom')" value="wecom">
+              <div class="channel-option">
+                <el-icon><Comment /></el-icon>
+                <span>{{ t('report.wecom') }}</span>
+              </div>
+            </el-option>
+            <el-option :label="t('report.feishu')" value="feishu">
+              <div class="channel-option">
+                <el-icon><Promotion /></el-icon>
+                <span>{{ t('report.feishu') }}</span>
+              </div>
+            </el-option>
           </el-select>
         </el-form-item>
-        <el-form-item label="接收人">
-          <el-input v-model="subForm.recipients" placeholder="请输入接收人邮箱或账号" />
+        <el-form-item :label="t('report.recipients')" prop="recipients">
+          <el-input
+            v-model="subForm.recipients"
+            :placeholder="getChannelTip(subForm.channel)"
+            type="textarea"
+            :rows="2"
+            @blur="validateRecipients"
+          />
+          <div class="form-tip" v-if="subForm.channel === 'email'">
+            <el-icon><InfoFilled /></el-icon>
+            <span>{{ t('report.multipleRecipientsTip') }}</span>
+          </div>
+          <div class="form-error" v-if="recipientError">
+            <el-icon><CircleClose /></el-icon>
+            <span>{{ recipientError }}</span>
+          </div>
+        </el-form-item>
+        <el-form-item :label="t('report.pushTime')" prop="fixedTime">
+          <el-time-picker
+            v-model="subForm.fixedTime"
+            format="HH:mm"
+            value-format="HH:mm"
+            style="width: 100%;"
+            :placeholder="t('report.selectPushTime')"
+          />
+        </el-form-item>
+        <el-form-item :label="t('report.status')">
+          <el-switch v-model="subForm.enabled" :active-value="1" :inactive-value="0" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="subDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="saveSubscription">保存</el-button>
+        <div class="dialog-footer">
+          <el-button @click="subDialogVisible = false">{{ t('common.cancel') }}</el-button>
+          <el-button type="primary" @click="saveSubscription" :loading="saveLoading">
+            <el-icon v-if="!saveLoading"><Check /></el-icon>
+            {{ isEditSubscription ? t('report.saveChanges') : t('report.createSubscription') }}
+          </el-button>
+        </div>
       </template>
     </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, watch } from 'vue'
+import { ref, reactive, computed, onMounted, watch, nextTick } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import {
   DataLine, CircleCheck, Timer, Money, Plus, Download, TrendCharts, PieChart,
   Document, Calendar, Cpu, Stopwatch, Edit, Coin, Clock, User, Top, Bottom,
-  Coffee, CloseBold, Warning, Check, Lock
+  Coffee, CloseBold, Warning, Check, Lock, Promotion, VideoPlay,
+  Message, ChatDotRound, Comment, InfoFilled, CircleClose
 } from '@element-plus/icons-vue'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
@@ -716,9 +704,11 @@ import { apiGet, apiPost, apiPut, apiDelete } from '../../utils/api.js'
 
 use([CanvasRenderer, LineChart, EChartsBarChart, PieChartType, TitleComponent, TooltipComponent, LegendComponent, GridComponent])
 
+const { t } = useI18n()
 const currentTab = ref('daily')
 const loading = ref(false)
 const subLoading = ref(false)
+const triggerLoading = ref(false)
 const reportDialogVisible = ref(false)
 const subDialogVisible = ref(false)
 const showResult = ref(false)
@@ -823,7 +813,7 @@ const forecastStats = reactive({
   growthRate: 0,
   suggestRobotCount: 0,
   capacityRate: 0,
-  suggestion: '暂无预测数据'
+  suggestion: t('report.noForecastData')
 })
 
 // 自定义报表 - 从 API 加载
@@ -863,11 +853,40 @@ const reportForm = reactive({
 // 订阅表单
 const subForm = reactive({
   name: '',
-  report: 'daily',
+  reportType: 'daily',
   frequency: 'daily',
   channel: 'email',
-  recipients: ''
+  recipients: '',
+  fixedTime: '09:00',
+  enabled: 1
 })
+
+// 是否为编辑模式
+const isEditSubscription = ref(false)
+const editingSubscriptionId = ref(null)
+const saveLoading = ref(false)
+const subFormRef = ref(null)
+const recipientError = ref('')
+
+// 订阅表单验证规则
+const subFormRules = {
+  name: [
+    { required: true, message: t('report.inputSubscriptionName'), trigger: 'blur' },
+    { min: 2, max: 100, message: t('report.subscriptionNameLength'), trigger: 'blur' }
+  ],
+  reportType: [
+    { required: true, message: t('report.selectReportType'), trigger: 'change' }
+  ],
+  frequency: [
+    { required: true, message: t('report.selectFrequency'), trigger: 'change' }
+  ],
+  channel: [
+    { required: true, message: t('report.selectPushChannel'), trigger: 'change' }
+  ],
+  recipients: [
+    { required: true, message: t('report.inputRecipients'), trigger: 'blur' }
+  ]
+}
 
 // 格式化数字
 const formatNumber = (num) => {
@@ -905,7 +924,7 @@ const getStatusTagType = (status) => {
 }
 
 const getStatusText = (status) => {
-  const map = { success: '成功', failed: '失败', running: '进行中', abnormal: '异常' }
+  const map = { success: t('report.success'), failed: t('report.failed'), running: t('report.running'), abnormal: t('report.abnormal') }
   return map[status] || status || '-'
 }
 
@@ -917,8 +936,98 @@ const getRobotStatusType = (status) => {
 
 // 报表类型标签
 const getReportTypeTag = (type) => {
-  const map = { '任务执行': 'primary', '数据采集': 'success', '机器人效能': 'warning', '流程效率': 'info', '成本效益': 'danger' }
+  const map = { '任务执行': 'primary', '数据采集': 'success', '机器人效能': 'warning', '流程效率': 'info', '成本效益': 'danger', 'daily': 'primary', 'weekly': 'success', 'monthly': 'warning', 'robot': 'info' }
   return map[type] || 'info'
+}
+
+// 获取报表类型名称
+const getReportTypeName = (type) => {
+  const map = { 
+    'daily': t('report.daily'), 
+    'weekly': t('report.weekly'), 
+    'monthly': t('report.monthly'), 
+    'robot': t('report.robotReport') 
+  }
+  return map[type] || type || '-'
+}
+
+// 获取发送频率名称
+const getFrequencyName = (freq) => {
+  const map = { 'daily': t('report.daily'), 'weekly': t('report.weekly'), 'monthly': t('report.monthly') }
+  return map[freq] || freq || '-'
+}
+
+// 获取推送方式名称
+const getChannelName = (channel) => {
+  const map = { 
+    'email': t('report.email'), 
+    'dingtalk': t('report.dingtalk'), 
+    'wecom': t('report.wecom'), 
+    'feishu': t('report.feishu') 
+  }
+  return map[channel] || channel || '-'
+}
+
+// 邮箱格式验证
+const validateEmail = (email) => {
+  const emailRegex = /^[a-zA-Z0-9_+&*-]+(?:\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,7}$/
+  return emailRegex.test(email)
+}
+
+// 获取推送方式提示
+const getChannelTip = (channel) => {
+  const tips = {
+    'email': t('report.emailTip'),
+    'dingtalk': t('report.dingtalkTip'),
+    'wecom': t('report.wecomTip'),
+    'feishu': t('report.feishuTip')
+  }
+  return tips[channel] || ''
+}
+
+// 获取推送方式图标
+const getChannelIcon = (channel) => {
+  const icons = {
+    'email': 'Message',
+    'dingtalk': 'ChatDotRound',
+    'wecom': 'Comment',
+    'feishu': 'Promotion'
+  }
+  return icons[channel] || 'Message'
+}
+
+// 触发所有订阅
+const triggerSubscription = async () => {
+  try {
+    triggerLoading.value = true
+    const result = await apiPost('/report/subscription/trigger', {})
+    if (result.code === 0) {
+      ElMessage.success(t('report.subscriptionSending'))
+    } else {
+      ElMessage.error(result.message || t('report.sendFailed'))
+    }
+  } catch (e) {
+    console.error(t('report.triggerSubscriptionFailed'), e)
+    ElMessage.error(t('report.sendFailedWithMsg', { msg: e.message }))
+  } finally {
+    triggerLoading.value = false
+  }
+}
+
+// 触发单个订阅
+const triggerOneSubscription = async (sub) => {
+  try {
+    const result = await apiPost(`/report/subscription/${sub.id}/trigger`, {})
+    if (result.code === 0) {
+      ElMessage.success(t('report.reportSending', { name: sub.name }))
+      await loadSubscriptions()
+    } else {
+      ElMessage.error(result.message || t('report.sendFailed'))
+    }
+  } catch (e) {
+    console.error(t('report.triggerSubscriptionFailed'), e)
+    ElMessage.error(t('report.sendFailedWithMsg', { msg: e.message }))
+  }
 }
 
 // 图表配置 - 使用真实数据
@@ -946,17 +1055,17 @@ const hourlyTrendOption = computed(() => {
       type: 'category',
       data: Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`)
     },
-    yAxis: { type: 'value', name: '任务数' },
+    yAxis: { type: 'value', name: t('report.taskCount') },
     series: [
       {
-        name: '成功',
+        name: t('report.success'),
         type: 'bar',
         stack: 'total',
         data: hourlyData.map(h => h.success),
         itemStyle: { color: '#67c23a' }
       },
       {
-        name: '失败',
+        name: t('report.failed'),
         type: 'bar',
         stack: 'total',
         data: hourlyData.map(h => h.failed),
@@ -976,25 +1085,25 @@ const dailyPieOption = computed(() => ({
     itemStyle: { borderRadius: 10, borderColor: '#fff', borderWidth: 2 },
     label: { show: true, formatter: '{b}: {d}%' },
     data: [
-      { value: dailyStats.success, name: '成功', itemStyle: { color: '#67c23a' } },
-      { value: dailyStats.failed, name: '失败', itemStyle: { color: '#f56c6c' } },
-      { value: dailyStats.running, name: '进行中', itemStyle: { color: '#e6a23c' } }
+      { value: dailyStats.success, name: t('report.success'), itemStyle: { color: '#67c23a' } },
+      { value: dailyStats.failed, name: t('report.failed'), itemStyle: { color: '#f56c6c' } },
+      { value: dailyStats.running, name: t('report.running'), itemStyle: { color: '#e6a23c' } }
     ]
   }]
 }))
 
 const monthlyTrendOption = computed(() => ({
   tooltip: { trigger: 'axis' },
-  legend: { data: ['执行次数', '成功次数'], bottom: 0 },
+  legend: { data: [t('report.execCount'), t('report.successCount')], bottom: 0 },
   grid: { left: '3%', right: '4%', bottom: '15%', top: '10%', containLabel: true },
   xAxis: {
     type: 'category',
-    data: ['1日', '5日', '10日', '15日', '20日', '25日', '30日']
+    data: [t('report.day1'), t('report.day5'), t('report.day10'), t('report.day15'), t('report.day20'), t('report.day25'), t('report.day30')]
   },
-  yAxis: { type: 'value', name: '次数' },
+  yAxis: { type: 'value', name: t('report.count') },
   series: [
-    { name: '执行次数', type: 'line', data: [180, 165, 190, 175, 200, 185, 195], smooth: true, itemStyle: { color: '#409eff' } },
-    { name: '成功次数', type: 'line', data: [170, 158, 180, 166, 190, 175, 186], smooth: true, itemStyle: { color: '#67c23a' } }
+    { name: t('report.execCount'), type: 'line', data: [180, 165, 190, 175, 200, 185, 195], smooth: true, itemStyle: { color: '#409eff' } },
+    { name: t('report.successCount'), type: 'line', data: [170, 158, 180, 166, 190, 175, 186], smooth: true, itemStyle: { color: '#67c23a' } }
   ]
 }))
 
@@ -1006,11 +1115,11 @@ const processPieOption = computed(() => ({
     radius: '60%',
     label: { show: true, formatter: '{b}: {d}%' },
     data: [
-      { value: 35, name: '数据采集', itemStyle: { color: '#409eff' } },
-      { value: 25, name: '订单处理', itemStyle: { color: '#67c23a' } },
-      { value: 18, name: '发票审核', itemStyle: { color: '#e6a23c' } },
-      { value: 12, name: '报表生成', itemStyle: { color: '#f56c6c' } },
-      { value: 10, name: '其他', itemStyle: { color: '#909399' } }
+      { value: 35, name: t('report.dataCollection'), itemStyle: { color: '#409eff' } },
+      { value: 25, name: t('report.orderProcessing'), itemStyle: { color: '#67c23a' } },
+      { value: 18, name: t('report.invoiceReview'), itemStyle: { color: '#e6a23c' } },
+      { value: 12, name: t('report.reportGeneration'), itemStyle: { color: '#f56c6c' } },
+      { value: 10, name: t('report.other'), itemStyle: { color: '#909399' } }
     ]
   }]
 }))
@@ -1018,10 +1127,10 @@ const processPieOption = computed(() => ({
 const dataCollectTrendOption = computed(() => ({
   tooltip: { trigger: 'axis' },
   grid: { left: '3%', right: '4%', bottom: '10%', top: '10%', containLabel: true },
-  xAxis: { type: 'category', data: ['1日', '5日', '10日', '15日', '20日', '25日', '30日'] },
-  yAxis: { type: 'value', name: '数据量' },
+  xAxis: { type: 'category', data: [t('report.day1'), t('report.day5'), t('report.day10'), t('report.day15'), t('report.day20'), t('report.day25'), t('report.day30')] },
+  yAxis: { type: 'value', name: t('report.dataVolume') },
   series: [{
-    name: '采集数据',
+    name: t('report.collectedData'),
     type: 'bar',
     data: [2800, 3200, 2900, 3500, 3800, 3600, 4200],
     itemStyle: { color: '#409eff', borderRadius: [4, 4, 0, 0] }
@@ -1035,9 +1144,9 @@ const robotStatusOption = computed(() => ({
     radius: ['45%', '70%'],
     innerRadius: '35%',
     data: [
-      { value: robotStats.busyRate, name: '忙碌', itemStyle: { color: '#e6a23c' } },
-      { value: robotStats.idleRate, name: '空闲', itemStyle: { color: '#67c23a' } },
-      { value: robotStats.offlineRate, name: '离线', itemStyle: { color: '#909399' } }
+      { value: robotStats.busyRate, name: t('report.busy'), itemStyle: { color: '#e6a23c' } },
+      { value: robotStats.idleRate, name: t('report.idle'), itemStyle: { color: '#67c23a' } },
+      { value: robotStats.offlineRate, name: t('report.offline'), itemStyle: { color: '#909399' } }
     ]
   }]
 }))
@@ -1045,7 +1154,7 @@ const robotStatusOption = computed(() => ({
 const robotRankingOption = computed(() => ({
   tooltip: { trigger: 'axis' },
   grid: { left: '3%', right: '4%', bottom: '10%', top: '10%', containLabel: true },
-  xAxis: { type: 'value', name: '执行次数' },
+  xAxis: { type: 'value', name: t('report.execCount') },
   yAxis: { 
     type: 'category', 
     data: robotList.value.slice(0, 10).map(r => r.name).reverse() 
@@ -1060,7 +1169,7 @@ const robotRankingOption = computed(() => ({
 const processDurationOption = computed(() => ({
   tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
   grid: { left: '3%', right: '4%', bottom: '15%', top: '10%', containLabel: true },
-  xAxis: { type: 'value', name: '平均耗时(分钟)' },
+  xAxis: { type: 'value', name: t('report.avgDurationMinutes') },
   yAxis: {
     type: 'category',
     data: processList.value.slice(0, processTopN.value).map(p => p.name).reverse()
@@ -1075,23 +1184,23 @@ const processDurationOption = computed(() => ({
 
 const forecastChartOption = computed(() => ({
   tooltip: { trigger: 'axis' },
-  legend: { data: ['历史数据', '预测值'], bottom: 0 },
+  legend: { data: [t('report.historicalData'), t('report.forecastValue')], bottom: 0 },
   grid: { left: '3%', right: '4%', bottom: '15%', top: '10%', containLabel: true },
   xAxis: {
     type: 'category',
-    data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日', '周一', '周二', '周三', '周四', '周五', '周六', '周日']
+    data: [t('report.monday'), t('report.tuesday'), t('report.wednesday'), t('report.thursday'), t('report.friday'), t('report.saturday'), t('report.sunday'), t('report.monday'), t('report.tuesday'), t('report.wednesday'), t('report.thursday'), t('report.friday'), t('report.saturday'), t('report.sunday')]
   },
-  yAxis: { type: 'value', name: '任务数' },
+  yAxis: { type: 'value', name: t('report.taskCount') },
   series: [
     {
-      name: '历史数据',
+      name: t('report.historicalData'),
       type: 'line',
       data: [120, 132, 101, 134, 190, 230, 210, null, null, null, null, null, null, null],
       itemStyle: { color: '#409eff' },
       areaStyle: { color: 'rgba(64, 158, 255, 0.1)' }
     },
     {
-      name: '预测值',
+      name: t('report.forecastValue'),
       type: 'line',
       data: [null, null, null, null, null, null, null, 230, 250, 280, 260, 290, 310, 340],
       itemStyle: { color: '#67c23a' },
@@ -1107,7 +1216,7 @@ const createCustomReport = () => {
 }
 
 const editCustomReport = (report) => {
-  ElMessage.info(`编辑报表: ${report.name}`)
+  ElMessage.info(t('report.editReport') + report.name)
 }
 
 const deleteCustomReport = async (report) => {
@@ -1115,13 +1224,13 @@ const deleteCustomReport = async (report) => {
     const result = await apiDelete(`/report/custom/${report.id}`)
     if (result.code === 0) {
       await loadCustomReports()
-      ElMessage.success('报表删除成功')
+      ElMessage.success(t('report.reportDeleted'))
     } else {
-      ElMessage.error(result.message || '删除失败')
+      ElMessage.error(result.message || t('report.deleteFailed'))
     }
   } catch (e) {
-    console.error('删除报表失败:', e)
-    ElMessage.error('删除报表失败')
+    console.error(t('report.deleteReportFailed'), e)
+    ElMessage.error(t('report.deleteReportFailed'))
   }
 }
 
@@ -1129,14 +1238,14 @@ const runReport = async (report) => {
   try {
     const result = await apiPost(`/report/custom/${report.id}/run`, {})
     if (result.code === 0) {
-      ElMessage.success(`报表 "${report.name}" 运行成功`)
+      ElMessage.success(t('report.reportRunSuccess', { name: report.name }))
       await loadCustomReports()
     } else {
-      ElMessage.error(result.message || '运行失败')
+      ElMessage.error(result.message || t('report.runFailed'))
     }
   } catch (e) {
-    console.error('运行报表失败:', e)
-    ElMessage.error('运行报表失败')
+    console.error(t('report.runReportFailed'), e)
+    ElMessage.error(t('report.runReportFailed'))
   }
 }
 
@@ -1174,13 +1283,68 @@ const resetCalculator = () => {
   showResult.value = false
 }
 
+// 推送方式改变时清空接收人并重置错误
+const onChannelChange = () => {
+  recipientError.value = ''
+}
+
+// 验证接收人格式
+const validateRecipients = () => {
+  if (!subForm.recipients || !subForm.recipients.trim()) {
+    recipientError.value = t('report.recipientsRequired')
+    return false
+  }
+
+  const recipients = subForm.recipients.split(/[,，;；]/).filter(r => r.trim())
+
+  if (recipients.length === 0) {
+    recipientError.value = t('report.recipientsRequired')
+    return false
+  }
+
+  if (subForm.channel === 'email') {
+    for (const email of recipients) {
+      if (!validateEmail(email.trim())) {
+        recipientError.value = t('report.emailFormatError', { email: email.trim() })
+        return false
+      }
+    }
+  }
+
+  recipientError.value = ''
+  return true
+}
+
 const addSubscription = () => {
-  Object.assign(subForm, { name: '', report: 'daily', frequency: 'daily', channel: 'email', recipients: '' })
+  isEditSubscription.value = false
+  editingSubscriptionId.value = null
+  Object.assign(subForm, {
+    name: '',
+    reportType: 'daily',
+    frequency: 'daily',
+    channel: 'email',
+    recipients: '',
+    fixedTime: '09:00',
+    enabled: 1
+  })
+  recipientError.value = ''
   subDialogVisible.value = true
 }
 
 const editSubscription = (sub) => {
-  ElMessage.info(`编辑订阅: ${sub.name}`)
+  isEditSubscription.value = true
+  editingSubscriptionId.value = sub.id
+  Object.assign(subForm, {
+    name: sub.name,
+    reportType: sub.reportType,
+    frequency: sub.frequency,
+    channel: sub.channel,
+    recipients: sub.recipients,
+    fixedTime: sub.fixedTime || '09:00',
+    enabled: sub.enabled
+  })
+  recipientError.value = ''
+  subDialogVisible.value = true
 }
 
 const deleteSubscription = async (sub) => {
@@ -1188,13 +1352,13 @@ const deleteSubscription = async (sub) => {
     const result = await apiDelete(`/report/subscription/${sub.id}`)
     if (result.code === 0) {
       await loadSubscriptions()
-      ElMessage.success('订阅删除成功')
+      ElMessage.success(t('report.subscriptionDeleted'))
     } else {
-      ElMessage.error(result.message || '删除失败')
+      ElMessage.error(result.message || t('report.deleteFailed'))
     }
   } catch (e) {
-    console.error('删除订阅失败:', e)
-    ElMessage.error('删除订阅失败')
+    console.error(t('report.deleteSubscriptionFailed'), e)
+    ElMessage.error(t('report.deleteSubscriptionFailed'))
   }
 }
 
@@ -1203,19 +1367,21 @@ const toggleSubscription = async (sub) => {
     const result = await apiPut(`/report/subscription/${sub.id}/toggle`, {})
     if (result.code === 0) {
       await loadSubscriptions()
-      ElMessage.success(result.message || '操作成功')
+      ElMessage.success(result.message || t('common.operationSuccess'))
     } else {
-      ElMessage.error(result.message || '操作失败')
+      await loadSubscriptions() // 恢复原状态
+      ElMessage.error(result.message || t('common.operationFailed'))
     }
   } catch (e) {
-    console.error('切换订阅状态失败:', e)
-    ElMessage.error('操作失败')
+    console.error(t('report.toggleSubscriptionFailed'), e)
+    await loadSubscriptions() // 恢复原状态
+    ElMessage.error(t('common.operationFailed'))
   }
 }
 
 const saveCustomReport = async () => {
   if (!reportForm.name) {
-    ElMessage.warning('请输入报表名称')
+    ElMessage.warning(t('report.inputReportName'))
     return
   }
   try {
@@ -1243,52 +1409,84 @@ const saveCustomReport = async () => {
     if (result.code === 0) {
       reportDialogVisible.value = false
       await loadCustomReports()
-      ElMessage.success('报表创建成功')
+      ElMessage.success(t('report.reportCreated'))
     } else {
-      ElMessage.error(result.message || '创建失败')
+      ElMessage.error(result.message || t('report.createFailed'))
     }
   } catch (e) {
-    console.error('创建报表失败:', e)
-    ElMessage.error('创建报表失败: ' + e.message)
+    console.error(t('report.createReportFailed'), e)
+    ElMessage.error(t('report.createReportFailed') + ': ' + e.message)
   }
 }
 
 const saveSubscription = async () => {
-  if (!subForm.name || !subForm.recipients) {
-    ElMessage.warning('请填写完整信息')
+  // 1. 表单验证
+  if (!subForm.name || !subForm.name.trim()) {
+    ElMessage.warning(t('report.inputSubscriptionName'))
     return
   }
+  if (!subForm.reportType) {
+    ElMessage.warning(t('report.selectReportType'))
+    return
+  }
+  if (!subForm.frequency) {
+    ElMessage.warning(t('report.selectFrequency'))
+    return
+  }
+  if (!subForm.channel) {
+    ElMessage.warning(t('report.selectPushChannel'))
+    return
+  }
+
+  // 2. 接收人验证
+  if (!validateRecipients()) {
+    ElMessage.warning(t('report.checkRecipientsFormat'))
+    return
+  }
+
   try {
-    // 从 localStorage 获取当前用户信息
+    saveLoading.value = true
+
+    // 3. 从 localStorage 获取当前用户信息
     const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}')
     const userId = userInfo.id || 1
     const userName = userInfo.username || userInfo.name || 'admin'
-    
+
+    // 4. 构建请求数据
     const payload = {
       name: subForm.name,
-      reportType: subForm.report,
+      reportType: subForm.reportType,
       frequency: subForm.frequency,
       channel: subForm.channel,
       recipients: subForm.recipients,
-      createUser: Number(userId), // 确保是数字类型
+      fixedTime: subForm.fixedTime || '09:00',
+      enabled: subForm.enabled,
+      createUser: Number(userId),
       createUserName: userName
     }
-    
-    console.log('创建订阅请求:', payload) // 调试日志
-    
-    const result = await apiPost('/report/subscription', payload)
-    console.log('创建订阅响应:', result) // 调试日志
-    
+
+    let result
+
+    if (isEditSubscription.value && editingSubscriptionId.value) {
+      // 编辑模式
+      result = await apiPut(`/report/subscription/${editingSubscriptionId.value}`, payload)
+    } else {
+      // 新建模式
+      result = await apiPost('/report/subscription', payload)
+    }
+
     if (result.code === 0) {
       subDialogVisible.value = false
       await loadSubscriptions()
-      ElMessage.success('订阅创建成功')
+      ElMessage.success(isEditSubscription.value ? t('report.subscriptionUpdated') : t('report.subscriptionCreated'))
     } else {
-      ElMessage.error(result.message || '创建失败')
+      ElMessage.error(result.message || t('report.saveFailed'))
     }
   } catch (e) {
-    console.error('创建订阅失败:', e)
-    ElMessage.error('创建订阅失败: ' + e.message)
+    console.error(t('report.saveSubscriptionFailed'), e)
+    ElMessage.error(t('report.saveFailedWithMsg', { msg: e.message || t('report.checkNetworkConnection') }))
+  } finally {
+    saveLoading.value = false
   }
 }
 
@@ -1415,7 +1613,7 @@ const loadForecast = async () => {
       forecastStats.growthRate = data.growthRate || 0
       forecastStats.suggestRobotCount = data.suggestRobotCount || 0
       forecastStats.capacityRate = data.capacityRate || 0
-      forecastStats.suggestion = data.suggestion || '暂无预测数据'
+      forecastStats.suggestion = data.suggestion || t('report.noForecastData')
     }
   } catch (e) {
     console.error('加载趋势预测失败:', e)
@@ -1452,6 +1650,10 @@ const formatRuntime = (seconds) => {
 onMounted(() => {
   loadStats()
   loadPermissions()
+  // 使用 nextTick 确保 DOM 渲染完成后再初始化图表
+  nextTick(() => {
+    // 图表会在 v-chart 的 autoresize 属性下自动调整
+  })
 })
 
 // 加载用户权限
@@ -1478,13 +1680,13 @@ const loadPermissions = async () => {
 // 检查是否有导出权限
 const checkExportPermission = () => {
   if (!permissions.loaded) {
-    ElMessage.warning('权限信息加载中，请稍候')
+    ElMessage.warning(t('report.permissionLoading'))
     return false
   }
   if (!permissions.canExport && !permissions.isAdmin) {
     ElMessage({
       type: 'warning',
-      message: '您没有导出权限，请联系管理员申请开通',
+      message: t('report.noExportPermission'),
       duration: 5000
     })
     return false
@@ -1505,78 +1707,78 @@ const exportReport = (type) => {
 
   switch (type) {
     case 'daily':
-      filename = '任务执行日报'
-      headers = ['任务名称', '流程', '状态', '采集数据', '开始时间', '耗时']
+      filename = t('report.dailyReport')
+      headers = [t('report.taskName'), t('report.process'), t('report.status'), t('report.dataCollected'), t('report.startTime'), t('report.duration')]
       data = dailyLogs.value.map(item => ({
-        '任务名称': item.taskName,
-        '流程': item.processName,
-        '状态': getStatusText(item.status),
-        '采集数据': item.dataCount,
-        '开始时间': item.startTime,
-        '耗时': item.duration
+        [t('report.taskName')]: item.taskName,
+        [t('report.process')]: item.processName,
+        [t('report.status')]: getStatusText(item.status),
+        [t('report.dataCollected')]: item.dataCount,
+        [t('report.startTime')]: item.startTime,
+        [t('report.duration')]: item.duration
       }))
       break
     case 'monthly':
-      filename = '任务执行月报'
-      headers = ['统计项', '数值']
+      filename = t('report.monthlyReport')
+      headers = [t('report.statItem'), t('report.value')]
       data = [
-        {'统计项': '总执行次数', '数值': monthlyStats.totalExecutions},
-        {'统计项': '成功次数', '数值': monthlyStats.successCount},
-        {'统计项': '失败次数', '数值': monthlyStats.failedCount},
-        {'统计项': '成功率', '数值': monthlyStats.successRate + '%'},
-        {'统计项': '采集数据总量', '数值': monthlyStats.totalData},
-        {'统计项': '日均采集', '数值': monthlyStats.dailyAvg},
-        {'统计项': '峰值日采集', '数值': monthlyStats.peakData},
-        {'统计项': '采集成功率', '数值': monthlyStats.dataSuccessRate + '%'}
+        {[t('report.statItem')]: t('report.totalExecutions'), [t('report.value')]: monthlyStats.totalExecutions},
+        {[t('report.statItem')]: t('report.successCount'), [t('report.value')]: monthlyStats.successCount},
+        {[t('report.statItem')]: t('report.failedCount'), [t('report.value')]: monthlyStats.failedCount},
+        {[t('report.statItem')]: t('report.successRate'), [t('report.value')]: monthlyStats.successRate + '%'},
+        {[t('report.statItem')]: t('report.totalDataCollected'), [t('report.value')]: monthlyStats.totalData},
+        {[t('report.statItem')]: t('report.dailyAvg'), [t('report.value')]: monthlyStats.dailyAvg},
+        {[t('report.statItem')]: t('report.peakData'), [t('report.value')]: monthlyStats.peakData},
+        {[t('report.statItem')]: t('report.dataSuccessRate'), [t('report.value')]: monthlyStats.dataSuccessRate + '%'}
       ]
       break
     case 'robot':
-      filename = '机器人利用率'
-      headers = ['机器人名称', '状态', '执行次数', '成功率', '运行时长', '采集数据', '最后执行']
+      filename = t('report.robotUtilization')
+      headers = [t('report.robotName'), t('report.status'), t('report.execCount'), t('report.successRate'), t('report.runtime'), t('report.dataCollected'), t('report.lastRun')]
       data = robotList.value.map(item => ({
-        '机器人名称': item.name,
-        '状态': item.statusText,
-        '执行次数': item.execCount,
-        '成功率': item.successRate + '%',
-        '运行时长': item.runtime,
-        '采集数据': item.dataCount,
-        '最后执行': item.lastRun
+        [t('report.robotName')]: item.name,
+        [t('report.status')]: item.statusText,
+        [t('report.execCount')]: item.execCount,
+        [t('report.successRate')]: item.successRate + '%',
+        [t('report.runtime')]: item.runtime,
+        [t('report.dataCollected')]: item.dataCount,
+        [t('report.lastRun')]: item.lastRun
       }))
       break
     case 'process':
-      filename = '流程耗时排行'
-      headers = ['流程名称', '流程编码', '执行次数', '平均耗时', '最长耗时', '最短耗时', '总耗时', '成功率']
+      filename = t('report.processDuration')
+      headers = [t('report.processName'), t('report.processCode'), t('report.execCount'), t('report.avgDuration'), t('report.maxDuration'), t('report.minDuration'), t('report.totalDuration'), t('report.successRate')]
       data = processList.value.map(item => ({
-        '流程名称': item.name,
-        '流程编码': item.code,
-        '执行次数': item.execCount,
-        '平均耗时': item.avgDuration,
-        '最长耗时': item.maxDuration,
-        '最短耗时': item.minDuration,
-        '总耗时': item.totalDuration,
-        '成功率': item.successRate + '%'
+        [t('report.processName')]: item.name,
+        [t('report.processCode')]: item.code,
+        [t('report.execCount')]: item.execCount,
+        [t('report.avgDuration')]: item.avgDuration,
+        [t('report.maxDuration')]: item.maxDuration,
+        [t('report.minDuration')]: item.minDuration,
+        [t('report.totalDuration')]: item.totalDuration,
+        [t('report.successRate')]: item.successRate + '%'
       }))
       break
     case 'custom':
-      filename = '自定义报表'
-      headers = ['报表名称', '报表类型', '统计维度', '创建人', '创建时间', '最后运行']
+      filename = t('report.customReport')
+      headers = [t('report.reportName'), t('report.reportType'), t('report.dimensions'), t('report.creator'), t('report.createTime'), t('report.lastRun')]
       data = customReports.value.map(item => ({
-        '报表名称': item.name,
-        '报表类型': item.type,
-        '统计维度': item.dimensions,
-        '创建人': item.createUser,
-        '创建时间': item.createTime,
-        '最后运行': item.lastRun
+        [t('report.reportName')]: item.name,
+        [t('report.reportType')]: item.type,
+        [t('report.dimensions')]: item.dimensions,
+        [t('report.creator')]: item.createUser,
+        [t('report.createTime')]: item.createTime,
+        [t('report.lastRun')]: item.lastRun
       }))
       break
     default:
-      ElMessage.warning('暂不支持导出该报表类型')
+      ElMessage.warning(t('report.exportNotSupported'))
       return
   }
 
   // 生成CSV内容
   if (data.length === 0) {
-    ElMessage.warning('没有可导出的数据')
+    ElMessage.warning(t('report.noDataToExport'))
     return
   }
 
@@ -1597,7 +1799,7 @@ const exportReport = (type) => {
   link.click()
 
   URL.revokeObjectURL(url)
-  ElMessage.success(`${filename}导出成功，共 ${data.length} 条记录`)
+  ElMessage.success(t('report.exportSuccess', { count: data.length, filename: filename }))
 }
 </script>
 <style scoped>
@@ -1611,74 +1813,141 @@ const exportReport = (type) => {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 20px;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
 .stat-card {
   background: white;
   padding: 20px;
-  border-radius: 12px;
+  border-radius: 16px;
   display: flex;
   align-items: center;
   gap: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
+  overflow: hidden;
 }
+
+.stat-card-bg {
+  position: absolute;
+  top: -50%;
+  right: -30%;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  opacity: 0.08;
+  transition: all 0.4s ease;
+}
+
+.stat-card:nth-child(1) .stat-card-bg { background: #409eff; }
+.stat-card:nth-child(2) .stat-card-bg { background: #67c23a; }
+.stat-card:nth-child(3) .stat-card-bg { background: #e6a23c; }
+.stat-card:nth-child(4) .stat-card-bg { background: #f56c6c; }
 
 .stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
-.stat-icon {
+.stat-card:hover .stat-card-bg {
+  transform: scale(1.5);
+  opacity: 0.12;
+}
+
+.stat-card-active {
+  box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.3);
+}
+
+.stat-icon-wrap {
   width: 56px;
   height: 56px;
-  border-radius: 12px;
+  border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 28px;
+  font-size: 26px;
   color: white;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
 }
 
-.stat-icon.primary { background: linear-gradient(135deg, #409eff, #66b1ff); }
-.stat-icon.success { background: linear-gradient(135deg, #67c23a, #85ce61); }
-.stat-icon.warning { background: linear-gradient(135deg, #e6a23c, #ebb563); }
-.stat-icon.danger { background: linear-gradient(135deg, #f56c6c, #f78989); }
+.stat-icon-wrap::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+  background: inherit;
+  filter: blur(12px);
+  opacity: 0.25;
+  z-index: -1;
+}
+
+.stat-icon-wrap.primary { background: linear-gradient(135deg, #409eff 0%, #66b1ff 100%); }
+.stat-icon-wrap.success { background: linear-gradient(135deg, #67c23a 0%, #85ce61 100%); }
+.stat-icon-wrap.warning { background: linear-gradient(135deg, #e6a23c 0%, #ebb563 100%); }
+.stat-icon-wrap.danger { background: linear-gradient(135deg, #f56c6c 0%, #f78989 100%); }
 
 .stat-content {
   display: flex;
   flex-direction: column;
   flex: 1;
+  min-width: 0;
+  position: relative;
+  z-index: 1;
 }
 
 .stat-value {
   font-size: 28px;
-  font-weight: bold;
-  color: #1e3a4a;
+  font-weight: 800;
+  color: #1a1a1a;
+  line-height: 1.2;
+  letter-spacing: -0.5px;
+}
+
+.stat-unit {
+  font-size: 16px;
+  font-weight: 600;
+  color: #606266;
+  margin-left: 2px;
 }
 
 .stat-label {
   font-size: 13px;
-  color: #8c8c8c;
+  color: #909399;
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+.stat-meta {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
 }
 
 .stat-trend {
-  position: absolute;
-  top: 12px;
-  right: 12px;
   display: flex;
   align-items: center;
   gap: 2px;
   font-size: 12px;
-  padding: 2px 6px;
-  border-radius: 4px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 12px;
 }
 
-.stat-trend.up { color: #67c23a; background: rgba(103, 194, 58, 0.1); }
-.stat-trend.down { color: #f56c6c; background: rgba(245, 108, 108, 0.1); }
+.stat-trend.up { color: #67c23a; background: rgba(103, 194, 58, 0.12); }
+.stat-trend.down { color: #f56c6c; background: rgba(245, 108, 108, 0.12); }
+
+.stat-period {
+  font-size: 10px;
+  color: #c0c4cc;
+}
 
 /* 快捷入口 */
 .quick-entry {
@@ -2038,6 +2307,8 @@ const exportReport = (type) => {
 
 .forecast-tips { margin-top: 16px; }
 
+.subscription-tips { margin-top: 20px; }
+
 .toolbar { display: flex; gap: 12px; margin-bottom: 20px; align-items: center; }
 
 .card-header {
@@ -2048,6 +2319,52 @@ const exportReport = (type) => {
 
 .report-tabs :deep(.el-tabs__header) { margin-bottom: 0; }
 .report-tabs :deep(.el-tabs__content) { padding: 0; }
+
+/* 推送方式选项样式 */
+.channel-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.channel-option .el-icon {
+  font-size: 16px;
+}
+
+/* 表单提示样式 */
+.form-tip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  font-size: 12px;
+  color: #909399;
+}
+
+.form-tip .el-icon {
+  font-size: 12px;
+}
+
+/* 表单错误样式 */
+.form-error {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  font-size: 12px;
+  color: #f56c6c;
+}
+
+.form-error .el-icon {
+  font-size: 12px;
+}
+
+/* 对话框底部按钮 */
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
 
 @media (max-width: 1200px) {
   .stats-row { grid-template-columns: repeat(2, 1fr); }

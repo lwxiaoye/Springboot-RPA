@@ -38,19 +38,19 @@
         >
           <el-menu-item index="dashboard">
             <el-icon><Odometer /></el-icon>
-            <span>首页</span>
+            <span>{{ t('menu.dashboard') }}</span>
           </el-menu-item>
           <el-menu-item index="monitor">
             <el-icon><DataLine /></el-icon>
-            <span>实时监控</span>
+            <span>{{ t('menu.monitor') }}</span>
           </el-menu-item>
           <el-menu-item index="rpa">
             <el-icon><VideoCamera /></el-icon>
-            <span>RPA运营管理</span>
+            <span>{{ t('menu.rpaManagement') }}</span>
           </el-menu-item>
           <el-menu-item index="system">
             <el-icon><Setting /></el-icon>
-            <span>系统管理</span>
+            <span>{{ t('menu.systemManagement') }}</span>
           </el-menu-item>
         </el-menu>
       </div>
@@ -81,11 +81,11 @@
             <el-dropdown-menu>
               <el-dropdown-item @click="goToProfile">
                 <el-icon><User /></el-icon>
-                个人信息
+                {{ t('menu.profile') }}
               </el-dropdown-item>
               <el-dropdown-item divided @click="handleLogout">
                 <el-icon><SwitchButton /></el-icon>
-                退出登录
+                {{ t('menu.logout') }}
               </el-dropdown-item>
             </el-dropdown-menu>
           </template>
@@ -109,7 +109,7 @@
             </div>
             <div class="stat-content">
               <div class="stat-value">{{ stats.pendingTasks }}</div>
-              <div class="stat-label">待执行任务</div>
+              <div class="stat-label">{{ t('dashboard.pendingTasks') }}</div>
             </div>
           </div>
 
@@ -127,7 +127,7 @@
                 {{ stats.onlineRobots }}
                 <span class="stat-total">/ {{ stats.totalRobots }}</span>
               </div>
-              <div class="stat-label">在线机器人</div>
+              <div class="stat-label">{{ t('dashboard.onlineRobots') }}</div>
             </div>
           </div>
 
@@ -140,8 +140,8 @@
             </div>
             <div class="stat-content">
               <div class="stat-value">{{ formatNumber(stats.todayExecutions) }}</div>
-              <div class="stat-label">今日执行</div>
-              <div class="stat-sub success">{{ stats.successRate }}% 成功率</div>
+              <div class="stat-label">{{ t('dashboard.todayExecutions') }}</div>
+              <div class="stat-sub success">{{ stats.successRate }}% {{ t('dashboard.successRate') }}</div>
             </div>
           </div>
 
@@ -156,7 +156,7 @@
             </div>
             <div class="stat-content">
               <div class="stat-value">{{ stats.failedTasks }}</div>
-              <div class="stat-label">异常任务</div>
+              <div class="stat-label">{{ t('dashboard.failedTasks') }}</div>
             </div>
           </div>
         </div>
@@ -165,36 +165,36 @@
       <!-- 最近执行日志 -->
       <section class="logs-section">
         <div class="section-header">
-          <h3>最近执行</h3>
-          <el-button size="small" @click="goTo('/rpa/logs')">查看全部</el-button>
+          <h3>{{ t('dashboard.recentExecutions') }}</h3>
+          <el-button size="small" @click="goTo('/rpa/logs')">{{ t('dashboard.viewAll') }}</el-button>
         </div>
         <div class="logs-table">
           <el-table :data="recentLogs" size="small" max-height="200">
-            <el-table-column prop="taskName" label="任务" min-width="120" show-overflow-tooltip />
-            <el-table-column prop="robotName" label="机器人" width="100" show-overflow-tooltip />
-            <el-table-column prop="status" label="状态" width="80" align="center">
+            <el-table-column prop="taskName" :label="t('task.taskName')" min-width="120" show-overflow-tooltip />
+            <el-table-column prop="robotName" :label="t('monitor.robotName')" width="100" show-overflow-tooltip />
+            <el-table-column prop="status" :label="t('common.status')" width="80" align="center">
               <template #default="{ row }">
                 <span class="status-badge" :class="row.status">{{ getStatusText(row.status) }}</span>
               </template>
             </el-table-column>
-            <el-table-column prop="startTime" label="时间" width="150" />
+            <el-table-column prop="startTime" :label="t('task.startTime')" width="150" />
           </el-table>
         </div>
       </section>
     </main>
 
     <!-- 告警弹窗 -->
-    <el-dialog v-model="showAlerts" title="告警详情" width="500px">
+    <el-dialog v-model="showAlerts" :title="t('dashboard.alertDetails')" width="500px">
       <div class="alert-list">
         <div v-for="alert in alerts" :key="alert.id" class="alert-item" :class="alert.level">
           <div class="alert-content">
             <span class="alert-title">{{ alert.title }}</span>
             <span class="alert-message">{{ alert.message }}</span>
           </div>
-          <el-button size="small" type="primary" @click="handleAlert(alert)">处理</el-button>
+          <el-button size="small" type="primary" @click="handleAlert(alert)">{{ t('dashboard.handle') }}</el-button>
         </div>
         <div v-if="alerts.length === 0" class="empty-alerts">
-          暂无告警
+          {{ t('dashboard.noAlerts') }}
         </div>
       </div>
     </el-dialog>
@@ -205,10 +205,12 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { useI18n } from 'vue-i18n'
 import { Odometer, DataLine, VideoCamera, Setting, Bell, User, ArrowDown, SwitchButton } from '@element-plus/icons-vue'
 import { apiGet } from '../utils/api.js'
 
 const router = useRouter()
+const { t } = useI18n()
 const showAlerts = ref(false)
 const activeTopMenu = ref('dashboard')
 const wsConnected = ref(true)
@@ -221,7 +223,7 @@ const currentUser = ref({
 })
 
 const userName = computed(() => currentUser.value.realName || currentUser.value.username)
-const userRole = computed(() => currentUser.value.role === 1 ? '管理员' : '普通用户')
+const userRole = computed(() => currentUser.value.role === 1 ? t('user.admin') : t('user.normalUser'))
 const userInitial = computed(() => {
   const name = userName.value
   return name ? name.charAt(0).toUpperCase() : 'U'
@@ -253,7 +255,13 @@ const handleTopMenuSelect = (index) => {
 }
 
 const getStatusText = (status) => {
-  const map = { success: '成功', completed: '完成', failed: '失败', running: '进行中', pending: '等待' }
+  const map = {
+    success: t('task.statusSuccess'),
+    completed: t('task.statusCompleted'),
+    failed: t('task.statusFailed'),
+    running: t('task.statusRunning'),
+    pending: t('task.statusPending')
+  }
   return map[status] || status
 }
 
@@ -264,21 +272,21 @@ const formatNumber = (num) => {
 }
 
 const handleLogout = () => {
-  ElMessageBox.confirm('确定要退出登录吗？', '提示', {
+  ElMessageBox.confirm(t('confirm.logout'), t('common.tips'), {
     type: 'warning',
     confirmButtonPosition: 'right',
     distinguishCancelAndClose: true
   }).then(() => {
     localStorage.removeItem('token')
     localStorage.removeItem('userInfo')
-    ElMessage.success('已退出登录')
+    ElMessage.success(t('login.logoutSuccess'))
     router.push('/login')
   }).catch(() => {})
 }
 
 const handleAlert = (alert) => {
   alerts.value = alerts.value.filter(a => a.id !== alert.id)
-  ElMessage.success('告警已处理')
+  ElMessage.success(t('dashboard.alertHandled'))
 }
 
 const loadData = async () => {

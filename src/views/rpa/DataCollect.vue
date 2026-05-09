@@ -1,28 +1,28 @@
 <template>
   <div class="data-collect-page">
     <div class="page-header">
-      <h2>数据采集</h2>
-      <p class="page-desc">配置和管理数据采集任务</p>
+      <h2>{{ t('dataCollect.title') }}</h2>
+      <p class="page-desc">{{ t('dataCollect.subtitle') }}</p>
     </div>
 
     <div class="toolbar">
       <div class="search-box">
         <el-icon><Search /></el-icon>
-        <input v-model="searchKeyword" placeholder="搜索采集名称..." />
+        <input v-model="searchKeyword" :placeholder="t('dataCollect.searchPlaceholder')" />
       </div>
-      <el-select v-model="statusFilter" placeholder="状态筛选" clearable style="width: 120px;">
-        <el-option label="成功" value="success" />
-        <el-option label="运行中" value="running" />
-        <el-option label="待执行" value="pending" />
-        <el-option label="失败" value="failed" />
+      <el-select v-model="statusFilter" :placeholder="t('dataCollect.statusFilter')" clearable style="width: 120px;">
+        <el-option :label="t('task.statusSuccess')" value="success" />
+        <el-option :label="t('task.statusRunning')" value="running" />
+        <el-option :label="t('task.statusPending')" value="pending" />
+        <el-option :label="t('task.statusFailed')" value="failed" />
       </el-select>
       <el-button type="primary" @click="showCreateModal">
-        <el-icon><Plus /></el-icon> 新建采集
+        <el-icon><Plus /></el-icon> {{ t('dataCollect.newCollect') }}
       </el-button>
     </div>
 
     <el-table :data="paginatedData" v-loading="loading" border stripe class="unified-table" :default-sort="{ prop: 'lastCollectTime', order: 'descending' }">
-      <el-table-column type="index" label="序号" width="60" align="center">
+      <el-table-column type="index" :label="t('dataCollect.seq')" width="60" align="center">
         <template #default="{ $index }">
           <div class="index-cell">
             <div class="index-line"></div>
@@ -31,40 +31,40 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column prop="name" label="采集名称" min-width="160" show-overflow-tooltip />
-      <el-table-column prop="sourceUrl" label="数据来源" min-width="160" show-overflow-tooltip />
-      <el-table-column prop="sourceType" label="类型" width="100" align="center" />
-      <el-table-column prop="status" label="状态" width="90" align="center">
+      <el-table-column prop="name" :label="t('dataCollect.collectName')" min-width="160" show-overflow-tooltip />
+      <el-table-column prop="sourceUrl" :label="t('dataCollect.dataSource')" min-width="160" show-overflow-tooltip />
+      <el-table-column prop="sourceType" :label="t('dataCollect.type')" width="100" align="center" />
+      <el-table-column prop="status" :label="t('task.status')" width="90" align="center">
         <template #default="{ row }">
           <el-tag :type="getStatusType(row.status)" size="small">
             {{ getStatusText(row.status) }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="dataCount" label="数据量" width="90" align="center" />
-      <el-table-column prop="lastCollectTime" label="最后采集" min-width="160">
+      <el-table-column prop="dataCount" :label="t('dataCollect.dataCount')" width="90" align="center" />
+      <el-table-column prop="lastCollectTime" :label="t('dataCollect.lastCollect')" min-width="160">
         <template #default="{ row }">{{ row.lastCollectTime ? new Date(row.lastCollectTime).toLocaleString() : '-' }}</template>
       </el-table-column>
-      <el-table-column label="操作" width="180" fixed="right" align="center">
+      <el-table-column :label="t('common.actions')" width="180" fixed="right" align="center">
         <template #default="{ row }">
           <div class="action-buttons">
             <el-button link type="success" @click="runTask(row)" class="action-btn">
-              <span>执行</span>
+              <span>{{ t('common.execute') }}</span>
             </el-button>
             <el-button link type="primary" @click="editTask(row)" class="action-btn">
-              <span>编辑</span>
+              <span>{{ t('common.edit') }}</span>
             </el-button>
             <el-popconfirm
-              :title="'确定要删除采集任务「' + row.name + '」吗？'"
-              confirmButtonText="确认删除"
-              cancelButtonText="取消"
+              :title="t('dataCollect.confirmDelete', { name: row.name })"
+              :confirmButtonText="t('dataCollect.confirmDeleteBtn')"
+              :cancelButtonText="t('common.cancel')"
               icon="Delete"
               iconColor="#f56c6c"
               @confirm="deleteTask(row)"
             >
               <template #reference>
                 <el-button link type="danger" class="action-btn">
-                  <span>删除</span>
+                  <span>{{ t('common.delete') }}</span>
                 </el-button>
               </template>
             </el-popconfirm>
@@ -88,14 +88,14 @@
     <!-- 新建/编辑采集弹窗 -->
     <el-dialog v-model="dialogVisible" :title="dialogTitle" width="520px">
       <el-form :model="dataForm" :rules="formRules" ref="formRef" label-width="100px">
-        <el-form-item label="采集名称" prop="name">
-          <el-input v-model="dataForm.name" placeholder="请输入采集名称" />
+        <el-form-item :label="t('dataCollect.collectName')" prop="name">
+          <el-input v-model="dataForm.name" :placeholder="t('dataCollect.enterCollectName')" />
         </el-form-item>
-        <el-form-item label="来源URL" prop="sourceUrl">
-          <el-input v-model="dataForm.sourceUrl" placeholder="请输入数据来源URL，如：https://example.com/api" />
+        <el-form-item :label="t('dataCollect.sourceUrl')" prop="sourceUrl">
+          <el-input v-model="dataForm.sourceUrl" :placeholder="t('dataCollect.enterSourceUrl')" />
         </el-form-item>
-        <el-form-item label="来源类型">
-          <el-select v-model="dataForm.sourceType" placeholder="请选择来源类型" style="width: 100%">
+        <el-form-item :label="t('dataCollect.sourceType')">
+          <el-select v-model="dataForm.sourceType" :placeholder="t('dataCollect.selectSourceType')" style="width: 100%">
             <el-option label="CRM系统" value="CRM系统" />
             <el-option label="ERP系统" value="ERP系统" />
             <el-option label="电商平台" value="电商平台" />
@@ -103,22 +103,22 @@
             <el-option label="网页" value="网页" />
           </el-select>
         </el-form-item>
-        <el-form-item label="选择器规则">
-          <el-input v-model="dataForm.selectorRules" type="textarea" :rows="3" placeholder="请输入CSS选择器或XPath规则" />
+        <el-form-item :label="t('dataCollect.selectorRules')">
+          <el-input v-model="dataForm.selectorRules" type="textarea" :rows="3" :placeholder="t('dataCollect.enterSelectorRules')" />
         </el-form-item>
-        <el-form-item label="请求头">
-          <el-input v-model="dataForm.headers" type="textarea" :rows="2" placeholder="如：Content-Type: application/json" />
+        <el-form-item :label="t('dataCollect.requestHeaders')">
+          <el-input v-model="dataForm.headers" type="textarea" :rows="2" :placeholder="t('dataCollect.enterHeaders')" />
         </el-form-item>
-        <el-form-item label="Cookie">
-          <el-input v-model="dataForm.cookies" type="textarea" :rows="2" placeholder="如有登录Cookie，请在此输入" />
+        <el-form-item :label="t('dataCollect.cookies')">
+          <el-input v-model="dataForm.cookies" type="textarea" :rows="2" :placeholder="t('dataCollect.enterCookies')" />
         </el-form-item>
-        <el-form-item label="定时规则">
-          <el-input v-model="dataForm.cronExpression" placeholder="Cron表达式，如：0 0 * * * (每天)" />
+        <el-form-item :label="t('dataCollect.cronRules')">
+          <el-input v-model="dataForm.cronExpression" :placeholder="t('dataCollect.enterCron')" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitTask" :loading="submitLoading">确定</el-button>
+        <el-button @click="dialogVisible = false">{{ t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="submitTask" :loading="submitLoading">{{ t('common.confirm') }}</el-button>
       </template>
     </el-dialog>
   </div>
@@ -126,10 +126,12 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { Search, Plus } from '@element-plus/icons-vue'
 
 import { apiGet, apiPost, apiPut, apiDelete } from '../../utils/api.js'
+const { t } = useI18n()
 const loading = ref(false)
 const submitLoading = ref(false)
 const dataList = ref([])
@@ -153,14 +155,14 @@ const dataForm = reactive({
 })
 
 const formRules = {
-  name: [{ required: true, message: '请输入采集名称', trigger: 'blur' }],
-  sourceUrl: [{ required: true, message: '请输入数据来源URL', trigger: 'blur' }]
+  name: [{ required: true, message: t('dataCollect.enterCollectName'), trigger: 'blur' }],
+  sourceUrl: [{ required: true, message: t('dataCollect.enterSourceUrl'), trigger: 'blur' }]
 }
 
-const dialogTitle = computed(() => isEdit.value ? '编辑采集' : '新建采集')
+const dialogTitle = computed(() => isEdit.value ? t('dataCollect.editCollect') : t('dataCollect.newCollect'))
 
 const getStatusText = (s) => {
-  const map = { success: '成功', running: '运行中', pending: '待执行', failed: '失败' }
+  const map = { success: t('task.statusSuccess'), running: t('task.statusRunning'), pending: t('task.statusPending'), failed: t('task.statusFailed') }
   return map[s] || s
 }
 
@@ -246,11 +248,11 @@ const submitTask = async () => {
             cronExpression: dataForm.cronExpression
           })
           if (result && result.code === 0) {
-            ElMessage.success('更新成功')
+            ElMessage.success(t('dataCollect.updateSuccess'))
             dialogVisible.value = false
             await loadData()
           } else {
-            ElMessage.success('更新成功（模拟）')
+            ElMessage.success(t('dataCollect.updateSuccessSim'))
             dialogVisible.value = false
             await loadData()
           }
@@ -265,18 +267,18 @@ const submitTask = async () => {
             cronExpression: dataForm.cronExpression
           })
           if (result && result.code === 0) {
-            ElMessage.success('创建成功')
+            ElMessage.success(t('dataCollect.createSuccess'))
             dialogVisible.value = false
             await loadData()
           } else {
-            ElMessage.success('创建成功（模拟）')
+            ElMessage.success(t('dataCollect.createSuccessSim'))
             dialogVisible.value = false
             await loadData()
           }
         }
       } catch (e) {
-        console.warn('请求失败，使用模拟成功', e)
-        ElMessage.success(isEdit.value ? '更新成功（模拟）' : '创建成功（模拟）')
+        console.warn(t('dataCollect.requestFailed'), e)
+        ElMessage.success(isEdit.value ? t('dataCollect.updateSuccessSim') : t('dataCollect.createSuccessSim'))
         dialogVisible.value = false
         await loadData()
       } finally {
@@ -290,14 +292,14 @@ const runTask = async (item) => {
   try {
     const result = await apiPost(`/dataCollect/${item.id}/execute`)
     if (result && (result.code === 0 || result.success)) {
-      ElMessage.success(`采集任务已启动: ${item.name}`)
+      ElMessage.success(t('dataCollect.taskStarted', { name: item.name }))
       await loadData()
     } else {
-      ElMessage.error((result && result.message) || '执行失败')
+      ElMessage.error((result && result.message) || t('dataCollect.executeFailed'))
     }
   } catch (e) {
-    console.warn('执行失败，使用模拟成功', e)
-    ElMessage.success(`采集任务已启动: ${item.name}`)
+    console.warn(t('dataCollect.executeFailed'), e)
+    ElMessage.success(t('dataCollect.taskStarted', { name: item.name }))
   }
 }
 
@@ -310,23 +312,23 @@ const deleteTask = async (item) => {
         dataList.value.splice(index, 1)
         pagination.total--
       }
-      ElMessage.success('删除成功')
+      ElMessage.success(t('dataCollect.deleteSuccess'))
     } else {
       const index = dataList.value.findIndex(d => d.id === item.id)
       if (index !== -1) {
         dataList.value.splice(index, 1)
         pagination.total--
       }
-      ElMessage.success('删除成功')
+      ElMessage.success(t('dataCollect.deleteSuccess'))
     }
   } catch (e) {
-    console.warn('删除失败，使用模拟成功', e)
+    console.warn(t('dataCollect.deleteFailed'), e)
     const index = dataList.value.findIndex(d => d.id === item.id)
     if (index !== -1) {
       dataList.value.splice(index, 1)
       pagination.total--
     }
-    ElMessage.success('删除成功')
+    ElMessage.success(t('dataCollect.deleteSuccess'))
   }
 }
 

@@ -170,9 +170,21 @@ public class TaskController {
             response.put("code", 0);
             response.put("message", "分配成功");
             response.put("data", task);
-            
-            executionLogService.create(id, task.getProcessId(), robotId, 
+
+            executionLogService.create(id, task.getProcessId(), robotId,
                     "任务分配", "assigned", "任务已分配给机器人");
+
+            // 审计日志
+            try {
+                Map<String, Object> logParams = new HashMap<>();
+                logParams.put("robotId", robotId);
+                logParams.put("taskStatus", task.getStatus());
+                auditLogService.log("TASK", "TASK_ASSIGN", "Task", id, task.getName(),
+                    "分配任务给机器人: 任务ID=" + id + ", 机器人ID=" + robotId, "medium", "success",
+                    logParams);
+            } catch (Exception logEx) {
+                System.err.println("警告：任务分配日志记录失败: " + logEx.getMessage());
+            }
         } catch (Exception e) {
             response.put("code", -1);
             response.put("message", e.getMessage());
@@ -188,14 +200,29 @@ public class TaskController {
             String status = request.get("status");
             String resultData = request.get("resultData");
             String errorMessage = request.get("errorMessage");
-            
+
             Task task = taskService.updateStatus(id, status, resultData, errorMessage);
             response.put("code", 0);
             response.put("message", "更新成功");
             response.put("data", task);
-            
-            executionLogService.create(id, task.getProcessId(), task.getRobotId(), 
+
+            executionLogService.create(id, task.getProcessId(), task.getRobotId(),
                     "状态更新", status, "任务状态更新为：" + status);
+
+            // 审计日志
+            try {
+                String riskLevel = "completed".equals(status) || "success".equals(status) ? "low" :
+                                   "failed".equals(status) || "error".equals(status) ? "high" : "medium";
+                Map<String, Object> logParams = new HashMap<>();
+                logParams.put("newStatus", status);
+                logParams.put("resultData", resultData);
+                logParams.put("errorMessage", errorMessage);
+                auditLogService.log("TASK", "TASK_STATUS_UPDATE", "Task", id, task.getName(),
+                    "更新任务状态: 任务ID=" + id + ", 新状态=" + status, riskLevel, "success",
+                    logParams);
+            } catch (Exception logEx) {
+                System.err.println("警告：任务状态更新日志记录失败: " + logEx.getMessage());
+            }
         } catch (Exception e) {
             response.put("code", -1);
             response.put("message", e.getMessage());
@@ -212,7 +239,7 @@ public class TaskController {
             String category = (String) request.get("category");
             String priority = (String) request.get("priority");
             String remark = (String) request.get("remark");
-            
+
             // 处理 processId
             Object processIdObj = request.get("processId");
             Long processId = null;
@@ -220,7 +247,7 @@ public class TaskController {
                 processId = Long.valueOf(processIdObj.toString());
             }
             String processName = (String) request.get("processName");
-            
+
             // 处理 processIds（多流程，支持 List 和字符串）
             Object processIdsObj = request.get("processIds");
             String processIds = null;
@@ -236,11 +263,24 @@ public class TaskController {
             } else if (processNamesObj != null) {
                 processNames = processNamesObj.toString();
             }
-            
+
             Task task = taskService.update(id, name, category, priority, processId, processName, processIds, processNames, remark);
             response.put("code", 0);
             response.put("message", "更新成功");
             response.put("data", task);
+
+            // 审计日志
+            try {
+                Map<String, Object> logParams = new HashMap<>();
+                logParams.put("category", category);
+                logParams.put("priority", priority);
+                logParams.put("processId", processId);
+                auditLogService.log("TASK", "TASK_UPDATE", "Task", id, name,
+                    "更新任务: 任务ID=" + id + ", 任务名=" + name, "medium", "success",
+                    logParams);
+            } catch (Exception logEx) {
+                System.err.println("警告：任务更新日志记录失败: " + logEx.getMessage());
+            }
         } catch (Exception e) {
             response.put("code", -1);
             response.put("message", e.getMessage());

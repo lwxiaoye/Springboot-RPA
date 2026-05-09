@@ -3,25 +3,36 @@
     <!-- 工具栏 -->
     <div class="canvas-toolbar">
       <div class="toolbar-left">
-        <el-button size="small" @click="goBack" text>
-          <el-icon><Back /></el-icon> 返回
-        </el-button>
-        <el-divider direction="vertical" />
-        <span class="toolbar-title">流程画布</span>
-        <el-divider direction="vertical" />
-        <el-button size="small" @click="addProcessNode" type="primary">
-          <el-icon><Plus /></el-icon> 添加流程节点
-        </el-button>
-        <el-button size="small" @click="addConditionNode" type="warning">
-          <el-icon><Plus /></el-icon> 添加条件节点
-        </el-button>
+        <span class="toolbar-title">
+          <el-icon class="title-icon"><EditPen /></el-icon>
+          流程画布
+        </span>
+      </div>
+      <div class="toolbar-center">
+        <div class="tool-group">
+          <el-button size="small" @click="addProcessNode" class="add-node-btn process">
+            <el-icon><Plus /></el-icon>
+            <span>流程节点</span>
+          </el-button>
+          <el-button size="small" @click="addConditionNode" class="add-node-btn condition">
+            <el-icon><Share /></el-icon>
+            <span>条件节点</span>
+          </el-button>
+        </div>
       </div>
       <div class="toolbar-right">
-        <el-button size="small" @click="autoLayout" text>
-          <el-icon><Grid /></el-icon> 自动布局
+        <el-button size="small" @click="autoLayout" class="tool-btn">
+          <el-icon><Grid /></el-icon>
+          <span>自动布局</span>
         </el-button>
-        <el-button size="small" @click="clearCanvas" text type="danger">
-          <el-icon><Delete /></el-icon> 清空画布
+        <el-button size="small" @click="clearCanvas" class="tool-btn danger">
+          <el-icon><Delete /></el-icon>
+          <span>清空</span>
+        </el-button>
+        <el-divider direction="vertical" class="toolbar-divider" />
+        <el-button size="small" @click="handleSave" class="save-btn" :loading="saving">
+          <el-icon><Check /></el-icon>
+          <span>保存设计</span>
         </el-button>
       </div>
     </div>
@@ -380,7 +391,8 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Plus, Delete, Grid, Close, Search, Monitor, ArrowDown, Back } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
+import { Plus, Delete, Grid, Close, Search, Monitor, ArrowDown, Back, Check, EditPen, Share } from '@element-plus/icons-vue'
 import { apiGet } from '../../utils/api.js'
 
 const router = useRouter()
@@ -397,10 +409,14 @@ const props = defineProps({
   robotCategories: {
     type: Array,
     default: () => []
+  },
+  processId: {
+    type: [String, Number],
+    default: null
   }
 })
 
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue', 'save'])
 
 // 返回流程列表
 const goBack = () => {
@@ -593,6 +609,22 @@ const saveData = () => {
   isInternalUpdate = true  // 标记为内部更新
   emit('update:modelValue', data)
   return data
+}
+
+// 保存设计 - 触发父组件保存
+const saving = ref(false)
+const handleSave = async () => {
+  saving.value = true
+  try {
+    // 先保存画布数据
+    saveData()
+    // 通知父组件
+    emit('save')
+  } finally {
+    setTimeout(() => {
+      saving.value = false
+    }, 500)
+  }
 }
 
 // 添加流程节点
@@ -1045,10 +1077,9 @@ defineExpose({
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 20px;
-  background: white;
-  border-bottom: 1px solid #e8ecef;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  padding: 14px 24px;
+  background: linear-gradient(135deg, #1a1f36 0%, #2d3748 100%);
+  box-shadow: 0 4px 12px rgba(26, 31, 54, 0.15);
 }
 
 .toolbar-left {
@@ -1057,15 +1088,128 @@ defineExpose({
   gap: 12px;
 }
 
-.toolbar-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: #2c3e50;
+.toolbar-center {
+  display: flex;
+  align-items: center;
+  gap: 16px;
 }
 
 .toolbar-right {
   display: flex;
+  align-items: center;
   gap: 8px;
+}
+
+.toolbar-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: 0.5px;
+}
+
+.title-icon {
+  font-size: 20px;
+  color: #67c23a;
+}
+
+.toolbar-divider {
+  height: 24px;
+  margin: 0 8px;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* 工具组 */
+.tool-group {
+  display: flex;
+  gap: 8px;
+}
+
+/* 添加节点按钮 */
+.add-node-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.25s ease;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.add-node-btn:hover {
+  transform: translateY(-2px);
+}
+
+.add-node-btn.process:hover {
+  background: rgba(64, 158, 255, 0.4);
+  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3);
+}
+
+.add-node-btn.condition:hover {
+  background: rgba(230, 162, 60, 0.4);
+  box-shadow: 0 4px 12px rgba(230, 162, 60, 0.3);
+}
+
+/* 通用工具按钮 */
+.tool-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.25s ease;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.tool-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.tool-btn.danger:hover {
+  background: rgba(245, 108, 108, 0.3);
+  color: #f56c6c;
+}
+
+/* 保存按钮 - 突出设计 */
+.save-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 24px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: none;
+  background: linear-gradient(135deg, #67c23a 0%, #529b2e 100%);
+  color: white;
+  box-shadow: 0 4px 14px rgba(103, 194, 58, 0.4);
+  letter-spacing: 0.5px;
+}
+
+.save-btn:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 6px 20px rgba(103, 194, 58, 0.5);
+  background: linear-gradient(135deg, #85ce61 0%, #67c23a 100%);
+}
+
+.save-btn:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.save-btn .el-icon {
+  font-size: 16px;
 }
 
 /* 画布容器 */

@@ -21,13 +21,13 @@ public class InvoiceDataController {
     private InvoiceDataRepository invoiceDataRepository;
 
     /**
-     * 获取所有发票数据
+     * 获取所有发票数据（按采集时间倒序，最近采集的排在前面）
      */
     @GetMapping
     public Map<String, Object> list() {
         Map<String, Object> result = new HashMap<>();
         try {
-            List<InvoiceData> list = invoiceDataRepository.findAll();
+            List<InvoiceData> list = invoiceDataRepository.findAllByOrderByCollectTimeDesc();
             result.put("code", 0);
             result.put("data", list);
             result.put("total", list.size());
@@ -61,13 +61,13 @@ public class InvoiceDataController {
     }
 
     /**
-     * 根据企业名称搜索
+     * 根据企业名称搜索（按采集时间倒序）
      */
     @GetMapping("/search/company")
     public Map<String, Object> searchByCompany(@RequestParam String name) {
         Map<String, Object> result = new HashMap<>();
         try {
-            List<InvoiceData> list = invoiceDataRepository.findByCompanyName(name);
+            List<InvoiceData> list = invoiceDataRepository.findByCompanyNameOrderByCollectTimeDesc(name);
             result.put("code", 0);
             result.put("data", list);
         } catch (Exception e) {
@@ -78,13 +78,13 @@ public class InvoiceDataController {
     }
 
     /**
-     * 根据统一社会信用代码查询
+     * 根据统一社会信用代码查询（按采集时间倒序）
      */
     @GetMapping("/search/creditCode")
     public Map<String, Object> searchByCreditCode(@RequestParam String creditCode) {
         Map<String, Object> result = new HashMap<>();
         try {
-            List<InvoiceData> list = invoiceDataRepository.findByCreditCode(creditCode);
+            List<InvoiceData> list = invoiceDataRepository.findByCreditCodeOrderByCollectTimeDesc(creditCode);
             result.put("code", 0);
             result.put("data", list);
         } catch (Exception e) {
@@ -95,13 +95,13 @@ public class InvoiceDataController {
     }
 
     /**
-     * 根据纳税人识别号查询
+     * 根据纳税人识别号查询（按采集时间倒序）
      */
     @GetMapping("/search/taxNo")
     public Map<String, Object> searchByTaxNo(@RequestParam String taxNo) {
         Map<String, Object> result = new HashMap<>();
         try {
-            List<InvoiceData> list = invoiceDataRepository.findByTaxNo(taxNo);
+            List<InvoiceData> list = invoiceDataRepository.findByTaxNoOrderByCollectTimeDesc(taxNo);
             result.put("code", 0);
             result.put("data", list);
         } catch (Exception e) {
@@ -118,16 +118,17 @@ public class InvoiceDataController {
     public Map<String, Object> stats() {
         Map<String, Object> result = new HashMap<>();
         try {
-            List<InvoiceData> all = invoiceDataRepository.findAll();
+            // 使用倒序查询获取最近采集的数据
+            List<InvoiceData> all = invoiceDataRepository.findAllByOrderByCollectTimeDesc();
             long total = all.size();
             long normal = all.stream().filter(d -> "正常".equals(d.getInvoiceStatus())).count();
             long abnormal = all.stream().filter(d -> "作废".equals(d.getInvoiceStatus()) || "红冲".equals(d.getInvoiceStatus())).count();
-            
+
             Map<String, Object> data = new HashMap<>();
             data.put("total", total);
             data.put("normal", normal);
             data.put("abnormal", abnormal);
-            
+
             result.put("code", 0);
             result.put("data", data);
         } catch (Exception e) {

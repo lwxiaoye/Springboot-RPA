@@ -1,26 +1,26 @@
 <template>
   <div class="processes-page" v-show="!designerVisible">
     <div class="page-header">
-      <h2>流程管理</h2>
-      <p class="page-desc">管理RPA自动化流程</p>
+      <h2>{{ t('process.title') }}</h2>
+      <p class="page-desc">{{ t('process.manageRPA') }}</p>
     </div>
 
     <div class="toolbar">
       <div class="search-box">
         <el-icon><Search /></el-icon>
-        <input v-model="searchKeyword" placeholder="搜索流程名称/编码..." />
+        <input v-model="searchKeyword" :placeholder="t('process.searchPlaceholder')" />
       </div>
-      <el-select v-model="statusFilter" placeholder="状态筛选" clearable style="width: 120px;">
-        <el-option label="已发布" value="active" />
-        <el-option label="草稿" value="draft" />
+      <el-select v-model="statusFilter" :placeholder="t('process.statusFilter')" clearable style="width: 120px;">
+        <el-option :label="t('process.published')" value="active" />
+        <el-option :label="t('process.draft')" value="draft" />
       </el-select>
       <el-button type="primary" @click="showCreateModal">
-        <el-icon><Plus /></el-icon> 新建流程
+        <el-icon><Plus /></el-icon> {{ t('process.newProcess') }}
       </el-button>
     </div>
 
     <el-table :data="paginatedProcesses" v-loading="loading" border stripe class="unified-table">
-      <el-table-column type="index" label="序号" width="60" align="center">
+      <el-table-column type="index" :label="t('process.index')" width="60" align="center">
         <template #default="{ $index }">
           <div class="index-cell">
             <div class="index-line"></div>
@@ -29,47 +29,37 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column prop="name" label="流程名称" min-width="180" show-overflow-tooltip />
-      <el-table-column prop="code" label="流程编码" min-width="140" />
-      <el-table-column prop="version" label="版本" width="80" align="center" />
-      <el-table-column prop="description" label="描述" min-width="200" show-overflow-tooltip>
+      <el-table-column prop="name" :label="t('process.name')" min-width="180" show-overflow-tooltip />
+      <el-table-column prop="code" :label="t('process.code')" min-width="140" />
+      <el-table-column prop="version" :label="t('process.version')" width="80" align="center" />
+      <el-table-column prop="description" :label="t('process.description')" min-width="200" show-overflow-tooltip>
         <template #default="{ row }">{{ row.description || '-' }}</template>
       </el-table-column>
-      <el-table-column prop="status" label="状态" width="90" align="center">
+      <el-table-column prop="status" :label="t('process.status')" width="90" align="center">
         <template #default="{ row }">
           <el-tag :type="row.status === 'active' ? 'success' : 'info'" size="small">
-            {{ row.status === 'active' ? '已发布' : '草稿' }}
+            {{ row.status === 'active' ? t('process.published') : t('process.draft') }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="creatorName" label="创建人" width="100" align="center" />
-      <el-table-column prop="createTime" label="创建时间" min-width="160" />
-      <el-table-column label="操作" width="220" fixed="right" align="center">
+      <el-table-column prop="creatorName" :label="t('process.creator')" width="100" align="center" />
+      <el-table-column prop="createTime" :label="t('process.createTime')" min-width="160" />
+      <el-table-column :label="t('common.actions')" width="300" fixed="right" align="center">
         <template #default="{ row }">
           <div class="action-buttons">
             <el-button link type="primary" @click="viewDetail(row)" class="action-btn">
-              <span>详情</span>
+              <span>{{ t('process.view') }}</span>
+            </el-button>
+            <el-button link type="warning" @click="openDesigner(row)" class="action-btn">
+              <el-icon><Edit /></el-icon>
+              <span>{{ t('process.design') }}</span>
             </el-button>
             <el-button link type="success" @click="handleExecute(row)" class="action-btn">
-              <span>执行</span>
+              <span>{{ t('process.execute') }}</span>
             </el-button>
             <el-button link type="primary" @click="editProcess(row)" class="action-btn">
-              <span>编辑</span>
+              <span>{{ t('common.edit') }}</span>
             </el-button>
-            <el-popconfirm
-              :title="'确定要删除流程「' + row.name + '」吗？'"
-              confirmButtonText="确认删除"
-              cancelButtonText="取消"
-              icon="Delete"
-              iconColor="#f56c6c"
-              @confirm="deleteProcess(row)"
-            >
-              <template #reference>
-                <el-button link type="danger" class="action-btn">
-                  <span>删除</span>
-                </el-button>
-              </template>
-            </el-popconfirm>
           </div>
         </template>
       </el-table-column>
@@ -90,26 +80,26 @@
     <!-- 新建/编辑流程弹窗 -->
     <el-dialog v-model="dialogVisible" :title="dialogTitle" width="600px" class="process-dialog" :close-on-click-modal="false">
       <el-form :model="processForm" :rules="formRules" ref="formRef" label-width="100px">
-        <el-form-item label="流程名称" prop="name">
-          <el-input v-model="processForm.name" placeholder="请输入流程名称" />
+        <el-form-item :label="t('process.name')" prop="name">
+          <el-input v-model="processForm.name" :placeholder="t('process.inputName')" />
         </el-form-item>
-        <el-form-item label="流程编码" prop="code">
-          <el-input v-model="processForm.code" placeholder="请输入流程编码，如：ORDER_PROCESS" />
+        <el-form-item :label="t('process.code')" prop="code">
+          <el-input v-model="processForm.code" :placeholder="t('process.inputCode')" />
         </el-form-item>
-        <el-form-item label="版本号" prop="version">
-          <el-input v-model="processForm.version" placeholder="请输入版本号，如：1.0.0" />
+        <el-form-item :label="t('process.versionNumber')" prop="version">
+          <el-input v-model="processForm.version" :placeholder="t('process.inputVersion')" />
         </el-form-item>
-        <el-form-item label="流程描述">
-          <el-input v-model="processForm.description" type="textarea" :rows="3" placeholder="请输入流程描述" />
+        <el-form-item :label="t('process.description')">
+          <el-input v-model="processForm.description" type="textarea" :rows="3" :placeholder="t('process.inputDesc')" />
         </el-form-item>
-        <el-form-item label="状态" prop="status">
+        <el-form-item :label="t('process.status')" prop="status">
           <el-radio-group v-model="processForm.status">
-            <el-radio label="draft">草稿</el-radio>
-            <el-radio label="active">已发布</el-radio>
+            <el-radio label="draft">{{ t('process.draft') }}</el-radio>
+            <el-radio label="active">{{ t('process.published') }}</el-radio>
           </el-radio-group>
         </el-form-item>
-        <el-form-item label="执行凭据">
-          <el-select v-model="processForm.credentialId" placeholder="选择执行时使用的凭据（可选）" clearable filterable style="width: 100%">
+        <el-form-item :label="t('process.credential')">
+          <el-select v-model="processForm.credentialId" :placeholder="t('process.selectCredential')" clearable filterable style="width: 100%">
             <el-option v-for="cred in credentials" :key="cred.id" :label="cred.name" :value="cred.id">
               <div class="credential-option">
                 <span>{{ cred.name }}</span>
@@ -117,60 +107,60 @@
               </div>
             </el-option>
           </el-select>
-          <div class="form-tip">选择执行此流程时需要使用的凭据（如数据库密码、API密钥等）</div>
+          <div class="form-tip">{{ t('process.credentialTip') }}</div>
         </el-form-item>
       </el-form>
 
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button v-if="isEdit" type="danger" @click="handleDeleteProcess">删除流程</el-button>
-          <el-button type="primary" @click="submitProcess" :loading="submitLoading">确定</el-button>
+          <el-button @click="dialogVisible = false">{{ t('process.cancel') }}</el-button>
+          <el-button v-if="isEdit" type="danger" @click="handleDeleteProcess">{{ t('common.delete') }}</el-button>
+          <el-button type="primary" @click="submitProcess" :loading="submitLoading">{{ t('process.confirm') }}</el-button>
         </div>
       </template>
     </el-dialog>
 
     <!-- 详情弹窗 -->
-    <el-dialog v-model="detailVisible" title="流程详情" width="700px" class="process-detail-dialog">
+    <el-dialog v-model="detailVisible" :title="t('process.detail')" width="700px" class="process-detail-dialog">
       <div class="detail-content">
         <!-- 基本信息卡片 -->
         <div class="info-section">
           <div class="section-title-bar">
             <el-icon class="section-icon"><Document /></el-icon>
-            <span class="section-title">基本信息</span>
+            <span class="section-title">{{ t('process.basicInfo') }}</span>
           </div>
           
           <div class="info-grid">
             <div class="info-row">
-              <label class="info-label">流程名称：</label>
+              <label class="info-label">{{ t('process.name') }}：</label>
               <span class="info-value value-primary">{{ currentProcess.name }}</span>
             </div>
             <div class="info-row">
-              <label class="info-label">流程编码：</label>
+              <label class="info-label">{{ t('process.code') }}：</label>
               <span class="info-value value-code">{{ currentProcess.code }}</span>
             </div>
             <div class="info-row">
-              <label class="info-label">版本号：</label>
+              <label class="info-label">{{ t('process.versionNumber') }}：</label>
               <el-tag size="small" effect="plain">{{ currentProcess.version }}</el-tag>
             </div>
             <div class="info-row">
-              <label class="info-label">状态：</label>
+              <label class="info-label">{{ t('process.status') }}：</label>
               <el-tag :type="currentProcess.status === 'active' ? 'success' : 'info'" size="small" effect="light">
-                {{ currentProcess.status === 'active' ? '已发布' : '草稿' }}
+                {{ currentProcess.status === 'active' ? t('process.published') : t('process.draft') }}
               </el-tag>
             </div>
             <div class="info-row">
-              <label class="info-label">创建人：</label>
+              <label class="info-label">{{ t('process.creator') }}：</label>
               <span class="info-value">{{ currentProcess.creatorName }}</span>
             </div>
             <div class="info-row">
-              <label class="info-label">创建时间：</label>
+              <label class="info-label">{{ t('process.createTime') }}：</label>
               <span class="info-value">{{ currentProcess.createTime }}</span>
             </div>
           </div>
           
           <div class="info-row full-row">
-            <label class="info-label">描述：</label>
+            <label class="info-label">{{ t('process.description') }}：</label>
             <span class="info-value value-desc">{{ currentProcess.description || '-' }}</span>
           </div>
         </div>
@@ -179,9 +169,9 @@
         <div class="steps-section">
           <div class="section-title-bar">
             <el-icon class="section-icon"><List /></el-icon>
-            <span class="section-title">流程步骤（{{ detailSteps.length }}个）</span>
+            <span class="section-title">{{ t('process.processSteps') }}（{{ t('process.stepsCount', { count: detailSteps.length }) }}）</span>
             <el-tag type="info" size="small" effect="plain" class="steps-count-tag">
-              {{ detailSteps.filter(s => s.robotId).length }} 个已绑定机器人
+              {{ detailSteps.filter(s => s.robotId).length }} {{ t('process.boundRobots') }}
             </el-tag>
           </div>
           
@@ -192,7 +182,7 @@
               </div>
               <div class="detail-step-content">
                 <div class="detail-step-header">
-                  <span class="detail-step-name">{{ step.name || '未命名步骤' }}</span>
+                  <span class="detail-step-name">{{ step.name || t('process.noNamedStep') }}</span>
                   <el-tag v-if="step.type" size="small" effect="light" :type="getDetailStepTypeTag(step.type)">
                     {{ getDetailStepTypeLabel(step.type) }}
                   </el-tag>
@@ -209,7 +199,7 @@
                   <div v-else class="detail-step-robot-empty">
                     <el-tag type="info" size="small" effect="plain" class="unbound-tag">
                       <el-icon style="margin-right: 4px;"><Warning /></el-icon>
-                      未绑定机器人
+                      {{ t('process.unboundRobot') }}
                     </el-tag>
                   </div>
                 </div>
@@ -218,8 +208,8 @@
           </div>
           
           <div v-else class="empty-detail-steps">
-            <el-empty description="暂无步骤" :image-size="80">
-              <el-button type="primary" size="small" @click="openDesigner(currentProcess); detailVisible = false">去设计</el-button>
+            <el-empty :description="t('process.noSteps')" :image-size="80">
+              <el-button type="primary" size="small" @click="openDesigner(currentProcess); detailVisible = false">{{ t('process.goDesign') }}</el-button>
             </el-empty>
           </div>
         </div>
@@ -233,24 +223,26 @@
       <div class="nav-left">
         <el-button @click="closeDesigner" text class="back-btn">
           <el-icon><ArrowLeft /></el-icon>
-          返回列表
+          {{ t('process.backToList') }}
         </el-button>
         <el-divider direction="vertical" />
-        <span class="nav-title">流程设计 - {{ currentProcess.name }}</span>
+        <span class="nav-title">{{ t('process.designTitle') }} - {{ currentProcess.name }}</span>
       </div>
       <div class="nav-actions">
         <el-button @click="saveDesign" type="primary" :loading="savingDesign">
-          <el-icon><Check /></el-icon> 保存设计
+          <el-icon><Check /></el-icon> {{ t('process.saveDesign') }}
         </el-button>
       </div>
     </div>
 
     <div class="designer-main-content">
-      <CanvasDesigner 
+      <CanvasDesigner
         ref="canvasDesignerRef"
         v-model="canvasData"
         :robots="robots"
         :robot-categories="robotCategories"
+        :process-id="currentDesignId"
+        @save="saveDesign"
       />
     </div>
   </div>
@@ -260,11 +252,13 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useRouter } from 'vue-router'
-import { Search, Plus, Check, Delete, ArrowLeft } from '@element-plus/icons-vue'
+import { useI18n } from 'vue-i18n'
+import { Search, Plus, Check, Delete, ArrowLeft, Edit } from '@element-plus/icons-vue'
 import CanvasDesigner from './CanvasDesigner.vue'
 
 import { apiGet, apiPost, apiPut, apiDelete } from '../../utils/api.js'
 
+const { t } = useI18n()
 const router = useRouter()
 
 const robots = ref([])
@@ -299,13 +293,13 @@ const processForm = reactive({
   credentialId: null
 })
 
-const formRules = {
-  name: [{ required: true, message: '请输入流程名称', trigger: 'blur' }],
-  code: [{ required: true, message: '请输入流程编码', trigger: 'blur' }],
-  version: [{ required: true, message: '请输入版本号', trigger: 'blur' }]
-}
+const formRules = computed(() => ({
+  name: [{ required: true, message: t('process.inputName'), trigger: 'blur' }],
+  code: [{ required: true, message: t('process.inputCode'), trigger: 'blur' }],
+  version: [{ required: true, message: t('process.inputVersion'), trigger: 'blur' }]
+}))
 
-const dialogTitle = computed(() => isEdit.value ? '编辑流程' : '新建流程')
+const dialogTitle = computed(() => isEdit.value ? t('process.edit') : t('process.newProcess'))
 
 const filteredProcesses = computed(() => {
   let list = processes.value
@@ -370,12 +364,12 @@ const handleExecute = async (process) => {
   try {
     const result = await apiPost(`/process/${process.id}/execute`)
     if (result.code === 0) {
-      ElMessage.success('流程执行已启动')
+      ElMessage.success(t('process.executionStarted'))
     } else {
-      ElMessage.error(result.message || '执行失败')
+      ElMessage.error(result.message || t('process.executionFailed'))
     }
   } catch {
-    ElMessage.error('执行失败')
+    ElMessage.error(t('process.executionFailed'))
   }
 }
 
@@ -394,11 +388,11 @@ const submitProcess = async () => {
             status: processForm.status
           })
           if (result.code === 0) {
-            ElMessage.success('更新成功')
+            ElMessage.success(t('process.updateSuccess'))
             dialogVisible.value = false
             await loadProcesses()
           } else {
-            ElMessage.error(result.message || '更新失败')
+            ElMessage.error(result.message || t('process.requestFailed'))
           }
         } else {
           const result = await apiPost('/process', {
@@ -409,15 +403,15 @@ const submitProcess = async () => {
             status: processForm.status
           })
           if (result.code === 0) {
-            ElMessage.success('创建成功')
+            ElMessage.success(t('process.createSuccess'))
             dialogVisible.value = false
             await loadProcesses()
           } else {
-            ElMessage.error(result.message || '创建失败')
+            ElMessage.error(result.message || t('process.requestFailed'))
           }
         }
       } catch {
-        ElMessage.error('请求失败')
+        ElMessage.error(t('process.requestFailed'))
       } finally {
         submitLoading.value = false
       }
@@ -434,12 +428,12 @@ const deleteProcess = async (process) => {
         processes.value.splice(index, 1)
         pagination.total--
       }
-      ElMessage.success('删除成功')
+      ElMessage.success(t('process.deleteSuccess'))
     } else {
-      ElMessage.error(result.message || '删除失败')
+      ElMessage.error(result.message || t('process.requestFailed'))
     }
   } catch {
-    ElMessage.error('请求失败')
+    ElMessage.error(t('process.requestFailed'))
   }
 }
 
@@ -448,23 +442,23 @@ const handleDeleteProcess = async () => {
   if (!currentEditId.value) return
   
   try {
-    await ElMessageBox.confirm('确认删除该流程吗？删除后无法恢复！', '删除确认', {
-      confirmButtonText: '删除',
-      cancelButtonText: '取消',
+    await ElMessageBox.confirm(t('process.deleteConfirm'), t('process.deleteConfirmTitle'), {
+      confirmButtonText: t('common.delete'),
+      cancelButtonText: t('common.cancel'),
       type: 'warning'
     })
     
     const result = await apiDelete(`/process/${currentEditId.value}`)
     if (result.code === 0) {
-      ElMessage.success('删除成功')
+      ElMessage.success(t('process.deleteSuccess'))
       dialogVisible.value = false
       await loadProcesses()
     } else {
-      ElMessage.error(result.message || '删除失败')
+      ElMessage.error(result.message || t('process.requestFailed'))
     }
   } catch (err) {
     if (err !== 'cancel') {
-      ElMessage.error('请求失败')
+      ElMessage.error(t('process.requestFailed'))
     }
   }
 }
@@ -576,15 +570,15 @@ const loadCredentials = async () => {
 // 获取凭据类型文本
 const getCredentialTypeText = (type) => {
   const typeMap = {
-    'DATABASE': '数据库',
-    'API_KEY': 'API密钥',
-    'SYSTEM_ACCOUNT': '系统账号',
-    'SSH_KEY': 'SSH密钥',
-    'CERTIFICATE': '证书',
-    'RPA_CREDENTIAL': 'RPA凭据',
-    'OTHER': '其他'
+    'DATABASE': t('credential.database', '数据库'),
+    'API_KEY': t('credential.apiKey', 'API密钥'),
+    'SYSTEM_ACCOUNT': t('credential.systemAccount', '系统账号'),
+    'SSH_KEY': t('credential.sshKey', 'SSH密钥'),
+    'CERTIFICATE': t('credential.certificate', '证书'),
+    'RPA_CREDENTIAL': t('credential.rpaCredential', 'RPA凭据'),
+    'OTHER': t('common.other', '其他')
   }
-  return typeMap[type] || type || '其他'
+  return typeMap[type] || type || t('common.other', '其他')
 }
 
 // 根据分类过滤机器人
@@ -600,9 +594,9 @@ const getRobotStatus = (robotId) => {
     return { name: '', statusText: '', type: 'info' }
   }
   const statusMap = {
-    idle: { text: '空闲', type: 'success' },
-    busy: { text: '忙碌', type: 'warning' },
-    offline: { text: '离线', type: 'info' }
+    idle: { text: t('robot.idle', '空闲'), type: 'success' },
+    busy: { text: t('robot.busy', '忙碌'), type: 'warning' },
+    offline: { text: t('robot.offline', '离线'), type: 'info' }
   }
   const status = statusMap[robot.status] || { text: robot.status, type: 'info' }
   return {
@@ -614,14 +608,14 @@ const getRobotStatus = (robotId) => {
 
 // 步骤类型标签映射
 const stepTypeMap = {
-  collect: { label: '数据采集', tag: 'primary' },
-  parse: { label: '数据解析', tag: 'success' },
-  process: { label: '数据加工', tag: 'warning' },
-  query: { label: '数据查询', tag: 'info' },
-  transform: { label: '数据转换', tag: '' },
-  output: { label: '数据输出', tag: 'danger' },
-  validate: { label: '数据校验', tag: '' },
-  default: { label: '通用步骤', tag: 'info' }
+  collect: { label: t('dataCollect.collect', '数据采集'), tag: 'primary' },
+  parse: { label: t('dataProcess.parse', '数据解析'), tag: 'success' },
+  process: { label: t('dataProcess.process', '数据加工'), tag: 'warning' },
+  query: { label: t('dataQuery.query', '数据查询'), tag: 'info' },
+  transform: { label: t('dataProcess.transform', '数据转换'), tag: '' },
+  output: { label: t('dataProcess.output', '数据输出'), tag: 'danger' },
+  validate: { label: t('dataProcess.validate', '数据校验'), tag: '' },
+  default: { label: t('process.noNamedStep', '通用步骤'), tag: 'info' }
 }
 
 // 获取步骤类型标签
@@ -645,14 +639,14 @@ const saveDesign = async () => {
       steps: stepsData
     })
     if (result.code === 0) {
-      ElMessage.success('保存成功')
+      ElMessage.success(t('common.success'))
       // 不关闭设计器，只刷新流程列表
       await loadProcesses()
     } else {
-      ElMessage.error(result.message || '保存失败')
+      ElMessage.error(result.message || t('common.failed'))
     }
   } catch {
-    ElMessage.error('请求失败')
+    ElMessage.error(t('process.requestFailed'))
   } finally {
     savingDesign.value = false
   }
@@ -827,16 +821,17 @@ onMounted(() => { loadProcesses(); loadCredentials() })
   align-items: center;
   justify-content: center;
   gap: 2px;
+  flex-wrap: wrap;
 }
 
 .action-btn {
   display: flex;
   align-items: center;
   gap: 3px;
-  padding: 4px 10px;
+  padding: 4px 8px;
   border-radius: 6px;
   transition: all 0.2s ease;
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .action-btn:hover {

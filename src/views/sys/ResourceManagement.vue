@@ -2,45 +2,45 @@
   <div class="resource-management-content">
 
     <div class="section-header">
-      <h2 class="section-title">资源管理</h2>
+      <h2 class="section-title">{{ t('resource.title') }}</h2>
       <el-button type="primary" @click="showResourceModal">
-        <span style="margin-right: 4px;">+</span> 新增资源
+        <span style="margin-right: 4px;">+</span> {{ t('resource.addResource') }}
       </el-button>
     </div>
 
     <!-- 查询表单 -->
     <div class="search-form">
       <el-form :model="searchForm" inline>
-        <el-form-item label="资源名称：">
-          <el-input 
-            v-model="searchForm.resourceName" 
-            placeholder="请输入" 
+        <el-form-item :label="t('resource.resourceName') + '：'">
+          <el-input
+            v-model="searchForm.resourceName"
+            :placeholder="t('common.input')"
             clearable
             style="width: 160px"
           />
         </el-form-item>
-        <el-form-item label="资源类型：">
-          <el-select 
-            v-model="searchForm.resourceType" 
-            placeholder="请选择" 
+        <el-form-item :label="t('resource.resourceType') + '：'">
+          <el-select
+            v-model="searchForm.resourceType"
+            :placeholder="t('common.select')"
             clearable
             style="width: 140px"
           >
-            <el-option label="菜单" value="menu" />
-            <el-option label="按钮" value="button" />
-            <el-option label="页面" value="page" />
+            <el-option :label="t('resource.menu')" value="menu" />
+            <el-option :label="t('resource.button')" value="button" />
+            <el-option :label="t('resource.page')" value="page" />
           </el-select>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="handleSearch">查询</el-button>
-          <el-button @click="resetSearch">重置</el-button>
+          <el-button type="primary" @click="handleSearch">{{ t('common.search') }}</el-button>
+          <el-button @click="resetSearch">{{ t('common.reset') }}</el-button>
         </el-form-item>
       </el-form>
     </div>
 
     <!-- 资源表格 -->
     <el-table :data="paginatedResources" style="width: 100%" v-loading="loading" border stripe class="unified-table">
-      <el-table-column type="index" label="序号" width="80" align="center">
+      <el-table-column type="index" :label="t('common.index')" width="80" align="center">
         <template #default="{ $index }">
           <div class="index-cell">
             <div class="index-line"></div>
@@ -49,39 +49,39 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column prop="name" label="资源名称" min-width="150" />
-      <el-table-column prop="code" label="资源编码" min-width="150" />
-      <el-table-column prop="type" label="资源类型" width="100">
+      <el-table-column prop="name" :label="t('resource.resourceName')" min-width="150" />
+      <el-table-column prop="code" :label="t('resource.resourceCode')" min-width="150" />
+      <el-table-column prop="type" :label="t('resource.resourceType')" width="100">
         <template #default="{ row }">
           <el-tag :type="getResourceTypeTag(row.type)" size="small">
             {{ getResourceTypeText(row.type) }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="url" label="路径/URL" min-width="180">
+      <el-table-column prop="url" :label="t('resource.pathUrl')" min-width="180">
         <template #default="{ row }">{{ row.url || '-' }}</template>
       </el-table-column>
-      <el-table-column prop="icon" label="图标" width="100">
+      <el-table-column prop="icon" :label="t('resource.icon')" width="100">
         <template #default="{ row }">
           <span v-if="row.icon">{{ row.icon }}</span>
           <span v-else>-</span>
         </template>
       </el-table-column>
-      <el-table-column prop="sort" label="排序" width="80" align="center" />
-      <el-table-column label="操作" width="150" fixed="right" align="center">
+      <el-table-column prop="sort" :label="t('common.sort')" width="80" align="center" />
+      <el-table-column :label="t('common.actions')" width="150" fixed="right" align="center">
         <template #default="{ row }">
           <div class="action-buttons">
-            <el-button link type="primary" size="small" @click="editResource(row)" class="action-btn">编辑</el-button>
+            <el-button link type="primary" size="small" @click="editResource(row)" class="action-btn">{{ t('common.edit') }}</el-button>
             <el-popconfirm
-              :title="'确定要删除资源「' + row.name + '」吗？'"
-              confirmButtonText="确认删除"
-              cancelButtonText="取消"
+              :title="t('resource.confirmDelete') + row.name + '？'"
+              :confirmButtonText="t('resource.confirmDeleteBtn')"
+              :cancelButtonText="t('common.cancel')"
               icon="Delete"
               iconColor="#f56c6c"
               @confirm="deleteResource(row)"
             >
               <template #reference>
-                <el-button link type="danger" size="small" class="action-btn">删除</el-button>
+                <el-button link type="danger" size="small" class="action-btn">{{ t('common.delete') }}</el-button>
               </template>
             </el-popconfirm>
           </div>
@@ -103,45 +103,45 @@
     </div>
 
     <!-- 新增/编辑资源弹窗 -->
-    <el-dialog 
-      v-model="dialogVisible" 
-      :title="dialogTitle" 
+    <el-dialog
+      v-model="dialogVisible"
+      :title="dialogTitle"
       width="550px"
       @close="closeDialog"
     >
       <el-form :model="resourceForm" :rules="formRules" ref="resourceFormRef" label-width="100px">
-        <el-form-item label="资源名称" prop="name">
-          <el-input v-model="resourceForm.name" placeholder="请输入资源名称" />
+        <el-form-item :label="t('resource.resourceName')" prop="name">
+          <el-input v-model="resourceForm.name" :placeholder="t('resource.inputResourceName')" />
         </el-form-item>
-        <el-form-item label="资源编码" prop="code">
-          <el-input v-model="resourceForm.code" placeholder="请输入资源编码，如：SYS_RESOURCE" />
+        <el-form-item :label="t('resource.resourceCode')" prop="code">
+          <el-input v-model="resourceForm.code" :placeholder="t('resource.inputResourceCode')" />
         </el-form-item>
-        <el-form-item label="资源类型" prop="type">
-          <el-select v-model="resourceForm.type" placeholder="请选择资源类型" style="width: 100%">
-            <el-option label="菜单" value="menu" />
-            <el-option label="按钮" value="button" />
-            <el-option label="页面" value="page" />
+        <el-form-item :label="t('resource.resourceType')" prop="type">
+          <el-select v-model="resourceForm.type" :placeholder="t('resource.selectResourceType')" style="width: 100%">
+            <el-option :label="t('resource.menu')" value="menu" />
+            <el-option :label="t('resource.button')" value="button" />
+            <el-option :label="t('resource.page')" value="page" />
           </el-select>
         </el-form-item>
-        <el-form-item label="路径/URL" prop="url">
-          <el-input v-model="resourceForm.url" placeholder="请输入路径或URL，如：/system/resource" />
+        <el-form-item :label="t('resource.pathUrl')" prop="url">
+          <el-input v-model="resourceForm.url" :placeholder="t('resource.inputPathUrl')" />
         </el-form-item>
-        <el-form-item label="图标" prop="icon">
-          <el-input v-model="resourceForm.icon" placeholder="请输入图标名称，如：Setting" />
+        <el-form-item :label="t('resource.icon')" prop="icon">
+          <el-input v-model="resourceForm.icon" :placeholder="t('resource.inputIcon')" />
         </el-form-item>
-        <el-form-item label="排序" prop="sort">
+        <el-form-item :label="t('common.sort')" prop="sort">
           <el-input-number v-model="resourceForm.sort" :min="0" :max="999" style="width: 100%" />
         </el-form-item>
-        <el-form-item label="状态" prop="status">
+        <el-form-item :label="t('common.status')" prop="status">
           <el-radio-group v-model="resourceForm.status">
-            <el-radio :label="1">启用</el-radio>
-            <el-radio :label="0">禁用</el-radio>
+            <el-radio :label="1">{{ t('common.enabled') }}</el-radio>
+            <el-radio :label="0">{{ t('common.disabled') }}</el-radio>
           </el-radio-group>
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="saveResource" :loading="submitLoading">保存</el-button>
+        <el-button @click="dialogVisible = false">{{ t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="saveResource" :loading="submitLoading">{{ t('common.save') }}</el-button>
       </template>
     </el-dialog>
   </div>
@@ -149,9 +149,12 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 import { apiGet, apiPost, apiPut, apiDelete } from '../../utils/api.js'
+
+const { t } = useI18n()
 
 // 数据状态
 const loading = ref(false)
@@ -193,22 +196,22 @@ const resourceForm = reactive({
 // 表单验证规则
 const formRules = {
   name: [
-    { required: true, message: '请输入资源名称', trigger: 'blur' },
-    { min: 2, max: 50, message: '长度在 2 到 50 个字符', trigger: 'blur' }
+    { required: true, message: t('resource.inputResourceName'), trigger: 'blur' },
+    { min: 2, max: 50, message: t('resource.nameLength'), trigger: 'blur' }
   ],
   code: [
-    { required: true, message: '请输入资源编码', trigger: 'blur' }
+    { required: true, message: t('resource.inputResourceCode'), trigger: 'blur' }
   ],
   type: [
-    { required: true, message: '请选择资源类型', trigger: 'change' }
+    { required: true, message: t('resource.selectResourceType'), trigger: 'change' }
   ],
   sort: [
-    { type: 'number', message: '排序必须为数字', trigger: 'blur' }
+    { type: 'number', message: t('resource.sortNumber'), trigger: 'blur' }
   ]
 }
 
 // 计算属性
-const dialogTitle = computed(() => isEdit.value ? '编辑资源' : '新增资源')
+const dialogTitle = computed(() => isEdit.value ? t('resource.editResource') : t('resource.addResource'))
 
 // 筛选后的资源列表
 const filteredResources = computed(() => {
@@ -244,9 +247,9 @@ const getResourceTypeTag = (type) => {
 // 获取资源类型文本
 const getResourceTypeText = (type) => {
   const map = {
-    menu: '菜单',
-    button: '按钮',
-    page: '页面'
+    menu: t('resource.menu'),
+    button: t('resource.button'),
+    page: t('resource.page')
   }
   return map[type] || type
 }
@@ -347,10 +350,10 @@ const saveResource = async () => {
           status: resourceForm.status
         })
         if (result.code === 0) {
-          ElMessage.success('更新成功')
+          ElMessage.success(t('resource.updateSuccess'))
           await loadResources()
         } else {
-          ElMessage.error(result.message || '更新失败')
+          ElMessage.error(result.message || t('resource.updateFailed'))
         }
       } else {
         const result = await apiPost('/resource', {
@@ -362,15 +365,15 @@ const saveResource = async () => {
           sort: resourceForm.sort
         })
         if (result.code === 0) {
-          ElMessage.success('创建成功')
+          ElMessage.success(t('resource.createSuccess'))
           await loadResources()
         } else {
-          ElMessage.error(result.message || '创建失败')
+          ElMessage.error(result.message || t('resource.createFailed'))
         }
       }
       dialogVisible.value = false
     } catch {
-      ElMessage.error('请求失败')
+      ElMessage.error(t('resource.requestFailed'))
     } finally {
       submitLoading.value = false
     }
@@ -387,12 +390,12 @@ const deleteResource = async (resource) => {
         resources.value.splice(index, 1)
         pagination.total--
       }
-      ElMessage.success('删除成功')
+      ElMessage.success(t('resource.deleteSuccess'))
     } else {
-      ElMessage.error(result.message || '删除失败')
+      ElMessage.error(result.message || t('resource.deleteFailed'))
     }
   } catch {
-    ElMessage.error('请求失败')
+    ElMessage.error(t('resource.requestFailed'))
   }
 }
 

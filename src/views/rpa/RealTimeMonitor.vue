@@ -58,14 +58,13 @@
         <div class="chart-panel main-chart">
           <div class="panel-header-3d">
             <div class="panel-title">
-              <span class="title-cn">24小时执行趋势</span>
-              <span class="title-en">EXECUTION TREND</span>
+              <span class="title-text">{{ locale === 'zh-CN' ? t('monitor.executionTrend') : 'EXECUTION TREND' }}</span>
             </div>
             <div class="chart-controls">
               <el-radio-group v-model="trendType" size="small" class="type-selector">
-                <el-radio-button value="count">执行数</el-radio-button>
-                <el-radio-button value="success">成功率</el-radio-button>
-                <el-radio-button value="duration">执行时长</el-radio-button>
+                <el-radio-button value="count">{{ t('monitor.execCount') }}</el-radio-button>
+                <el-radio-button value="success">{{ t('monitor.successRate') }}</el-radio-button>
+                <el-radio-button value="duration">{{ t('monitor.execDuration') }}</el-radio-button>
               </el-radio-group>
             </div>
           </div>
@@ -78,8 +77,7 @@
         <div class="chart-panel side-chart">
           <div class="panel-header-3d">
             <div class="panel-title">
-              <span class="title-cn">任务状态分布</span>
-              <span class="title-en">STATUS DISTRIBUTION</span>
+              <span class="title-text">{{ locale === 'zh-CN' ? t('monitor.taskStatusDist') : 'STATUS DISTRIBUTION' }}</span>
             </div>
           </div>
           <div class="chart-body">
@@ -94,8 +92,7 @@
         <div class="chart-panel">
           <div class="panel-header-3d">
             <div class="panel-title">
-              <span class="title-cn">机器人性能监控</span>
-              <span class="title-en">ROBOT PERFORMANCE</span>
+              <span class="title-text">{{ locale === 'zh-CN' ? t('monitor.robotPerformance') : 'ROBOT PERFORMANCE' }}</span>
             </div>
           </div>
           <div class="chart-body">
@@ -107,8 +104,7 @@
         <div class="task-stream-panel">
           <div class="panel-header-3d">
             <div class="panel-title">
-              <span class="title-cn">实时任务流</span>
-              <span class="title-en">LIVE TASK STREAM</span>
+              <span class="title-text">{{ locale === 'zh-CN' ? t('monitor.liveTaskStream') : 'LIVE TASK STREAM' }}</span>
             </div>
             <div class="live-badge">
               <span class="live-dot"></span>
@@ -128,7 +124,7 @@
                 <div class="task-info">
                   <div class="task-name">{{ task.name }}</div>
                   <div class="task-meta">
-                    <span>{{ task.robot || '待分配' }}</span>
+                    <span>{{ task.robot || t('monitor.unassigned') }}</span>
                     <span>{{ task.startTime }}</span>
                   </div>
                 </div>
@@ -142,8 +138,7 @@
         <div class="alert-panel">
           <div class="panel-header-3d">
             <div class="panel-title">
-              <span class="title-cn">智能告警</span>
-              <span class="title-en">SMART ALERTS</span>
+              <span class="title-text">{{ locale === 'zh-CN' ? t('monitor.smartAlerts') : 'SMART ALERTS' }}</span>
             </div>
             <el-badge :value="alertCount" :hidden="alertCount === 0" class="alert-badge">
               <span class="alert-icon">
@@ -166,7 +161,7 @@
             </div>
             <div v-if="alerts.length === 0" class="no-alerts">
               <el-icon size="32"><CircleCheck /></el-icon>
-              <span>系统运行正常</span>
+              <span>{{ t('monitor.systemNormal') }}</span>
             </div>
           </div>
         </div>
@@ -176,18 +171,18 @@
       <div class="status-bar">
         <div class="status-item">
           <div class="status-dot" :class="{ online: kpi.robotsOnline > 0 }"></div>
-          <span>在线机器人: {{ kpi.robotsOnline }}/{{ kpi.robotsTotal }}</span>
+          <span>{{ t('monitor.onlineRobots') }}: {{ kpi.robotsOnline }}/{{ kpi.robotsTotal }}</span>
         </div>
         <div class="status-item">
           <div class="status-dot success"></div>
-          <span>今日成功率: {{ kpi.successRate }}%</span>
+          <span>{{ t('monitor.todaySuccessRate') }}: {{ kpi.successRate }}%</span>
         </div>
         <div class="status-item">
           <div class="status-dot warning"></div>
-          <span>队列积压: {{ kpi.pending }}</span>
+          <span>{{ t('monitor.queueBacklog') }}: {{ kpi.pending }}</span>
         </div>
         <div class="status-item">
-          <span>数据刷新: {{ refreshInterval }}s</span>
+          <span>{{ t('monitor.dataRefresh') }}: {{ refreshInterval }}s</span>
         </div>
         <div class="status-item version">
           <span>RPA System v2.0</span>
@@ -198,8 +193,9 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, onUnmounted, watch } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import {
   Refresh,
@@ -230,17 +226,18 @@ import {
 import * as echarts from 'echarts'
 import { apiGet } from '../../utils/api.js'
 
+const { t, locale } = useI18n()
 const router = useRouter()
 
 // 快捷导航
 const activeNav = ref('')
-const navItems = [
-  { path: '/rpa/tasks', label: '任务调度中心', desc: '查看和管理所有任务', icon: 'List', gradient: 'linear-gradient(135deg, #00f5ff22, #00f5ff44)' },
-  { path: '/rpa/robots', label: '机器人管理', desc: '监控机器人运行状态', icon: 'Monitor', gradient: 'linear-gradient(135deg, #a855f722, #a855f744)' },
-  { path: '/rpa/processes', label: '流程仓库', desc: '管理自动化流程', icon: 'Document', gradient: 'linear-gradient(135deg, #00ff8822, #00ff8844)' },
-  { path: '/rpa/logs', label: '执行日志', desc: '查看任务执行记录', icon: 'Tickets', gradient: 'linear-gradient(135deg, #fbbf2422, #fbbf2444)' },
-  { path: '/rpa/credentials', label: '凭据中心', desc: '管理系统凭据', icon: 'Key', gradient: 'linear-gradient(135deg, #3b82f622, #3b82f644)' }
-]
+const navItems = computed(() => [
+  { path: '/rpa/tasks', label: t('monitor.navTasks'), desc: t('monitor.navTasksDesc'), icon: 'List', gradient: 'linear-gradient(135deg, #00f5ff22, #00f5ff44)' },
+  { path: '/rpa/robots', label: t('monitor.navRobots'), desc: t('monitor.navRobotsDesc'), icon: 'Monitor', gradient: 'linear-gradient(135deg, #a855f722, #a855f744)' },
+  { path: '/rpa/processes', label: t('monitor.navProcesses'), desc: t('monitor.navProcessesDesc'), icon: 'Document', gradient: 'linear-gradient(135deg, #00ff8822, #00ff8844)' },
+  { path: '/rpa/logs', label: t('monitor.navLogs'), desc: t('monitor.navLogsDesc'), icon: 'Tickets', gradient: 'linear-gradient(135deg, #fbbf2422, #fbbf2444)' },
+  { path: '/rpa/credentials', label: t('monitor.navCredentials'), desc: t('monitor.navCredentialsDesc'), icon: 'Key', gradient: 'linear-gradient(135deg, #3b82f622, #3b82f644)' }
+])
 
 const navigateTo = (path) => {
   router.push(path)
@@ -279,14 +276,18 @@ const kpi = reactive({
 })
 
 // KPI卡片配置
-const kpiCards = ref([
-  { label: '运行中任务', value: 0, icon: 'Loading', color: '#00f5ff', gradient: 'linear-gradient(135deg, #00f5ff22, #00f5ff44)', sparkData: [], path: '/rpa/tasks' },
-  { label: '队列积压', value: 0, icon: 'Clock', color: '#ff6b6b', gradient: 'linear-gradient(135deg, #ff6b6b22, #ff6b6b44)', sparkData: [], path: '/rpa/queues' },
-  { label: '任务成功率', value: '0%', icon: 'CircleCheck', color: '#00ff88', gradient: 'linear-gradient(135deg, #00ff8822, #00ff8844)', sparkData: [], path: '/rpa/logs' },
-  { label: '在线机器人', value: 0, icon: 'Monitor', color: '#a855f7', gradient: 'linear-gradient(135deg, #a855f722, #a855f744)', sparkData: [], path: '/rpa/robots' },
-  { label: '今日执行', value: 0, icon: 'Odometer', color: '#fbbf24', gradient: 'linear-gradient(135deg, #fbbf2422, #fbbf2444)', sparkData: [], path: '/rpa/logs' },
-  { label: '吞吐量/h', value: 0, icon: 'TrendCharts', color: '#3b82f6', gradient: 'linear-gradient(135deg, #3b82f622, #3b82f644)', sparkData: [], path: '/rpa/reports' }
-])
+const kpiCards = computed(() => {
+  // 依赖 locale 以便语言切换时更新
+  const _ = locale.value
+  return [
+    { label: t('monitor.runningTasks'), value: 0, icon: 'Loading', color: '#00f5ff', gradient: 'linear-gradient(135deg, #00f5ff22, #00f5ff44)', sparkData: [], path: '/rpa/tasks' },
+    { label: t('monitor.queueBacklog2'), value: 0, icon: 'Clock', color: '#ff6b6b', gradient: 'linear-gradient(135deg, #ff6b6b22, #ff6b6b44)', sparkData: [], path: '/rpa/queues' },
+    { label: t('monitor.taskSuccessRate'), value: '0%', icon: 'CircleCheck', color: '#00ff88', gradient: 'linear-gradient(135deg, #00ff8822, #00ff8844)', sparkData: [], path: '/rpa/logs' },
+    { label: t('monitor.onlineRobots2'), value: 0, icon: 'Monitor', color: '#a855f7', gradient: 'linear-gradient(135deg, #a855f722, #a855f744)', sparkData: [], path: '/rpa/robots' },
+    { label: t('monitor.todayExecutions'), value: 0, icon: 'Odometer', color: '#fbbf24', gradient: 'linear-gradient(135deg, #fbbf2422, #fbbf2444)', sparkData: [], path: '/rpa/logs' },
+    { label: t('monitor.throughput'), value: 0, icon: 'TrendCharts', color: '#3b82f6', gradient: 'linear-gradient(135deg, #3b82f622, #3b82f644)', sparkData: [], path: '/rpa/reports' }
+  ]
+})
 
 // 任务流
 const taskStream = ref([])
@@ -350,17 +351,19 @@ const getParticleStyle = (i) => {
 }
 
 const getSparkline = (data) => {
-  if (!data || data.length < 2) return ''
+  if (!data || data.length < 2) return 'M0,30 L60,30 Z'
   const max = Math.max(...data)
   const min = Math.min(...data)
-  if (max === min) return ''
+  if (max === min) return 'M0,30 L60,30 Z'
   const range = max - min || 1
   const points = data.map((v, i) => {
     const x = (i / (data.length - 1)) * 60
     const y = 30 - ((v - min) / range) * 28
-    return `${x},${y}`
+    return { x, y }
   })
-  return `M0,30 L${points.join(' L')},${points[points.length - 1].split(',')[1]} L60,30 Z`
+  // 构建正确的 SVG path：M起点 L各点 L终点 Z闭合
+  const pathParts = points.map(p => `${p.x.toFixed(2)},${p.y.toFixed(2)}`)
+  return `M0,30 L${pathParts.join(' L')} L60,30 Z`
 }
 
 const getSparklineLine = (data) => {
@@ -372,19 +375,19 @@ const getSparklineLine = (data) => {
   const points = data.map((v, i) => {
     const x = (i / (data.length - 1)) * 60
     const y = 30 - ((v - min) / range) * 28
-    return `${x},${y}`
+    return `${x.toFixed(2)},${y.toFixed(2)}`
   })
   return `M${points.join(' L')}`
 }
 
 const getStatusText = (status) => {
   const map = {
-    running: '运行中',
-    pending: '等待中',
-    assigned: '已分配',
-    success: '成功',
-    completed: '已完成',
-    failed: '失败'
+    running: t('monitor.status.running'),
+    pending: t('monitor.status.pending'),
+    assigned: t('monitor.status.assigned'),
+    success: t('monitor.status.success'),
+    completed: t('monitor.status.completed'),
+    failed: t('monitor.status.failed')
   }
   return map[status] || status
 }
@@ -526,7 +529,7 @@ const updateFromRealData = () => {
 
   taskStream.value = tasks.slice(0, 20).map(t => ({
     id: t.id,
-    name: t.name || t.processName || '未知任务',
+    name: t.name || t.processName || t('monitor.unknownTask'),
     robot: t.robotName || '',
     status: t.status,
     startTime: t.startTime ? new Date(t.startTime).toLocaleTimeString('zh-CN') : '--:--:--'
@@ -685,9 +688,9 @@ const generateAlerts = () => {
     newAlerts.push({
       id: 'failed-' + Date.now(),
       level: 'warning',
-      title: '任务执行异常',
-      message: `${failedTasks.length} 个任务执行失败，请检查`,
-      time: '刚刚'
+      title: t('monitor.alert.taskFailed'),
+      message: `${failedTasks.length} ${t('monitor.alert.tasksFailedMsg')}`,
+      time: t('monitor.alert.justNow')
     })
   }
 
@@ -696,9 +699,9 @@ const generateAlerts = () => {
     newAlerts.push({
       id: 'offline-' + Date.now(),
       level: 'critical',
-      title: '机器人离线',
-      message: `${offlineCount} 台机器人已离线`,
-      time: '刚刚'
+      title: t('monitor.alert.robotOffline'),
+      message: `${offlineCount} ${t('monitor.alert.robotsOfflineMsg')}`,
+      time: t('monitor.alert.justNow')
     })
   }
 
@@ -706,9 +709,9 @@ const generateAlerts = () => {
     newAlerts.push({
       id: 'rate-' + Date.now(),
       level: 'warning',
-      title: '成功率预警',
-      message: `当前成功率 ${kpi.successRate}%，低于阈值`,
-      time: '刚刚'
+      title: t('monitor.alert.successRateWarning'),
+      message: t('monitor.alert.currentSuccessRate', { rate: kpi.successRate }),
+      time: t('monitor.alert.justNow')
     })
   }
 
@@ -716,9 +719,9 @@ const generateAlerts = () => {
     newAlerts.push({
       id: 'queue-' + Date.now(),
       level: 'info',
-      title: '队列积压',
-      message: `任务队列积压 ${kpi.pending} 项`,
-      time: '刚刚'
+      title: t('monitor.alert.queueBacklog'),
+      message: t('monitor.alert.queueBacklogMsg', { count: kpi.pending }),
+      time: t('monitor.alert.justNow')
     })
   }
 
@@ -924,10 +927,10 @@ const updateRadarChart = (robots) => {
 const toggleAutoRefresh = () => {
   isAutoRefresh.value = !isAutoRefresh.value
   if (isAutoRefresh.value) {
-    ElMessage.success('已开启实时监控')
+    ElMessage.success(t('monitor.autoRefreshOn'))
     loadData()
   } else {
-    ElMessage.warning('已暂停实时监控')
+    ElMessage.warning(t('monitor.autoRefreshOff'))
   }
 }
 
@@ -964,8 +967,16 @@ onMounted(() => {
     }
   }, 3000)
 
-  // 延迟初始化图表
-  setTimeout(initCharts, 100)
+  // 延迟初始化图表，等待 DOM 完全渲染
+  nextTick(() => {
+    setTimeout(() => {
+      initCharts()
+      if (usingRealData.value || trendDataInitialized.value) {
+        updateTrendChart()
+        updatePieChart()
+      }
+    }, 200)
+  })
   
   window.addEventListener('resize', handleResize)
 })
@@ -1217,8 +1228,7 @@ onUnmounted(() => {
 
 .panel-header-3d { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid rgba(0, 245, 255, 0.1); background: rgba(0, 0, 0, 0.2); }
 .panel-title { display: flex; flex-direction: column; }
-.title-cn { font-size: 15px; font-weight: 600; color: #e0e6ed; }
-.title-en { font-size: 10px; color: #555; letter-spacing: 2px; text-transform: uppercase; }
+.title-text { font-size: 15px; font-weight: 600; color: #e0e6ed; }
 
 .chart-body { padding: 16px; }
 .echarts-container { width: 100%; height: 280px; }

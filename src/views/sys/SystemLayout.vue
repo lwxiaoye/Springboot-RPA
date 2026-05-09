@@ -9,7 +9,7 @@
       <div class="header-left">
         <div class="logo-area" @click="router.push('/rpa/collaboration')">
           <div class="logo-icon">
-            <img src="/title.png" alt="logo" style="width:36px;height:36px;" />
+            <img src="/logo.png" alt="logo" style="width:36px;height:36px;" />
           </div>
           <div class="logo-text">
             <span class="logo-title">RPA</span>

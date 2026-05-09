@@ -1,8 +1,8 @@
 <template>
   <div class="triggers-page">
     <div class="page-header">
-      <h2>触发器管理</h2>
-      <p class="page-desc">配置定时、文件、API、Webhook触发规则，自动化执行流程</p>
+      <h2>{{ t('trigger.title') }}</h2>
+      <p class="page-desc">{{ t('trigger.pageDesc') }}</p>
     </div>
 
     <div class="stats-row">
@@ -10,28 +10,28 @@
         <div class="stat-icon primary"><el-icon><Timer /></el-icon></div>
         <div class="stat-content">
           <span class="stat-value">{{ stats.total }}</span>
-          <span class="stat-label">触发器总数</span>
+          <span class="stat-label">{{ t('trigger.totalCount') }}</span>
         </div>
       </div>
       <div class="stat-card">
         <div class="stat-icon success"><el-icon><CircleCheck /></el-icon></div>
         <div class="stat-content">
           <span class="stat-value">{{ stats.active }}</span>
-          <span class="stat-label">启用中</span>
+          <span class="stat-label">{{ t('trigger.active') }}</span>
         </div>
       </div>
       <div class="stat-card">
         <div class="stat-icon warning"><el-icon><Clock /></el-icon></div>
         <div class="stat-content">
           <span class="stat-value">{{ stats.totalTriggers }}</span>
-          <span class="stat-label">累计触发</span>
+          <span class="stat-label">{{ t('trigger.totalTriggers') }}</span>
         </div>
       </div>
       <div class="stat-card">
         <div class="stat-icon danger"><el-icon><TrendCharts /></el-icon></div>
         <div class="stat-content">
           <span class="stat-value">{{ stats.successRate }}%</span>
-          <span class="stat-label">触发成功率</span>
+          <span class="stat-label">{{ t('trigger.successRate') }}</span>
         </div>
       </div>
     </div>
@@ -39,26 +39,26 @@
     <div class="toolbar">
       <div class="search-box">
         <el-icon><Search /></el-icon>
-        <input v-model="searchKeyword" placeholder="搜索触发器名称/编码..." />
+        <input v-model="searchKeyword" :placeholder="t('trigger.searchPlaceholder')" />
       </div>
-      <el-select v-model="typeFilter" placeholder="类型筛选" clearable style="width: 120px;">
-        <el-option label="定时触发" value="schedule" />
-        <el-option label="文件触发" value="file" />
-        <el-option label="API触发" value="api" />
-        <el-option label="Webhook" value="webhook" />
+      <el-select v-model="typeFilter" :placeholder="t('trigger.typeFilter')" clearable style="width: 120px;">
+        <el-option :label="t('trigger.typeSchedule')" value="schedule" />
+        <el-option :label="t('trigger.typeFile')" value="file" />
+        <el-option :label="t('trigger.typeApi')" value="api" />
+        <el-option :label="t('trigger.typeWebhook')" value="webhook" />
       </el-select>
-      <el-select v-model="statusFilter" placeholder="状态筛选" clearable style="width: 120px;">
-        <el-option label="启用" value="active" />
-        <el-option label="暂停" value="paused" />
-        <el-option label="禁用" value="disabled" />
+      <el-select v-model="statusFilter" :placeholder="t('trigger.statusFilter')" clearable style="width: 120px;">
+        <el-option :label="t('trigger.statusEnabled')" value="active" />
+        <el-option :label="t('trigger.statusPaused')" value="paused" />
+        <el-option :label="t('trigger.statusDisabled')" value="disabled" />
       </el-select>
       <el-button type="primary" @click="showCreateModal">
-        <el-icon><Plus /></el-icon> 新建触发器
+        <el-icon><Plus /></el-icon> {{ t('trigger.create') }}
       </el-button>
     </div>
 
     <el-table :data="paginatedTriggers" v-loading="loading" border stripe class="unified-table" :default-sort="{ prop: 'lastTriggerTime', order: 'descending' }">
-      <el-table-column type="index" label="序号" width="60" align="center">
+      <el-table-column type="index" :label="t('trigger.index')" width="60" align="center">
         <template #default="{ $index }">
           <div class="index-cell">
             <div class="index-line"></div>
@@ -67,78 +67,78 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column prop="name" label="触发器名称" min-width="150" show-overflow-tooltip />
-      <el-table-column prop="code" label="触发器编码" min-width="130">
+      <el-table-column prop="name" :label="t('trigger.name')" min-width="150" show-overflow-tooltip />
+      <el-table-column prop="code" :label="t('trigger.code')" min-width="130">
         <template #default="{ row }">
           <span class="code-text">{{ row.code }}</span>
         </template>
       </el-table-column>
-      <el-table-column prop="triggerType" label="触发类型" width="100" align="center">
+      <el-table-column prop="triggerType" :label="t('trigger.triggerType')" width="100" align="center">
         <template #default="{ row }">
           <el-tag :type="getTriggerTypeTag(row.triggerType)" size="small">
             {{ getTriggerTypeText(row.triggerType) }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="processName" label="关联流程" min-width="130" show-overflow-tooltip>
+      <el-table-column prop="processName" :label="t('trigger.relatedProcess')" min-width="130" show-overflow-tooltip>
         <template #default="{ row }">
           <span v-if="row.processName" class="process-link">{{ row.processName }}</span>
           <span v-else class="text-muted">-</span>
         </template>
       </el-table-column>
-      <el-table-column prop="cron" label="执行规则" min-width="120">
+      <el-table-column prop="cron" :label="t('trigger.executionRule')" min-width="120">
         <template #default="{ row }">
           <span v-if="row.cron" class="cron-text">{{ row.cron }}</span>
-          <span v-else-if="row.scheduleTime" class="schedule-text">每天 {{ row.scheduleTime }}</span>
+          <span v-else-if="row.scheduleTime" class="schedule-text">{{ t('trigger.scheduleEveryday') }} {{ row.scheduleTime }}</span>
           <span v-else class="text-muted">-</span>
         </template>
       </el-table-column>
-      <el-table-column prop="status" label="状态" width="80" align="center">
+      <el-table-column prop="status" :label="t('trigger.status')" width="80" align="center">
         <template #default="{ row }">
           <el-tag :type="getStatusTag(row.status)" size="small">
             {{ getStatusText(row.status) }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="触发统计" width="140" align="center">
+      <el-table-column :label="t('trigger.triggerStats')" width="140" align="center">
         <template #default="{ row }">
           <div class="trigger-stats">
             <span class="stat-total">{{ row.totalTriggers || 0 }}</span>
             <span class="stat-detail">
-              <span class="success">{{ row.successTriggers || 0 }} 成功</span>
-              <span class="failed">{{ row.failedTriggers || 0 }} 失败</span>
+              <span class="success">{{ row.successTriggers || 0 }} {{ t('trigger.success') }}</span>
+              <span class="failed">{{ row.failedTriggers || 0 }} {{ t('trigger.failed') }}</span>
             </span>
           </div>
         </template>
       </el-table-column>
-      <el-table-column prop="lastTriggerTime" label="最后触发" min-width="150">
+      <el-table-column prop="lastTriggerTime" :label="t('trigger.lastTrigger')" min-width="150">
         <template #default="{ row }">
           {{ formatDateTime(row.lastTriggerTime) }}
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="220" fixed="right" align="center">
+      <el-table-column :label="t('trigger.actions')" width="220" fixed="right" align="center">
         <template #default="{ row }">
           <div class="action-buttons">
             <el-button link type="success" @click="triggerNow(row)" :loading="triggeringId === row.id" class="action-btn">
-              <span>触发</span>
+              <span>{{ t('trigger.triggerNow') }}</span>
             </el-button>
             <el-button link type="primary" @click="editTrigger(row)" class="action-btn">
-              <span>编辑</span>
+              <span>{{ t('trigger.edit') }}</span>
             </el-button>
             <el-button link type="warning" @click="toggleStatus(row)" class="action-btn">
-              <span>{{ row.status === 'active' ? '暂停' : '启用' }}</span>
+              <span>{{ row.status === 'active' ? t('trigger.pause') : t('trigger.enable') }}</span>
             </el-button>
             <el-popconfirm
-              :title="'确定要删除触发器「' + row.name + '」吗？'"
-              confirmButtonText="确认删除"
-              cancelButtonText="取消"
+              :title="t('trigger.confirmDelete', { name: row.name })"
+              :confirmButtonText="t('trigger.confirmDeleteBtn')"
+              :cancelButtonText="t('trigger.cancel')"
               icon="Delete"
               iconColor="#f56c6c"
               @confirm="deleteTrigger(row)"
             >
               <template #reference>
                 <el-button link type="danger" class="action-btn">
-                  <span>删除</span>
+                  <span>{{ t('trigger.delete') }}</span>
                 </el-button>
               </template>
             </el-popconfirm>
@@ -162,95 +162,95 @@
     <!-- 新建/编辑触发器弹窗 -->
     <el-dialog v-model="dialogVisible" :title="dialogTitle" width="700px" class="trigger-dialog">
       <el-form :model="triggerForm" :rules="formRules" ref="formRef" label-width="110px">
-        <el-form-item label="触发器名称" prop="name">
-          <el-input v-model="triggerForm.name" placeholder="请输入触发器名称" />
+        <el-form-item :label="t('trigger.name')" prop="name">
+          <el-input v-model="triggerForm.name" :placeholder="t('trigger.namePlaceholder')" />
         </el-form-item>
-        <el-form-item label="触发器编码" prop="code">
-          <el-input v-model="triggerForm.code" placeholder="请输入触发器编码，如：DAILY_INVOICE" :disabled="isEdit" />
+        <el-form-item :label="t('trigger.code')" prop="code">
+          <el-input v-model="triggerForm.code" :placeholder="t('trigger.codePlaceholder')" :disabled="isEdit" />
         </el-form-item>
-        <el-form-item label="触发类型" prop="triggerType">
-          <el-select v-model="triggerForm.triggerType" placeholder="选择触发类型" style="width: 100%" @change="onTriggerTypeChange">
-            <el-option value="schedule" label="定时触发" />
-            <el-option value="file" label="文件触发" />
-            <el-option value="api" label="API触发" />
-            <el-option value="webhook" label="Webhook触发" />
+        <el-form-item :label="t('trigger.type')" prop="triggerType">
+          <el-select v-model="triggerForm.triggerType" :placeholder="t('trigger.typePlaceholder')" style="width: 100%" @change="onTriggerTypeChange">
+            <el-option value="schedule" :label="t('trigger.typeSchedule')" />
+            <el-option value="file" :label="t('trigger.typeFile')" />
+            <el-option value="api" :label="t('trigger.typeApi')" />
+            <el-option value="webhook" :label="t('trigger.typeWebhook')" />
           </el-select>
         </el-form-item>
-        <el-form-item label="关联流程" prop="processId">
-          <el-select v-model="triggerForm.processId" placeholder="选择关联的流程" style="width: 100%" filterable>
+        <el-form-item :label="t('trigger.bindProcess')" prop="processId">
+          <el-select v-model="triggerForm.processId" :placeholder="t('trigger.bindProcessPlaceholder')" style="width: 100%" filterable>
             <el-option v-for="p in processes" :key="p.id" :label="p.name" :value="p.id" />
           </el-select>
         </el-form-item>
-        <el-form-item label="关联队列">
-          <el-select v-model="triggerForm.queueId" placeholder="选择关联的队列（可选）" style="width: 100%" clearable filterable>
+        <el-form-item :label="t('trigger.bindQueue')">
+          <el-select v-model="triggerForm.queueId" :placeholder="t('trigger.bindQueuePlaceholder')" style="width: 100%" clearable filterable>
             <el-option v-for="q in queues" :key="q.id" :label="q.name" :value="q.id" />
           </el-select>
         </el-form-item>
 
         <!-- 定时触发配置 -->
         <template v-if="triggerForm.triggerType === 'schedule'">
-          <el-form-item label="定时规则">
+          <el-form-item :label="t('trigger.scheduleRule')">
             <el-radio-group v-model="scheduleMode">
-              <el-radio label="cron">Cron表达式</el-radio>
-              <el-radio label="simple">简单配置</el-radio>
+              <el-radio label="cron">{{ t('trigger.cronRadio') }}</el-radio>
+              <el-radio label="simple">{{ t('trigger.simpleRadio') }}</el-radio>
             </el-radio-group>
           </el-form-item>
-          <el-form-item v-if="scheduleMode === 'cron'" label="Cron表达式">
-            <el-input v-model="triggerForm.cron" placeholder="如：0 0 2 * * ? (每天凌晨2点)" />
-            <div class="form-tip">格式：秒 分 时 日 月 周 年</div>
+          <el-form-item v-if="scheduleMode === 'cron'" :label="t('trigger.cronExpression')">
+            <el-input v-model="triggerForm.cron" :placeholder="t('trigger.cronExpressionPlaceholder')" />
+            <div class="form-tip">{{ t('trigger.cronFormat') }}</div>
           </el-form-item>
-          <el-form-item v-if="scheduleMode === 'simple'" label="执行时间">
-            <el-time-picker v-model="triggerForm.scheduleTimeObj" format="HH:mm" value-format="HH:mm" placeholder="选择时间" style="width: 100%" />
+          <el-form-item v-if="scheduleMode === 'simple'" :label="t('trigger.executeTime')">
+            <el-time-picker v-model="triggerForm.scheduleTimeObj" format="HH:mm" value-format="HH:mm" :placeholder="t('trigger.executeTime')" style="width: 100%" />
           </el-form-item>
-          <el-form-item v-if="scheduleMode === 'simple'" label="执行周期">
+          <el-form-item v-if="scheduleMode === 'simple'" :label="t('trigger.executePeriod')">
             <el-select v-model="triggerForm.scheduleType" style="width: 100%" @change="onScheduleTypeChange">
-              <el-option value="day" label="每天" />
-              <el-option value="week" label="每周" />
-              <el-option value="month" label="每月" />
+              <el-option value="day" :label="t('trigger.periodDay')" />
+              <el-option value="week" :label="t('trigger.periodWeek')" />
+              <el-option value="month" :label="t('trigger.periodMonth')" />
             </el-select>
           </el-form-item>
           <!-- 每周：选择星期几 -->
-          <el-form-item v-if="scheduleMode === 'simple' && triggerForm.scheduleType === 'week'" label="选择星期">
+          <el-form-item v-if="scheduleMode === 'simple' && triggerForm.scheduleType === 'week'" :label="t('trigger.selectWeekday')">
             <el-checkbox-group v-model="selectedWeekDays">
-              <el-checkbox label="1">周一</el-checkbox>
-              <el-checkbox label="2">周二</el-checkbox>
-              <el-checkbox label="3">周三</el-checkbox>
-              <el-checkbox label="4">周四</el-checkbox>
-              <el-checkbox label="5">周五</el-checkbox>
-              <el-checkbox label="6">周六</el-checkbox>
-              <el-checkbox label="7">周日</el-checkbox>
+              <el-checkbox label="1">{{ t('trigger.weekdayMonday') }}</el-checkbox>
+              <el-checkbox label="2">{{ t('trigger.weekdayTuesday') }}</el-checkbox>
+              <el-checkbox label="3">{{ t('trigger.weekdayWednesday') }}</el-checkbox>
+              <el-checkbox label="4">{{ t('trigger.weekdayThursday') }}</el-checkbox>
+              <el-checkbox label="5">{{ t('trigger.weekdayFriday') }}</el-checkbox>
+              <el-checkbox label="6">{{ t('trigger.weekdaySaturday') }}</el-checkbox>
+              <el-checkbox label="7">{{ t('trigger.weekdaySunday') }}</el-checkbox>
             </el-checkbox-group>
-            <div class="form-tip">可选择多个星期</div>
+            <div class="form-tip">{{ t('trigger.selectWeekdayTip') }}</div>
           </el-form-item>
           <!-- 每月：选择日期 -->
-          <el-form-item v-if="scheduleMode === 'simple' && triggerForm.scheduleType === 'month'" label="选择日期">
-            <el-select v-model="selectedMonthDay" placeholder="选择日期" style="width: 100%">
+          <el-form-item v-if="scheduleMode === 'simple' && triggerForm.scheduleType === 'month'" :label="t('trigger.selectDate')">
+            <el-select v-model="selectedMonthDay" :placeholder="t('trigger.selectDate')" style="width: 100%">
               <el-option v-for="day in 31" :key="day" :label="day + '日'" :value="String(day)" />
             </el-select>
-            <div class="form-tip">选择每月的具体日期（1-31）</div>
+            <div class="form-tip">{{ t('trigger.selectDateTip') }}</div>
           </el-form-item>
         </template>
 
         <!-- 文件触发配置 -->
         <template v-if="triggerForm.triggerType === 'file'">
-          <el-form-item label="监控目录">
-            <el-input v-model="triggerForm.watchPath" placeholder="如：C:/invoices" />
+          <el-form-item :label="t('trigger.watchPath')">
+            <el-input v-model="triggerForm.watchPath" :placeholder="t('trigger.watchPathPlaceholder')" />
           </el-form-item>
-          <el-form-item label="文件匹配规则">
-            <el-input v-model="triggerForm.filePattern" placeholder="如：*.pdf, *.jpg" />
+          <el-form-item :label="t('trigger.filePattern')">
+            <el-input v-model="triggerForm.filePattern" :placeholder="t('trigger.filePatternPlaceholder')" />
           </el-form-item>
-          <el-form-item label="监控子目录">
+          <el-form-item :label="t('trigger.watchSubdirs')">
             <el-switch v-model="triggerForm.watchSubdirs" />
           </el-form-item>
         </template>
 
         <!-- API触发配置 -->
         <template v-if="triggerForm.triggerType === 'api'">
-          <el-form-item label="API密钥">
-            <el-input v-model="triggerForm.apiKey" placeholder="请输入API密钥" />
-            <div class="form-tip">用于接口调用认证</div>
+          <el-form-item :label="t('trigger.apiKey')">
+            <el-input v-model="triggerForm.apiKey" :placeholder="t('trigger.apiKeyPlaceholder')" />
+            <div class="form-tip">{{ t('trigger.apiKeyTip') }}</div>
           </el-form-item>
-          <el-form-item label="请求方法">
+          <el-form-item :label="t('trigger.requestMethod')">
             <el-radio-group v-model="triggerForm.httpMethod">
               <el-radio label="POST">POST</el-radio>
               <el-radio label="GET">GET</el-radio>
@@ -261,87 +261,87 @@
         <!-- Webhook配置 -->
         <template v-if="triggerForm.triggerType === 'webhook'">
           <el-form-item label="Webhook URL">
-            <el-input v-model="triggerForm.webhookUrl" placeholder="请输入Webhook接收地址" />
+            <el-input v-model="triggerForm.webhookUrl" :placeholder="t('trigger.webhookUrlPlaceholder')" />
           </el-form-item>
         </template>
 
-        <el-form-item label="触发后自动启动">
+        <el-form-item :label="t('trigger.autoStart')">
           <el-switch v-model="triggerForm.autoStart" />
-          <div class="form-tip">关闭后触发仅投递任务到队列，不自动执行</div>
+          <div class="form-tip">{{ t('trigger.autoStartTip') }}</div>
         </el-form-item>
 
-        <el-form-item label="最大并发">
+        <el-form-item :label="t('trigger.maxConcurrent')">
           <el-input-number v-model="triggerForm.maxConcurrent" :min="1" :max="10" />
         </el-form-item>
 
-        <el-form-item label="描述">
-          <el-input v-model="triggerForm.description" type="textarea" :rows="2" placeholder="请输入触发器描述" />
+        <el-form-item :label="t('trigger.description')">
+          <el-input v-model="triggerForm.description" type="textarea" :rows="2" :placeholder="t('trigger.descriptionPlaceholder')" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitTrigger" :loading="submitLoading">确定</el-button>
+        <el-button @click="dialogVisible = false">{{ t('trigger.cancel') }}</el-button>
+        <el-button type="primary" @click="submitTrigger" :loading="submitLoading">{{ t('trigger.submit') }}</el-button>
       </template>
     </el-dialog>
 
     <!-- 详情弹窗 -->
-    <el-dialog v-model="detailVisible" title="触发器详情" width="650px">
+    <el-dialog v-model="detailVisible" :title="t('trigger.detail')" width="650px">
       <div class="detail-content">
         <div class="detail-section">
-          <div class="section-title">基本信息</div>
+          <div class="section-title">{{ t('trigger.basicInfo') }}</div>
           <div class="detail-grid">
-            <div class="detail-item"><label>触发器名称：</label><span>{{ currentTrigger.name }}</span></div>
-            <div class="detail-item"><label>触发器编码：</label><span class="code-text">{{ currentTrigger.code }}</span></div>
-            <div class="detail-item"><label>触发类型：</label><el-tag :type="getTriggerTypeTag(currentTrigger.triggerType)" size="small">{{ getTriggerTypeText(currentTrigger.triggerType) }}</el-tag></div>
-            <div class="detail-item"><label>状态：</label><el-tag :type="getStatusTag(currentTrigger.status)" size="small">{{ getStatusText(currentTrigger.status) }}</el-tag></div>
-            <div class="detail-item"><label>关联流程：</label><span>{{ currentTrigger.processName || '-' }}</span></div>
-            <div class="detail-item"><label>关联队列：</label><span>{{ currentTrigger.queueName || '-' }}</span></div>
+            <div class="detail-item"><label>{{ t('trigger.name') }}：</label><span>{{ currentTrigger.name }}</span></div>
+            <div class="detail-item"><label>{{ t('trigger.code') }}：</label><span class="code-text">{{ currentTrigger.code }}</span></div>
+            <div class="detail-item"><label>{{ t('trigger.triggerType') }}：</label><el-tag :type="getTriggerTypeTag(currentTrigger.triggerType)" size="small">{{ getTriggerTypeText(currentTrigger.triggerType) }}</el-tag></div>
+            <div class="detail-item"><label>{{ t('trigger.status') }}：</label><el-tag :type="getStatusTag(currentTrigger.status)" size="small">{{ getStatusText(currentTrigger.status) }}</el-tag></div>
+            <div class="detail-item"><label>{{ t('trigger.relatedProcess') }}：</label><span>{{ currentTrigger.processName || '-' }}</span></div>
+            <div class="detail-item"><label>{{ t('trigger.bindQueue') }}：</label><span>{{ currentTrigger.queueName || '-' }}</span></div>
           </div>
         </div>
 
         <div class="detail-section">
-          <div class="section-title">执行配置</div>
+          <div class="section-title">{{ t('trigger.executionConfig') }}</div>
           <div class="detail-grid">
-            <div class="detail-item" v-if="currentTrigger.cron"><label>Cron表达式：</label><span class="cron-text">{{ currentTrigger.cron }}</span></div>
-            <div class="detail-item" v-if="currentTrigger.scheduleTime"><label>执行时间：</label><span>每天 {{ currentTrigger.scheduleTime }}</span></div>
-            <div class="detail-item"><label>自动启动：</label><span>{{ currentTrigger.autoStart ? '是' : '否' }}</span></div>
-            <div class="detail-item"><label>最大并发：</label><span>{{ currentTrigger.maxConcurrent }} 个任务</span></div>
+            <div class="detail-item" v-if="currentTrigger.cron"><label>{{ t('trigger.cronExpression') }}：</label><span class="cron-text">{{ currentTrigger.cron }}</span></div>
+            <div class="detail-item" v-if="currentTrigger.scheduleTime"><label>{{ t('trigger.executeTime') }}：</label><span>{{ t('trigger.scheduleEveryday') }} {{ currentTrigger.scheduleTime }}</span></div>
+            <div class="detail-item"><label>{{ t('trigger.autoStart') }}：</label><span>{{ currentTrigger.autoStart ? t('trigger.yes') : t('trigger.no') }}</span></div>
+            <div class="detail-item"><label>{{ t('trigger.maxConcurrent') }}：</label><span>{{ currentTrigger.maxConcurrent }} {{ t('trigger.tasks') }}</span></div>
           </div>
         </div>
 
         <div class="detail-section">
-          <div class="section-title">触发统计</div>
+          <div class="section-title">{{ t('trigger.triggerStats2') }}</div>
           <div class="stats-grid">
             <div class="mini-stat-card">
               <div class="stat-icon primary"><el-icon><Document /></el-icon></div>
               <div class="stat-info">
                 <span class="value">{{ currentTrigger.totalTriggers || 0 }}</span>
-                <span class="label">总触发次数</span>
+                <span class="label">{{ t('trigger.totalTriggers2') }}</span>
               </div>
             </div>
             <div class="mini-stat-card success">
               <div class="stat-icon"><el-icon><CircleCheck /></el-icon></div>
               <div class="stat-info">
                 <span class="value">{{ currentTrigger.successTriggers || 0 }}</span>
-                <span class="label">成功次数</span>
+                <span class="label">{{ t('trigger.successCount') }}</span>
               </div>
             </div>
             <div class="mini-stat-card danger">
               <div class="stat-icon"><el-icon><CircleClose /></el-icon></div>
               <div class="stat-info">
                 <span class="value">{{ currentTrigger.failedTriggers || 0 }}</span>
-                <span class="label">失败次数</span>
+                <span class="label">{{ t('trigger.failedCount') }}</span>
               </div>
             </div>
           </div>
         </div>
 
         <div class="detail-section">
-          <div class="section-title">最近执行</div>
+          <div class="section-title">{{ t('trigger.recentExecution') }}</div>
           <div class="detail-grid">
-            <div class="detail-item"><label>最后触发：</label><span>{{ formatDateTime(currentTrigger.lastTriggerTime) }}</span></div>
-            <div class="detail-item"><label>最后成功：</label><span>{{ formatDateTime(currentTrigger.lastSuccessTime) }}</span></div>
-        <div class="detail-item"><label>最后失败：</label><span>{{ formatDateTime(currentTrigger.lastFailedTime) }}</span></div>
+            <div class="detail-item"><label>{{ t('trigger.lastTrigger') }}：</label><span>{{ formatDateTime(currentTrigger.lastTriggerTime) }}</span></div>
+            <div class="detail-item"><label>{{ t('trigger.lastSuccess') }}：</label><span>{{ formatDateTime(currentTrigger.lastSuccessTime) }}</span></div>
+        <div class="detail-item"><label>{{ t('trigger.lastFailed') }}：</label><span>{{ formatDateTime(currentTrigger.lastFailedTime) }}</span></div>
           </div>
         </div>
       </div>
@@ -351,9 +351,12 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { Search, Plus, Timer, CircleCheck, Clock, TrendCharts, Document, CircleClose } from '@element-plus/icons-vue'
 import { apiGet, apiPost, apiPut, apiDelete } from '../../utils/api.js'
+
+const { t } = useI18n()
 
 const loading = ref(false)
 const submitLoading = ref(false)
@@ -407,14 +410,14 @@ const triggerForm = reactive({
   creator: 'admin'
 })
 
-const formRules = {
-  name: [{ required: true, message: '请输入触发器名称', trigger: 'blur' }],
-  code: [{ required: true, message: '请输入触发器编码', trigger: 'blur' }],
-  triggerType: [{ required: true, message: '请选择触发类型', trigger: 'change' }],
-  processId: [{ required: true, message: '请选择关联流程', trigger: 'change' }]
-}
+const formRules = computed(() => ({
+  name: [{ required: true, message: t('trigger.inputName'), trigger: 'blur' }],
+  code: [{ required: true, message: t('trigger.inputCode'), trigger: 'blur' }],
+  triggerType: [{ required: true, message: t('trigger.selectType'), trigger: 'change' }],
+  processId: [{ required: true, message: t('trigger.selectProcess'), trigger: 'change' }]
+}))
 
-const dialogTitle = computed(() => isEdit.value ? '编辑触发器' : '新建触发器')
+const dialogTitle = computed(() => isEdit.value ? t('trigger.edit') : t('trigger.create'))
 
 const filteredTriggers = computed(() => {
   let list = triggers.value
@@ -448,7 +451,7 @@ const updateStats = () => {
 }
 
 const getTriggerTypeText = (type) => {
-  const map = { schedule: '定时', file: '文件', api: 'API', webhook: 'Webhook' }
+  const map = { schedule: t('trigger.typeSchedule'), file: t('trigger.typeFile'), api: t('trigger.typeApi'), webhook: t('trigger.typeWebhook') }
   return map[type] || type || '-'
 }
 
@@ -458,7 +461,7 @@ const getTriggerTypeTag = (type) => {
 }
 
 const getStatusText = (s) => {
-  const map = { active: '启用', paused: '暂停', disabled: '禁用' }
+  const map = { active: t('trigger.statusEnabled'), paused: t('trigger.statusPaused'), disabled: t('trigger.statusDisabled') }
   return map[s] || s || '-'
 }
 
@@ -469,7 +472,6 @@ const getStatusTag = (s) => {
 
 const formatDateTime = (dateTime) => {
   if (!dateTime) return '-'
-  // 处理 ISO 8601 格式 (2026-04-15T18:25:41)
   if (typeof dateTime === 'string' && dateTime.includes('T')) {
     return dateTime.replace('T', ' ')
   }
@@ -546,7 +548,6 @@ const editTrigger = (trigger) => {
   isEdit.value = true
   currentTrigger.value = { ...trigger }
   
-  // 填充表单数据
   Object.assign(triggerForm, {
     name: trigger.name || '',
     code: trigger.code || '',
@@ -569,13 +570,10 @@ const editTrigger = (trigger) => {
     maxConcurrent: trigger.maxConcurrent || 1
   })
   
-  // 解析scheduleDays到选择器
   if (trigger.scheduleDays) {
     if (trigger.scheduleType === 'week') {
-      // 周的格式："1,2,3" -> ['1','2','3']
       selectedWeekDays.value = trigger.scheduleDays.split(',').filter(d => d)
     } else if (trigger.scheduleType === 'month') {
-      // 月的格式："15" -> "15"
       selectedMonthDay.value = trigger.scheduleDays
     }
   } else {
@@ -583,7 +581,6 @@ const editTrigger = (trigger) => {
     selectedMonthDay.value = ''
   }
   
-  // 根据是否有cron表达式设置定时模式
   scheduleMode.value = trigger.cron ? 'cron' : 'simple'
   dialogVisible.value = true
 }
@@ -594,7 +591,6 @@ const onTriggerTypeChange = () => {
 }
 
 const onScheduleTypeChange = () => {
-  // 切换周期类型时清空相关选择
   selectedWeekDays.value = []
   selectedMonthDay.value = ''
   triggerForm.scheduleDays = ''
@@ -610,13 +606,13 @@ const toggleStatus = async (trigger) => {
     const newStatus = trigger.status === 'active' ? 'paused' : 'active'
     const result = await apiPut(`/trigger/${trigger.id}/status`, { status: newStatus })
     if (result.code === 0) {
-      ElMessage.success(`触发器${newStatus === 'active' ? '已启用' : '已暂停'}`)
+      ElMessage.success(newStatus === 'active' ? t('trigger.enabled') : t('trigger.paused'))
       await loadTriggers()
     } else {
-      ElMessage.error(result.message || '操作失败')
+      ElMessage.error(result.message || t('trigger.operationFailed'))
     }
   } catch {
-    ElMessage.error('操作失败')
+    ElMessage.error(t('trigger.operationFailed'))
   }
 }
 
@@ -625,13 +621,13 @@ const triggerNow = async (trigger) => {
   try {
     const result = await apiPost(`/trigger/${trigger.id}/trigger`)
     if (result.code === 0) {
-      ElMessage.success('触发成功')
+      ElMessage.success(t('trigger.triggerSuccess'))
       await loadTriggers()
     } else {
-      ElMessage.error(result.message || '触发失败')
+      ElMessage.error(result.message || t('trigger.triggerFailed'))
     }
   } catch {
-    ElMessage.error('触发失败')
+    ElMessage.error(t('trigger.triggerFailed'))
   } finally {
     triggeringId.value = null
   }
@@ -646,13 +642,10 @@ const submitTrigger = async () => {
       const process = processes.value.find(p => p.id === triggerForm.processId)
       const queue = queues.value.find(q => q.id === triggerForm.queueId)
 
-      // 处理scheduleDays字段
       let scheduleDaysValue = ''
       if (triggerForm.scheduleType === 'week' && selectedWeekDays.value.length > 0) {
-        // 周：将数组转为逗号分隔的字符串，如 "1,2,3"
         scheduleDaysValue = selectedWeekDays.value.join(',')
       } else if (triggerForm.scheduleType === 'month' && selectedMonthDay.value) {
-        // 月：直接使用选中的日期
         scheduleDaysValue = selectedMonthDay.value
       }
 
@@ -672,14 +665,14 @@ const submitTrigger = async () => {
       }
 
       if (result.code === 0) {
-        ElMessage.success(isEdit.value ? '更新成功' : '创建成功')
+        ElMessage.success(isEdit.value ? t('trigger.updateSuccess') : t('trigger.createSuccess'))
         dialogVisible.value = false
         await loadTriggers()
       } else {
-        ElMessage.error(result.message || '操作失败')
+        ElMessage.error(result.message || t('trigger.operationFailed'))
       }
     } catch {
-      ElMessage.error('请求失败')
+      ElMessage.error(t('trigger.requestFailed'))
     } finally {
       submitLoading.value = false
     }
@@ -690,13 +683,13 @@ const deleteTrigger = async (trigger) => {
   try {
     const result = await apiDelete(`/trigger/${trigger.id}`, {})
     if (result.code === 0) {
-      ElMessage.success('删除成功')
+      ElMessage.success(t('trigger.deleteSuccess'))
       await loadTriggers()
     } else {
-      ElMessage.error(result.message || '删除失败')
+      ElMessage.error(result.message || t('trigger.deleteFailed'))
     }
   } catch {
-    ElMessage.error('删除失败')
+    ElMessage.error(t('trigger.deleteFailed'))
   }
 }
 

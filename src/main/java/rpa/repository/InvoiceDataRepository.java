@@ -47,4 +47,24 @@ public interface InvoiceDataRepository extends JpaRepository<InvoiceData, Long> 
      * 统计发票数量
      */
     long countByTaxNo(String taxNo);
+
+    /**
+     * 查询所有发票数据，按采集时间倒序（最近采集的排在前面）
+     */
+    List<InvoiceData> findAllByOrderByCollectTimeDesc();
+
+    /**
+     * 根据纳税人识别号查询，按采集时间倒序
+     */
+    List<InvoiceData> findByTaxNoOrderByCollectTimeDesc(String taxNo);
+
+    /**
+     * 根据统一社会信用代码查询，按采集时间倒序
+     */
+    List<InvoiceData> findByCreditCodeOrderByCollectTimeDesc(String creditCode);
+
+    /**
+     * 根据企业名称查询，按采集时间倒序
+     */
+    List<InvoiceData> findByCompanyNameOrderByCollectTimeDesc(String companyName);
 }
