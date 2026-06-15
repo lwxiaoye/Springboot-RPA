@@ -40,3 +40,32 @@ attachments/
 *.tar
 *.tar.gz
 *.zip
+
+# Local assistant/editor artifacts
+.cursor/
+SKILL.md
+prompt.txt
+dashboard-prompt.md
+check_*.py
+update_table_comments.sql
+src/assets/vite.svg
+src/assets/vue.svg
+src/components/HelloWorld.vue
+src/main/resources/static/frontend/
+
+# Local deployment drafts not required by the source release
+1panel-app.json
+build-local.ps1
+deploy.sh
+DEPLOY_*.md
+DATABASE_FIX_GUIDE.md
+docker-compose.*.yml
+nginx.1panel.conf
+
+# Superseded local notes
+使用说明.md
+密码安全策略说明.md
+快速启动.md
+数据查看功能说明.txt
+画布设计器使用说明.md
+docs/
