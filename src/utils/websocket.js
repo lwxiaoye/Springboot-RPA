@@ -25,16 +25,13 @@ class WebSocketClient {
 
   connect() {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      console.log('WebSocket already connected')
       return
     }
 
     try {
-      console.log('Connecting to WebSocket:', this.url)
       this.ws = new WebSocket(this.url)
 
       this.ws.onopen = (event) => {
-        console.log('WebSocket connected')
         this.reconnectAttempts = 0
         this.isManualClose = false
         this.startHeartbeat()
@@ -46,12 +43,11 @@ class WebSocketClient {
           const data = JSON.parse(event.data)
           this.options.onMessage(data)
         } catch (e) {
-          console.warn('Failed to parse WebSocket message:', e)
+          // 静默处理解析错误
         }
       }
 
       this.ws.onclose = (event) => {
-        console.log('WebSocket closed', event.code, event.reason)
         this.stopHeartbeat()
         this.options.onClose(event)
         
@@ -61,11 +57,9 @@ class WebSocketClient {
       }
 
       this.ws.onerror = (error) => {
-        console.error('WebSocket error:', error)
         this.options.onError(error)
       }
     } catch (e) {
-      console.error('Failed to create WebSocket:', e)
       this.scheduleReconnect()
     }
   }
@@ -75,7 +69,6 @@ class WebSocketClient {
       this.ws.send(typeof data === 'string' ? data : JSON.stringify(data))
       return true
     }
-    console.warn('WebSocket is not connected')
     return false
   }
 
@@ -96,7 +89,6 @@ class WebSocketClient {
     if (this.reconnectTimer) return
     
     this.reconnectAttempts++
-    console.log(`Scheduling reconnect attempt ${this.reconnectAttempts}/${this.options.maxReconnectAttempts} in ${this.options.reconnectInterval}ms`)
     
     this.reconnectTimer = setTimeout(() => {
       this.reconnectTimer = null
@@ -145,7 +137,6 @@ class MonitorWebSocketManager {
       maxReconnectAttempts: 10,
       heartbeatInterval: 25000,
       onOpen: () => {
-        console.log('Monitor WebSocket connected')
         this.connected.value = true
         this.emit('connected', {})
         
@@ -153,12 +144,10 @@ class MonitorWebSocketManager {
         this.subscribe()
       },
       onClose: () => {
-        console.log('Monitor WebSocket disconnected')
         this.connected.value = false
         this.emit('disconnected', {})
       },
       onError: (error) => {
-        console.error('Monitor WebSocket error:', error)
         this.emit('error', error)
       },
       onMessage: (data) => {
@@ -204,7 +193,8 @@ class MonitorWebSocketManager {
         // 心跳响应，忽略
         break
       default:
-        console.log('Unknown message type:', data.type)
+        // 静默处理未知消息类型
+        break
     }
   }
 
@@ -244,8 +234,6 @@ class MonitorWebSocketManager {
       this.listeners.set(event, [])
     }
     this.listeners.get(event).push(callback)
-    
-    // 返回取消订阅函数
     return () => {
       const callbacks = this.listeners.get(event)
       if (callbacks) {
@@ -278,7 +266,7 @@ class MonitorWebSocketManager {
         try {
           callback(data)
         } catch (e) {
-          console.error('Error in event listener:', e)
+          // 静默处理
         }
       })
     }

@@ -615,11 +615,6 @@ const checkSensitiveWords = () => {
   }
   
   detectedSensitiveWords.value = found.slice(0, 5)  // 最多显示5个
-  
-  // 调试日志
-  if (found.length > 0) {
-    console.log('检测到敏感词:', found)
-  }
 }
 
 // 清除敏感词内容
@@ -708,7 +703,6 @@ let globalSubscription = null  // 全局消息订阅
 
 const connectWebSocket = () => {
   if (isConnected()) {
-    console.log('STOMP already connected')
     wsConnected.value = true
     return
   }
@@ -719,17 +713,14 @@ const connectWebSocket = () => {
   connect({
     url: `${protocol}//${window.location.host}/ws/chat`,
     onConnect: () => {
-      console.log('STOMP connected')
       wsConnected.value = true
       // 连接成功后，订阅全局消息通知
       subscribeGlobalNotifications()
     },
     onDisconnect: () => {
-      console.log('STOMP disconnected')
       wsConnected.value = false
     },
-    onError: (error) => {
-      console.error('STOMP error:', error)
+    onError: () => {
       wsConnected.value = false
     }
   })
@@ -740,7 +731,6 @@ const subscribeGlobalNotifications = () => {
   import('../../utils/stomp.js').then(({ subscribe }) => {
     // 订阅所有会话更新通知（用户级别）
     globalSubscription = subscribe('/topic/conversations/updates', (notification) => {
-      console.log('收到会话更新通知:', notification)
       // 处理会话列表更新通知
       if (notification.type === 'conversation_update') {
         // 检查是否需要刷新会话列表
@@ -891,13 +881,10 @@ const loadAllUsers = async () => {
     const res = await apiGet('/user')
     if (res.code === 0) {
       allUsers.value = res.data || []
-      console.log('Loaded users:', allUsers.value.length)
     } else {
-      console.error('Failed to load users:', res.message)
       allUsers.value = []
     }
   } catch (error) {
-    console.error('加载用户列表失败:', error)
     allUsers.value = []
   }
   userLoading.value = false

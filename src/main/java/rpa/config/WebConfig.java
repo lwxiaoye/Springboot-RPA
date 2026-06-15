@@ -11,9 +11,8 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  * 配置Spring MVC的视图控制器和静态资源处理。
  * 主要功能：
  * <ul>
- *   <li>根路径"/"转发到登录页面</li>
- *   <li>"/dashboard.html"映射到dashboard视图</li>
- *   <li>"/login.html"映射到login视图</li>
+ *   <li>根路径"/"转发到 index.html (Vue SPA)</li>
+ *   <li>静态资源服务</li>
  * </ul>
  * </p>
  *
@@ -30,9 +29,7 @@ public class WebConfig implements WebMvcConfigurer {
      * <p>
      * 配置URL到视图的映射关系：
      * <ul>
-     *   <li>/ -> 转发到登录页面</li>
-     *   <li>/dashboard.html -> dashboard视图</li>
-     *   <li>/login.html -> login视图</li>
+     *   <li>/ -> index.html (Vue SPA入口)</li>
      * </ul>
      * </p>
      *
@@ -40,18 +37,24 @@ public class WebConfig implements WebMvcConfigurer {
      */
     @Override
     public void addViewControllers(ViewControllerRegistry registry) {
-        registry.addViewController("/").setViewName("forward:/login.html");
-        registry.addViewController("/login.html").setViewName("login");
-        registry.addViewController("/dashboard.html").setViewName("dashboard");
+        // 根路径转发到 Vue SPA 的 index.html
+        registry.addViewController("/").setViewName("forward:/index.html");
     }
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // 映射头像资源路径 - 支持两种路径格式，确保前后端一致
+        // 映射头像资源路径
         registry.addResourceHandler("/user/avatar/image/**")
                 .addResourceLocations("file:uploads/avatars/");
-        // 兼容带 /api 前缀的访问
         registry.addResourceHandler("/api/user/avatar/image/**")
                 .addResourceLocations("file:uploads/avatars/");
+
+        // Vue SPA 静态资源 - 关键配置
+        registry.addResourceHandler("/index.html")
+                .addResourceLocations("classpath:/static/frontend/");
+        registry.addResourceHandler("/*.html")
+                .addResourceLocations("classpath:/static/frontend/");
+        registry.addResourceHandler("/favicon.ico")
+                .addResourceLocations("classpath:/static/");
     }
 }

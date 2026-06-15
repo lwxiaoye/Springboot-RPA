@@ -12,7 +12,6 @@ export const connect = (options = {}) => {
   const { url = '/ws/chat', onConnect, onDisconnect, onError } = options
 
   if (stompClient && stompClient.connected) {
-    console.log('STOMP already connected')
     if (onConnect) onConnect()
     return stompClient
   }
@@ -27,23 +26,20 @@ export const connect = (options = {}) => {
 
       stompClient = new Client({
         webSocketFactory: () => socket,
-        debug: (str) => {
-          // 空函数，避免 this.debug is not a function 错误
+        debug: () => {
+          // 空函数，禁用调试输出
         },
         reconnectDelay: 5000,
         heartbeatIncoming: 0,
         heartbeatOutgoing: 0,
         onConnect: (frame) => {
-          console.log('STOMP connected')
           if (onConnect) onConnect()
           resolve(stompClient)
         },
         onDisconnect: (frame) => {
-          console.log('STOMP disconnected')
           if (onDisconnect) onDisconnect()
         },
         onStompError: (frame) => {
-          console.error('STOMP error:', frame)
           if (onError) onError(frame)
           reject(frame)
         }
@@ -51,7 +47,6 @@ export const connect = (options = {}) => {
 
       stompClient.activate()
     }).catch(err => {
-      console.error('Failed to load SockJS or stompjs:', err)
       reject(err)
     })
   })
@@ -69,16 +64,15 @@ export const disconnect = (callback) => {
 // 订阅会话
 export const subscribeConversation = (conversationId, callback) => {
   if (!stompClient || !stompClient.connected) {
-    console.warn('STOMP not connected, cannot subscribe')
     return null
   }
-  
+
   // 取消之前的订阅
   if (currentSubscription) {
     currentSubscription.unsubscribe()
     currentSubscription = null
   }
-  
+
   const destination = `/topic/conversation/${conversationId}`
   currentSubscription = stompClient.subscribe(destination, (message) => {
     try {
@@ -88,17 +82,16 @@ export const subscribeConversation = (conversationId, callback) => {
       callback(message.body)
     }
   })
-  
+
   return currentSubscription
 }
 
 // 通用订阅
 export const subscribe = (destination, callback) => {
   if (!stompClient || !stompClient.connected) {
-    console.warn('STOMP not connected, cannot subscribe')
     return null
   }
-  
+
   return stompClient.subscribe(destination, (message) => {
     try {
       const body = JSON.parse(message.body)
@@ -120,8 +113,6 @@ export const unsubscribe = (subscription) => {
 export const send = (destination, body) => {
   if (stompClient && stompClient.connected) {
     stompClient.publish({ destination, body: JSON.stringify(body) })
-  } else {
-    console.warn('STOMP not connected, cannot send message')
   }
 }
 

@@ -222,7 +222,6 @@ class WatermarkUtils {
       container.setAttribute('data-watermark-hash', hash)
       container.setAttribute('data-watermark-text', text)
       container.setAttribute('data-watermark-sensitivity', sensitivity)
-      console.log(`[Watermark] 水印已更新，敏感级别: ${sensitivity}`)
       return container
     }
 
@@ -395,8 +394,6 @@ class WatermarkUtils {
 
     // 监听截图事件（PrintScreen）
     this.setupScreenshotListener()
-
-    console.log(`[Watermark] 水印保护已启动，敏感级别: ${sensitivity}`)
   }
 
   /**
@@ -580,8 +577,6 @@ class WatermarkUtils {
     }
 
     this.removeWatermark()
-
-    console.log('[Watermark] 水印系统已销毁')
   }
 
   /**

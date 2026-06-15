@@ -902,7 +902,6 @@ const switchToTab = (tab) => {
 }
 
 const onTabChange = (tab) => {
-  console.log('切换到:', tab)
   // 根据不同 Tab 加载对应数据
   switch (tab) {
     case 'forecast':
@@ -1400,12 +1399,9 @@ const saveCustomReport = async () => {
       createUser: Number(userId), // 确保是数字类型
       createUserName: userName
     }
-    
-    console.log('创建报表请求:', payload) // 调试日志
-    
+
     const result = await apiPost('/report/custom', payload)
-    console.log('创建报表响应:', result) // 调试日志
-    
+
     if (result.code === 0) {
       reportDialogVisible.value = false
       await loadCustomReports()
@@ -1526,9 +1522,7 @@ const loadStats = async () => {
 // 加载日报数据
 const loadDailyReport = async () => {
   try {
-    console.log('加载日报数据，日期:', dailyDate.value)
     const result = await apiGet('/report/daily', { date: dailyDate.value })
-    console.log('日报API响应:', result)
     if (result.code === 0 && result.data) {
       const data = result.data
       dailyStats.total = data.total || 0
@@ -1536,12 +1530,9 @@ const loadDailyReport = async () => {
       dailyStats.failed = data.failed || 0
       dailyStats.running = data.running || 0
       dailyLogs.value = data.logs || []
-      console.log('日报数据已更新:', { dailyStats, logsCount: dailyLogs.value.length })
-    } else {
-      console.warn('日报API返回异常:', result)
     }
   } catch (e) {
-    console.error('加载日报数据失败:', e)
+    console.error('加载日报数据失败')
   }
 }
 

@@ -530,7 +530,6 @@ const loadData = async () => {
 const refreshData = () => loadData()
 
 const handleTabChange = (tab) => {
-  console.log('切换到:', tab)
 }
 
 // 模板操作

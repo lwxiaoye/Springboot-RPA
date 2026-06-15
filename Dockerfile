@@ -30,22 +30,21 @@ LABEL description="Enterprise RPA Platform Backend"
 WORKDIR /app
 
 # 创建必要目录
-RUN mkdir -p /app/logs /app/recordings /app/templates /app/data
+RUN mkdir -p /app/logs /app/uploads /app/templates /app/data
 
 # 复制构建产物
 COPY --from=builder /app/target/*.jar app.jar
 
 # 设置环境变量
 ENV JAVA_OPTS="-Xms512m -Xmx2048m -XX:+UseG1GC"
-ENV SPRING_PROFILES_ACTIVE=docker
 ENV TZ=Asia/Shanghai
 
 # 暴露端口
-EXPOSE 5173
+EXPOSE 8080
 
 # 健康检查
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:5173/actuator/health || exit 1
+    CMD curl -f http://localhost:8080/actuator/health || exit 1
 
 # 启动命令
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]

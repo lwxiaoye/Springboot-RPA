@@ -71,7 +71,7 @@ public class Announcement {
     private String targetUsers;
 
     /** 附件JSON字符串 */
-    @Column(name = "attachments", length = 2000)
+    @Column(name = "attachments", columnDefinition = "text")
     private String attachments;
 
     /** 创建时间 */

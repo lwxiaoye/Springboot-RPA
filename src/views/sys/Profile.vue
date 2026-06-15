@@ -408,20 +408,10 @@ const changePassword = async () => {
   
   pwdLoading.value = true
   try {
-    // 使用 apiPut 工具，自动携带 JWT Token
-    const token = localStorage.getItem('token')
-    console.log('当前 Token:', token ? token.substring(0, 20) + '...' : '无')
-    console.log('请求参数:', {
-      oldPassword: pwdModel.oldPassword,
-      newPassword: pwdModel.newPassword
-    })
-    
     const result = await apiPut(`/user/password/${currentUser.value.id}`, {
       oldPassword: pwdModel.oldPassword,
       newPassword: pwdModel.newPassword
     })
-    
-    console.log('后端响应:', result)
     
     if (result.code === 0) {
       ElMessage.success(t('profile.pwdSuccess'))
@@ -474,7 +464,6 @@ const handleAvatarChange = async (e) => {
       if (result.code === 0) {
         // 使用后端返回的相对路径
         currentUser.value.avatar = result.data?.imageUrl || avatarPreview.value
-        console.log('头像上传成功，新路径:', currentUser.value.avatar)
         
         // 同步更新 localStorage
         const storedUser = JSON.parse(localStorage.getItem('userInfo') || '{}')
@@ -499,9 +488,6 @@ const handleAvatarChange = async (e) => {
 
 // 处理图片加载失败
 const handleImageError = (e) => {
-  const imgSrc = e.target.src
-  console.error('❌ 头像加载失败:', imgSrc)
-  console.error('当前用户头像路径:', currentUser.value.avatar)
   ElMessage.error(t('profile.avatarLoadFailed'))
 }
 
@@ -513,18 +499,14 @@ const formatDate = (isoString) => {
 // 获取头像完整 URL
 const getAvatarUrl = (path) => {
   if (!path) {
-    console.log('头像路径为空')
     return null
   }
   // 如果已经是完整 URL，直接返回
   if (path.startsWith('http://') || path.startsWith('https://')) {
-    console.log('使用完整 URL:', path)
     return path
   }
   // 否则拼接 API 基础 URL
-  const fullUrl = `/api${path}`
-  console.log('头像路径处理 - 原始路径:', path, '| 完整 URL:', fullUrl)
-  return fullUrl
+  return `/api${path}`
 }
 
 const loadUserFromStorage = () => {
@@ -533,26 +515,20 @@ const loadUserFromStorage = () => {
     try {
       const user = JSON.parse(userStr)
       currentUser.value = { ...currentUser.value, ...user }
-      
-      console.log('从 localStorage 加载的用户信息:', currentUser.value)
-      console.log('头像路径:', currentUser.value.avatar)
-      
+
       // 修复旧的头像路径格式（去掉开头的 /api）
       if (currentUser.value.avatar && currentUser.value.avatar.startsWith('/api/')) {
         currentUser.value.avatar = currentUser.value.avatar.replace('/api/', '/')
         // 更新 localStorage
         user.avatar = currentUser.value.avatar
         localStorage.setItem('userInfo', JSON.stringify(user))
-        console.log('已修复头像路径:', currentUser.value.avatar)
       }
-      
+
       if (!currentUser.value.mobile) currentUser.value.mobile = '13800138002'
       if (!currentUser.value.role) currentUser.value.role = '系统管理员'
     } catch (e) {
-      console.error('解析用户信息失败:', e)
+      console.error('解析用户信息失败')
     }
-  } else {
-    console.warn('localStorage 中没有用户信息，请重新登录')
   }
   initEditForm()
 }
@@ -562,17 +538,15 @@ const loadUserProfile = async () => {
   try {
     const result = await apiGet(`/user/${currentUser.value.id}`)
     if (result.code === 0 && result.data) {
-      console.log('从后端获取的用户信息:', result.data)
       currentUser.value = { ...currentUser.value, ...result.data }
-      console.log('更新后的头像路径:', currentUser.value.avatar)
-      
+
       // 同时更新 localStorage
       const storedUser = JSON.parse(localStorage.getItem('userInfo') || '{}')
       storedUser.avatar = currentUser.value.avatar
       localStorage.setItem('userInfo', JSON.stringify(storedUser))
     }
   } catch (err) {
-    console.error('获取用户信息失败:', err)
+    console.error('获取用户信息失败')
   }
 }
 

@@ -1,4 +1,4 @@
-# RPA系统前端 - Docker镜像
+# RPA系统前端 - Docker镜像（Nginx）
 # 基于Node.js构建Vue 3应用
 
 # ===== 多阶段构建 =====

@@ -38,7 +38,6 @@ class GlobalWatermarkManager {
    */
   init() {
     if (this.isInitialized) {
-      console.warn('[GlobalWatermark] 水印系统已初始化')
       return
     }
 
@@ -47,14 +46,12 @@ class GlobalWatermarkManager {
 
     // 实时监控页面跳过
     if (isMonitorPage(path)) {
-      console.log('[GlobalWatermark] 实时监控页面，跳过水印初始化')
       this.isInitialized = true
       return
     }
 
     // 检查是否需要水印
     if (!shouldApplyWatermark(path)) {
-      console.log('[GlobalWatermark] 当前页面不需要水印')
       this.isInitialized = true
       return
     }
@@ -82,7 +79,6 @@ class GlobalWatermarkManager {
     this.startStatusCheck()
 
     this.isInitialized = true
-    console.log(`[GlobalWatermark] 全局水印系统已初始化，敏感级别: ${sensitivity}`)
   }
 
   /**
@@ -123,21 +119,14 @@ class GlobalWatermarkManager {
 
     // 监听水印状态变化事件
     window.addEventListener('watermarkStatusChanged', (e) => {
-      console.log('[GlobalWatermark] 收到水印状态变化事件:', e.detail)
-
-      // 只有明确的启用/禁用操作才处理，不处理公告相关的事件
+      // 只有明确的启用/禁用操作才处理
       if (e.detail && e.detail.enabled === false) {
-        // 水印被禁用，移除水印
         watermarkInstance.destroy()
         this.isExternallyDisabled = true
-        console.log('[GlobalWatermark] 水印已被禁用')
       } else if (e.detail && e.detail.enabled === true) {
-        // 水印被启用，重新启动
         this.isExternallyDisabled = false
-        console.log('[GlobalWatermark] 水印被启用，准备刷新')
         this.refreshWatermark()
       }
-      // 忽略其他类型的事件（如公告相关事件）
     })
 
     // 覆盖 pushState 和 replaceState 以监听程序化路由跳转
@@ -146,7 +135,6 @@ class GlobalWatermarkManager {
 
     window.history.pushState = (...args) => {
       originalPushState.apply(window.history, args)
-      // 使用 requestAnimationFrame 延迟执行，避免阻塞
       requestAnimationFrame(() => this.handleRouteChange())
     }
 
@@ -162,7 +150,6 @@ class GlobalWatermarkManager {
   handleRouteChange(newPath) {
     // 如果水印被外部禁用，不处理路由变化
     if (this.isExternallyDisabled) {
-      console.log('[GlobalWatermark] 水印已被禁用，跳过路由变化处理')
       return
     }
 
@@ -171,7 +158,6 @@ class GlobalWatermarkManager {
     // 实时监控页面移除水印
     if (isMonitorPage(path)) {
       if (watermarkInstance.isActive()) {
-        console.log('[GlobalWatermark] 进入实时监控页面，移除水印')
         watermarkInstance.destroy()
       }
       return
@@ -180,7 +166,6 @@ class GlobalWatermarkManager {
     // 检查是否需要水印
     if (!shouldApplyWatermark(path)) {
       if (watermarkInstance.isActive()) {
-        console.log('[GlobalWatermark] 进入不需要水印的页面，移除水印')
         watermarkInstance.destroy()
       }
       return
@@ -189,13 +174,11 @@ class GlobalWatermarkManager {
     // 获取新的敏感级别
     const newSensitivity = getSensitivityByPath(path)
 
-    // 如果敏感级别变化，更新水印（只更新配置，不销毁重建）
+    // 如果敏感级别变化，更新水印
     if (newSensitivity !== this.currentSensitivity) {
-      console.log(`[GlobalWatermark] 敏感级别变化: ${this.currentSensitivity} -> ${newSensitivity}`)
       this.currentSensitivity = newSensitivity
       watermarkInstance.createWatermarkElement(newSensitivity)
     } else if (!watermarkInstance.isActive()) {
-      // 如果水印未激活，重新启动
       watermarkInstance.startProtection(newSensitivity)
     }
   }
@@ -207,14 +190,12 @@ class GlobalWatermarkManager {
     // 监听 localStorage 变化
     window.addEventListener('storage', (e) => {
       if (e.key === 'userInfo') {
-        console.log('[GlobalWatermark] 用户信息已变更，刷新水印')
         this.refreshWatermark()
       }
     })
 
     // 监听自定义用户更新事件
     window.addEventListener('user-updated', () => {
-      console.log('[GlobalWatermark] 收到用户更新事件，刷新水印')
       this.refreshWatermark()
     })
   }
@@ -235,29 +216,24 @@ class GlobalWatermarkManager {
         const watermarkEnabled = result.data?.watermarkEnabled
 
         if (watermarkEnabled === false) {
-          // 水印被禁用
           if (!this.isExternallyDisabled) {
-            console.log('[GlobalWatermark] 检测到水印被禁用，移除水印')
             watermarkInstance.destroy()
             this.isExternallyDisabled = true
           }
         } else if (watermarkEnabled === true && this.isExternallyDisabled) {
-          // 水印被启用但当前被本地禁用（可能已自动恢复）
-          console.log('[GlobalWatermark] 检测到水印已恢复')
           this.isExternallyDisabled = false
           this.refreshWatermark()
         }
       }
     } catch (e) {
-      console.error('[GlobalWatermark] 检查临时关闭状态失败', e)
+      // 静默处理错误
     }
   }
 
   /**
-   * 刷新水印（当用户信息变化时或手动启用时）
+   * 刷新水印
    */
   refreshWatermark() {
-    // 如果页面不需要水印，跳过
     const path = window.location.pathname
 
     if (isMonitorPage(path) || !shouldApplyWatermark(path)) {
@@ -268,13 +244,10 @@ class GlobalWatermarkManager {
       this.currentSensitivity = getSensitivityByPath(path)
     }
 
-    // 如果水印被外部禁用且不是正在启用，跳过
     if (this.isExternallyDisabled) {
-      console.log('[GlobalWatermark] 水印已被禁用，跳过刷新')
       return
     }
 
-    // 销毁现有水印并重新启动
     if (watermarkInstance.isActive()) {
       watermarkInstance.destroy()
     }
@@ -299,14 +272,9 @@ class GlobalWatermarkManager {
       if (response.ok) {
         const result = await response.json()
         if (result.code === 0) {
-          // 设置禁用标志
           this.isExternallyDisabled = true
-          // 销毁水印
           watermarkInstance.destroy()
-
-          // 设置自动恢复定时器
           this.setAutoRestoreTimer(duration)
-
           return { success: true, ...result.data }
         }
       }
@@ -314,7 +282,6 @@ class GlobalWatermarkManager {
       const error = await response.json()
       return { success: false, message: error.message }
     } catch (e) {
-      console.error('[GlobalWatermark] 临时关闭失败', e)
       return { success: false, message: e.message }
     }
   }
@@ -334,17 +301,12 @@ class GlobalWatermarkManager {
       if (response.ok) {
         const result = await response.json()
         if (result.code === 0) {
-          // 清除禁用标志
           this.isExternallyDisabled = false
-          // 清除自动恢复定时器
           if (this.autoRestoreTimer) {
             clearTimeout(this.autoRestoreTimer)
             this.autoRestoreTimer = null
           }
-
-          // 重新启动水印
           this.refreshWatermark()
-
           return { success: true }
         }
       }
@@ -352,7 +314,6 @@ class GlobalWatermarkManager {
       const error = await response.json()
       return { success: false, message: error.message }
     } catch (e) {
-      console.error('[GlobalWatermark] 恢复水印失败', e)
       return { success: false, message: e.message }
     }
   }
@@ -366,7 +327,6 @@ class GlobalWatermarkManager {
     }
 
     this.autoRestoreTimer = setTimeout(() => {
-      console.log('[GlobalWatermark] 水印自动恢复时间到达')
       this.restoreWatermark()
     }, duration)
   }
@@ -375,7 +335,6 @@ class GlobalWatermarkManager {
    * 销毁水印系统
    */
   destroy() {
-    // 停止定期检查
     this.stopStatusCheck()
 
     if (this.autoRestoreTimer) {
@@ -388,8 +347,6 @@ class GlobalWatermarkManager {
 
     this.isInitialized = false
     this.currentSensitivity = null
-
-    console.log('[GlobalWatermark] 全局水印系统已销毁')
   }
 
   /**

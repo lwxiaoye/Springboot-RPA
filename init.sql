@@ -2,9 +2,9 @@
 -- 执行时机：容器首次启动时自动执行
 
 -- 创建数据库（如不存在）
-CREATE DATABASE IF NOT EXISTS rpa DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE IF NOT EXISTS rpa_system DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-USE rpa;
+USE rpa_system;
 
 -- 设置时区
 SET time_zone = '+08:00';
